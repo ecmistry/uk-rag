@@ -1,0 +1,62 @@
+[
+  {
+    "metric_name": "Natural Change (Births vs Deaths)",
+    "metric_key": "natural_change",
+    "category": "Population",
+    "value": "placeholder",
+    "time_period": "2026",
+    "unit": "\u2014",
+    "rag_status": "amber",
+    "data_source": "Placeholder",
+    "source_url": "",
+    "last_updated": "2026-01-31T14:26:00.816636"
+  },
+  {
+    "metric_name": "Old-Age Dependency Ratio",
+    "metric_key": "old_age_dependency_ratio",
+    "category": "Population",
+    "value": "placeholder",
+    "time_period": "2026",
+    "unit": "%",
+    "rag_status": "amber",
+    "data_source": "Placeholder",
+    "source_url": "",
+    "last_updated": "2026-01-31T14:26:00.816661"
+  },
+  {
+    "metric_name": "Net Migration (Long-term)",
+    "metric_key": "net_migration_long_term",
+    "category": "Population",
+    "value": "placeholder",
+    "time_period": "2026",
+    "unit": "000s",
+    "rag_status": "amber",
+    "data_source": "Placeholder",
+    "source_url": "",
+    "last_updated": "2026-01-31T14:26:00.816661"
+  },
+  {
+    "metric_name": "Healthy Life Expectancy",
+    "metric_key": "healthy_life_expectancy",
+    "category": "Population",
+    "value": "placeholder",
+    "time_period": "2026",
+    "unit": "years",
+    "rag_status": "amber",
+    "data_source": "Placeholder",
+    "source_url": "",
+    "last_updated": "2026-01-31T14:26:00.816666"
+  },
+  {
+    "metric_name": "Total Fertility Rate (TFR)",
+    "metric_key": "total_fertility_rate",
+    "category": "Population",
+    "value": "placeholder",
+    "time_period": "2026",
+    "unit": "\u2014",
+    "rag_status": "amber",
+    "data_source": "Placeholder",
+    "source_url": "",
+    "last_updated": "2026-01-31T14:26:00.816666"
+  }
+]

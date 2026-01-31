@@ -1,0 +1,19 @@
+[Unit]
+Description=UK RAG Portal Application
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/uk-rag-portal
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+EnvironmentFile=/home/ec2-user/uk-rag-portal/.env
+ExecStart=/home/ec2-user/uk-rag-portal/start.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
