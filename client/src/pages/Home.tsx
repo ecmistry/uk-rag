@@ -81,23 +81,23 @@ export default function Home() {
     return out;
   };
 
-  /** RAG card styling per UNIFORM_SCORECARD_PATTERN: pale bg/border + value colour */
+  /** RAG card styling per UNIFORM_SCORECARD_PATTERN: bolder bg/border + value colour */
   const getRAGCardClasses = (status: string) => {
     switch (status) {
       case 'green':
         return {
-          card: 'bg-green-50 border-green-300 dark:bg-green-950/40 dark:border-green-800',
-          value: 'text-green-700 dark:text-green-400',
+          card: 'bg-green-100 border-green-400 dark:bg-green-950/60 dark:border-green-700',
+          value: 'text-green-800 dark:text-green-300 font-semibold',
         };
       case 'amber':
         return {
-          card: 'bg-amber-50 border-amber-300 dark:bg-amber-950/40 dark:border-amber-800',
-          value: 'text-amber-700 dark:text-amber-400',
+          card: 'bg-amber-100 border-amber-400 dark:bg-amber-950/60 dark:border-amber-700',
+          value: 'text-amber-800 dark:text-amber-300 font-semibold',
         };
       case 'red':
         return {
-          card: 'bg-red-50 border-red-300 dark:bg-red-950/40 dark:border-red-800',
-          value: 'text-red-700 dark:text-red-400',
+          card: 'bg-red-100 border-red-400 dark:bg-red-950/60 dark:border-red-700',
+          value: 'text-red-800 dark:text-red-300 font-semibold',
         };
       default:
         return {
