@@ -6,10 +6,10 @@ After=network.target
 Type=simple
 User=ec2-user
 WorkingDirectory=/home/ec2-user/uk-rag-portal
-Environment="NODE_ENV=production"
+Environment="NODE_ENV=development"
 Environment="PORT=3000"
 EnvironmentFile=/home/ec2-user/uk-rag-portal/.env
-ExecStart=/home/ec2-user/uk-rag-portal/start.sh
+ExecStart=/home/ec2-user/uk-rag-portal/start-dev.sh
 Restart=always
 RestartSec=10
 StandardOutput=journal

@@ -2,6 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { RefreshCw, ExternalLink, AlertCircle, Info } from "lucide-react";
 import { Link } from "wouter";
@@ -10,6 +11,7 @@ import { Streamdown } from 'streamdown';
 import { useMemo } from 'react';
 import { cn } from "@/lib/utils";
 import type { Metric } from '@shared/types';
+import { getEconomyTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip } from "@/data/metricTooltips";
 
 export default function Home() {
   const { user } = useAuth();
@@ -25,6 +27,7 @@ export default function Home() {
       gcTime: 10 * 60 * 1000, // 10 minutes
       placeholderData: (previousData) => previousData, // Use cached data immediately
       refetchOnWindowFocus: true, // Refetch when returning to tab after e.g. Data Refresh
+      refetchOnMount: true, // Refetch when navigating back to dashboard so post-refresh data appears
     }
   );
 
@@ -96,7 +99,7 @@ export default function Home() {
         {['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population'].map((category, index) => {
           const categoryMetrics = metricsByCategory[category] || [];
           const categoryDescriptions: Record<string, string> = {
-            'Economy': 'Output per Hour, GDP Growth (Year on Year), CPI Inflation, Public Sector Net Debt, Business Investment',
+            'Economy': 'Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment',
             'Employment': 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence',
             'Education': 'Attainment 8 Score, Teacher Vacancies, NEET Rate (16-24), Persistent Absence, Apprentice Starts',
             'Crime': 'Total Recorded Crime, Charge Rate %, Perception of Safety, Crown Court Backlog, Reoffending Rate',
@@ -175,6 +178,7 @@ export default function Home() {
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 grid-auto-rows-[4.25rem]">
                   {categoryMetrics.map((metric: Metric) => {
                     const rag = getRAGCardClasses(metric.ragStatus);
+                    const cardTooltip = category === 'Economy' ? getEconomyTooltip(metric.metricKey) : category === 'Education' ? getEducationTooltip(metric.metricKey) : category === 'Crime' ? getCrimeTooltip(metric.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(metric.metricKey) : category === 'Defence' ? getDefenceTooltip(metric.metricKey) : undefined;
                     return (
                       <Link key={metric.metricKey} href={`/metric/${metric.metricKey}`} className="h-full min-h-[4.25rem]">
                         <Card
@@ -183,7 +187,28 @@ export default function Home() {
                             rag.card
                           )}
                         >
-                          <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
+                          <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center relative">
+                            {cardTooltip && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="absolute top-0.5 right-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
+                                    aria-label="Why this metric matters"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                  >
+                                    <Info className="h-3 w-3" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[280px] text-left text-xs whitespace-normal">
+                                  {cardTooltip}
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                             <CardTitle
                               className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full whitespace-pre-line"
                               title={metric.name}
@@ -210,9 +235,11 @@ export default function Home() {
                                 ? "—"
                                 : metric.metricKey === "attainment8"
                                   ? parseFloat(metric.value).toFixed(1)
-                                  : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
-                                    ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
-                                    : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                                  : metric.metricKey === "apprentice_starts"
+                                    ? parseInt(metric.value, 10).toLocaleString()
+                                    : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
+                                      ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
+                                      : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
                             </div>
                             {(metric.value === "placeholder" || Number.isNaN(parseFloat(metric.value))) && (
                               <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>

@@ -154,7 +154,9 @@ async function loadMetrics() {
     for (const metricData of educationResult.data) {
       try {
         // Determine unit based on metric key
-        const unit = metricData.metric_key === 'attainment8' ? 'Score' : 
+        const unit = metricData.metric_key === 'attainment8' ? 'Score' :
+                     metricData.metric_key === 'persistent_absence' ? '%' :
+                     metricData.metric_key === 'apprentice_starts' ? '' :
                      metricData.metric_key.includes('rate') || metricData.metric_key.includes('vacancy') ? '%' : '';
         
         await upsertMetric({

@@ -400,6 +400,8 @@ export function getDataSourceUrl(metricKey: string): string {
     attainment8: 'https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-4-performance',
     teacher_vacancy_rate: 'https://explore-education-statistics.service.gov.uk/find-statistics/school-workforce-in-england',
     neet_rate: 'https://explore-education-statistics.service.gov.uk/find-statistics/neet-statistics-annual-brief',
+    persistent_absence: 'https://explore-education-statistics.service.gov.uk/find-statistics/pupil-absence-in-schools-in-england',
+    apprentice_starts: 'https://explore-education-statistics.service.gov.uk/find-statistics/apprenticeships',
   };
   return sources[metricKey] || '';
 }

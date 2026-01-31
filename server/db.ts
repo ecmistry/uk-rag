@@ -69,6 +69,23 @@ async function getCollection<T extends { _id?: any }>(name: keyof typeof COLLECT
 }
 
 /**
+ * Diagnostics: DB connection and metrics count (for debugging "cards not appearing").
+ */
+export async function getMetricsDiagnostics(): Promise<{ dbConnected: boolean; metricsCount: number | null }> {
+  const collection = await getCollection<Metric>(COLLECTIONS.metrics);
+  if (!collection) {
+    return { dbConnected: false, metricsCount: null };
+  }
+  try {
+    const count = await collection.countDocuments();
+    return { dbConnected: true, metricsCount: count };
+  } catch (e) {
+    console.warn("[Metrics] Diagnostics count failed:", e);
+    return { dbConnected: true, metricsCount: null };
+  }
+}
+
+/**
  * Convert ObjectId to number for compatibility with existing code
  * Uses the timestamp portion of ObjectId to create a numeric ID
  */
@@ -280,14 +297,24 @@ function ensurePopulationPlaceholders(metrics: Metric[]): Metric[] {
 const DISPLAY_NAME_OVERRIDES: Partial<Record<string, string>> = {
   a_e_wait_time: "A&E 4-Hour Wait %",
   ambulance_response_time: "Ambulance (Cat 2)",
+  elective_backlog: "Elective Backlog",
+  gp_appt_access: "GP Appt. Access",
+  staff_vacancy_rate: "Staff Vacancy Rate",
   recorded_crime_rate: "Total Recorded Crime",
   charge_rate: "Charge Rate %",
+  perception_of_safety: "Perception of Safety",
+  crown_court_backlog: "Crown Court Backlog",
+  reoffending_rate: "Reoffending Rate",
   teacher_vacancy_rate: "Teacher Vacancies",
   neet_rate: "NEET Rate (16-24)",
   defence_spending_gdp: "Spend as % of GDP",
   personnel_strength: "Trained Strength",
+  equipment_spend: "Equipment Spend",
+  deployability: "Deployability %",
   equipment_readiness: "Force Readiness",
-  real_gdp_growth: "GDP Growth (Year on Year)",
+  real_gdp_growth: "Real GDP Growth",
+  persistent_absence: "Persistent Absence",
+  apprentice_starts: "Apprentice Starts",
 };
 
 function applyDisplayNameOverrides(m: Metric): Metric {
@@ -315,7 +342,7 @@ function dedupeByMetricKey(metrics: Metric[]): Metric[] {
   });
 }
 
-/** After display names are applied: dedupe by (category, name) so we never show two cards with the same label (e.g. two "GDP Growth (Year on Year)" in Economy). */
+/** After display names are applied: dedupe by (category, name) so we never show two cards with the same label. */
 function dedupeByCategoryAndName(metrics: Metric[]): Metric[] {
   const seen = new Set<string>();
   return metrics.filter((m) => {
@@ -326,6 +353,14 @@ function dedupeByCategoryAndName(metrics: Metric[]): Metric[] {
   });
 }
 
+/** Remove legacy "GDP Growth (Year on Year)" so only "Real GDP Growth" shows in Economy. */
+function dropLegacyGdpGrowthLabel(metrics: Metric[]): Metric[] {
+  return metrics.filter((m) => {
+    const name = m.name ?? "";
+    return !name.startsWith("GDP Growth (Year on");
+  });
+}
+
 /** Exclude only productivity (duplicate of output_per_hour); keep Output per Hour in Economy. Dedupe so only one GDP Growth card shows. */
 function filterEconomyMetrics(metrics: Metric[], category?: string): Metric[] {
   if (category && category !== "Economy") return metrics;
@@ -333,35 +368,221 @@ function filterEconomyMetrics(metrics: Metric[], category?: string): Metric[] {
   return dedupeByMetricKey(filtered);
 }
 
+/** Employment section: only these five cards (and their detail pages). */
+const EMPLOYMENT_ALLOWED_METRIC_KEYS = new Set([
+  "inactivity_rate",
+  "real_wage_growth",
+  "job_vacancy_ratio",
+  "underemployment",
+  "sickness_absence",
+]);
+
+function filterEmploymentMetrics(metrics: Metric[], category?: string): Metric[] {
+  if (category && category !== "Employment" && category !== "All") return metrics;
+  return metrics.filter(
+    (m) => m.category !== "Employment" || EMPLOYMENT_ALLOWED_METRIC_KEYS.has(m.metricKey)
+  );
+}
+
+/** Education section: only these five cards (and their detail pages). */
+const EDUCATION_ALLOWED_METRIC_KEYS = new Set([
+  "attainment8",
+  "teacher_vacancy_rate",
+  "neet_rate",
+  "persistent_absence",
+  "apprentice_starts",
+]);
+
+function filterEducationMetrics(metrics: Metric[], category?: string): Metric[] {
+  if (category && category !== "Education" && category !== "All") return metrics;
+  return metrics.filter(
+    (m) => m.category !== "Education" || EDUCATION_ALLOWED_METRIC_KEYS.has(m.metricKey)
+  );
+}
+
+/** Crime section: only these five cards (and their detail pages). */
+const CRIME_ALLOWED_METRIC_KEYS = new Set([
+  "recorded_crime_rate",
+  "charge_rate",
+  "perception_of_safety",
+  "crown_court_backlog",
+  "reoffending_rate",
+]);
+
+function filterCrimeMetrics(metrics: Metric[], category?: string): Metric[] {
+  if (category && category !== "Crime" && category !== "All") return metrics;
+  return metrics.filter(
+    (m) => m.category !== "Crime" || CRIME_ALLOWED_METRIC_KEYS.has(m.metricKey)
+  );
+}
+
+/** Crime placeholder metrics – always included so five tiles show until data sources are added. */
+const CRIME_PLACEHOLDER_KEYS = [
+  "perception_of_safety",
+  "crown_court_backlog",
+  "reoffending_rate",
+] as const;
+const CRIME_PLACEHOLDER_NAMES: Record<(typeof CRIME_PLACEHOLDER_KEYS)[number], string> = {
+  perception_of_safety: "Perception of Safety",
+  crown_court_backlog: "Crown Court Backlog",
+  reoffending_rate: "Reoffending Rate",
+};
+
+function ensureCrimePlaceholders(metrics: Metric[]): Metric[] {
+  const keys = new Set(metrics.map((m) => m.metricKey));
+  const out = [...metrics];
+  const now = new Date();
+  const dataDate = `${now.getFullYear()}`;
+  for (const key of CRIME_PLACEHOLDER_KEYS) {
+    if (!keys.has(key)) {
+      out.push({
+        _id: new ObjectId(),
+        metricKey: key,
+        name: CRIME_PLACEHOLDER_NAMES[key],
+        category: "Crime",
+        value: "placeholder",
+        unit: key === "crown_court_backlog" ? "" : "%",
+        ragStatus: "amber",
+        dataDate,
+        sourceUrl: null,
+        lastUpdated: now,
+        createdAt: now,
+      });
+    }
+  }
+  return out;
+}
+
+/** Healthcare section: only these five cards (and their detail pages). */
+const HEALTHCARE_ALLOWED_METRIC_KEYS = new Set([
+  "a_e_wait_time",
+  "elective_backlog",
+  "ambulance_response_time",
+  "gp_appt_access",
+  "staff_vacancy_rate",
+]);
+
+function filterHealthcareMetrics(metrics: Metric[], category?: string): Metric[] {
+  if (category && category !== "Healthcare" && category !== "All") return metrics;
+  return metrics.filter(
+    (m) => m.category !== "Healthcare" || HEALTHCARE_ALLOWED_METRIC_KEYS.has(m.metricKey)
+  );
+}
+
+/** Healthcare placeholder metrics – always included so five tiles show until data sources are added. */
+const HEALTHCARE_PLACEHOLDER_KEYS = [
+  "elective_backlog",
+  "gp_appt_access",
+  "staff_vacancy_rate",
+] as const;
+const HEALTHCARE_PLACEHOLDER_NAMES: Record<(typeof HEALTHCARE_PLACEHOLDER_KEYS)[number], string> = {
+  elective_backlog: "Elective Backlog",
+  gp_appt_access: "GP Appt. Access",
+  staff_vacancy_rate: "Staff Vacancy Rate",
+};
+
+function ensureHealthcarePlaceholders(metrics: Metric[]): Metric[] {
+  const keys = new Set(metrics.map((m) => m.metricKey));
+  const out = [...metrics];
+  const now = new Date();
+  const dataDate = `${now.getFullYear()}`;
+  for (const key of HEALTHCARE_PLACEHOLDER_KEYS) {
+    if (!keys.has(key)) {
+      out.push({
+        _id: new ObjectId(),
+        metricKey: key,
+        name: HEALTHCARE_PLACEHOLDER_NAMES[key],
+        category: "Healthcare",
+        value: "placeholder",
+        unit: key === "elective_backlog" ? "" : "%",
+        ragStatus: "amber",
+        dataDate,
+        sourceUrl: null,
+        lastUpdated: now,
+        createdAt: now,
+      });
+    }
+  }
+  return out;
+}
+
+/** Defence section: only these five cards (and their detail pages). */
+const DEFENCE_ALLOWED_METRIC_KEYS = new Set([
+  "defence_spending_gdp",
+  "personnel_strength",
+  "equipment_spend",
+  "deployability",
+  "equipment_readiness",
+]);
+
+function filterDefenceMetrics(metrics: Metric[], category?: string): Metric[] {
+  if (category && category !== "Defence" && category !== "All") return metrics;
+  return metrics.filter(
+    (m) => m.category !== "Defence" || DEFENCE_ALLOWED_METRIC_KEYS.has(m.metricKey)
+  );
+}
+
+/** Defence placeholder metrics – always included so five tiles show until data sources are added. */
+const DEFENCE_PLACEHOLDER_KEYS = [
+  "equipment_spend",
+  "deployability",
+] as const;
+const DEFENCE_PLACEHOLDER_NAMES: Record<(typeof DEFENCE_PLACEHOLDER_KEYS)[number], string> = {
+  equipment_spend: "Equipment Spend",
+  deployability: "Deployability %",
+};
+
+function ensureDefencePlaceholders(metrics: Metric[]): Metric[] {
+  const keys = new Set(metrics.map((m) => m.metricKey));
+  const out = [...metrics];
+  const now = new Date();
+  const dataDate = `${now.getFullYear()}`;
+  for (const key of DEFENCE_PLACEHOLDER_KEYS) {
+    if (!keys.has(key)) {
+      out.push({
+        _id: new ObjectId(),
+        metricKey: key,
+        name: DEFENCE_PLACEHOLDER_NAMES[key],
+        category: "Defence",
+        value: "placeholder",
+        unit: key === "deployability" ? "%" : "%",
+        ragStatus: "amber",
+        dataDate,
+        sourceUrl: null,
+        lastUpdated: now,
+        createdAt: now,
+      });
+    }
+  }
+  return out;
+}
+
 /**
- * Get all metrics, optionally filtered by category
- * Uses caching to improve performance.
+ * Get all metrics, optionally filtered by category.
+ * Always reads from MongoDB so the dashboard reflects the database; no in-memory cache for the list.
+ * This avoids ever showing empty/stale data when the DB has metrics (e.g. after a refresh).
  * Always includes Economy placeholders (Public Sector Net Debt, Business Investment) when returning all or Economy metrics.
  */
 export async function getMetrics(category?: string): Promise<Metric[]> {
-  // Import cache dynamically to avoid circular dependencies
-  const { cache } = await import("./cache");
-
-  // Create cache key
-  const cacheKey = `metrics:${category || "all"}`;
-
-  // Check cache first (still merge in economy/population placeholders so tiles always show)
-  const cached = cache.get<Metric[]>(cacheKey);
-  if (cached) {
-    let merged =
-      !category || category === "Economy"
-        ? ensureEconomyPlaceholders(cached)
-        : cached;
-    if (!category || category === "Population")
-      merged = ensurePopulationPlaceholders(merged);
-    merged = dedupeByMetricKey(merged);
-    const withOverrides = merged.map(normalizeOutputPerHourUnit).map(applyDisplayNameOverrides);
-    return dedupeByCategoryAndName(withOverrides);
-  }
-
-  // Fetch from database
+  // Always read from database (no cache for list) so portal is "directly from the database"
   const collection = await getCollection<Metric>(COLLECTIONS.metrics);
-  if (!collection) return [];
+  if (!collection) {
+    // DB unavailable: return placeholder-only list so dashboard still shows card layout
+    console.warn("[Metrics] list DB unavailable, returning placeholders only");
+    let fallback: Metric[] = [];
+    if (!category || category === "Economy") fallback = ensureEconomyPlaceholders(fallback);
+    if (!category || category === "Population") fallback = ensurePopulationPlaceholders(fallback);
+    if (!category || category === "Crime") fallback = ensureCrimePlaceholders(fallback);
+    if (!category || category === "Healthcare") fallback = ensureHealthcarePlaceholders(fallback);
+    if (!category || category === "Defence") fallback = ensureDefencePlaceholders(fallback);
+    fallback = dedupeByMetricKey(fallback);
+    const withOverrides = fallback.map(applyDisplayNameOverrides);
+    const fallbackResult = dedupeByCategoryAndName(
+      dropLegacyGdpGrowthLabel(filterEmploymentMetrics(filterEducationMetrics(filterCrimeMetrics(filterHealthcareMetrics(filterDefenceMetrics(withOverrides, category), category), category), category), category))
+    );
+    console.log(`[Metrics] list category=${category ?? "all"} source=fallback count=${fallbackResult.length}`);
+    return fallbackResult;
+  }
 
   const query = category ? { category } : {};
   const metrics = await collection.find(query, {
@@ -388,18 +609,28 @@ export async function getMetrics(category?: string): Promise<Metric[]> {
   // Ensure Population section has all five placeholder tiles until data sources are added
   if (!category || category === "Population")
     merged = ensurePopulationPlaceholders(merged);
+  // Ensure Crime section has all five tiles (placeholders for Perception of Safety, Crown Court Backlog, Reoffending Rate until fetchers added)
+  if (!category || category === "Crime")
+    merged = ensureCrimePlaceholders(merged);
+  // Ensure Healthcare section has all five tiles (placeholders for Elective Backlog, GP Appt. Access, Staff Vacancy Rate until fetchers added)
+  if (!category || category === "Healthcare")
+    merged = ensureHealthcarePlaceholders(merged);
+  // Ensure Defence section has all five tiles (placeholders for Equipment Spend, Deployability % until fetchers added)
+  if (!category || category === "Defence")
+    merged = ensureDefencePlaceholders(merged);
 
   // Dedupe by metricKey so duplicate cards (e.g. second GDP Growth when category is "All") never appear
   merged = dedupeByMetricKey(merged);
 
-  // Exclude Output per hour from Economy section
+  // Economy: exclude only productivity; include Output per Hour
   const filtered = filterEconomyMetrics(merged, category);
 
-  // Cache for 5 minutes
-  cache.set(cacheKey, filtered, 5 * 60 * 1000);
-
   const withOverrides = filtered.map(applyDisplayNameOverrides);
-  return dedupeByCategoryAndName(withOverrides);
+  const result = dedupeByCategoryAndName(
+    dropLegacyGdpGrowthLabel(filterEmploymentMetrics(filterEducationMetrics(filterCrimeMetrics(filterHealthcareMetrics(filterDefenceMetrics(withOverrides, category), category), category), category), category))
+  );
+  console.log(`[Metrics] list category=${category ?? "all"} source=db rawCount=${metrics.length} finalCount=${result.length}`);
+  return result;
 }
 
 /**
@@ -414,7 +645,23 @@ export async function getMetricByKey(metricKey: string): Promise<Metric | undefi
   const cacheKey = `metric:${metricKey}`;
   const cached = cache.get<Metric>(cacheKey);
   if (cached) {
-    return applyDisplayNameOverrides(cached);
+    const withOverrides = applyDisplayNameOverrides(cached);
+    if (withOverrides.category === "Employment" && !EMPLOYMENT_ALLOWED_METRIC_KEYS.has(withOverrides.metricKey)) {
+      return undefined;
+    }
+    if (withOverrides.category === "Education" && !EDUCATION_ALLOWED_METRIC_KEYS.has(withOverrides.metricKey)) {
+      return undefined;
+    }
+    if (withOverrides.category === "Crime" && !CRIME_ALLOWED_METRIC_KEYS.has(withOverrides.metricKey)) {
+      return undefined;
+    }
+    if (withOverrides.category === "Healthcare" && !HEALTHCARE_ALLOWED_METRIC_KEYS.has(withOverrides.metricKey)) {
+      return undefined;
+    }
+    if (withOverrides.category === "Defence" && !DEFENCE_ALLOWED_METRIC_KEYS.has(withOverrides.metricKey)) {
+      return undefined;
+    }
+    return withOverrides;
   }
 
   // Fetch from database
@@ -423,7 +670,7 @@ export async function getMetricByKey(metricKey: string): Promise<Metric | undefi
 
   let metric = await collection.findOne({ metricKey });
   if (!metric) {
-    // Return placeholder so detail page loads for Economy/Population placeholders
+    // Return placeholder so detail page loads for Economy/Population/Crime/Healthcare/Defence placeholders
     if (metricKey === "public_sector_net_debt" || metricKey === "business_investment") {
       metric = ECONOMY_PLACEHOLDER_METRICS(metricKey);
     } else if (POPULATION_PLACEHOLDER_KEYS.includes(metricKey as (typeof POPULATION_PLACEHOLDER_KEYS)[number])) {
@@ -442,9 +689,78 @@ export async function getMetricByKey(metricKey: string): Promise<Metric | undefi
         lastUpdated: now,
         createdAt: now,
       };
+    } else if (CRIME_PLACEHOLDER_KEYS.includes(metricKey as (typeof CRIME_PLACEHOLDER_KEYS)[number])) {
+      const key = metricKey as (typeof CRIME_PLACEHOLDER_KEYS)[number];
+      const now = new Date();
+      metric = {
+        _id: new ObjectId(),
+        metricKey: key,
+        name: CRIME_PLACEHOLDER_NAMES[key],
+        category: "Crime",
+        value: "placeholder",
+        unit: key === "crown_court_backlog" ? "" : "%",
+        ragStatus: "amber",
+        dataDate: `${now.getFullYear()}`,
+        sourceUrl: null,
+        lastUpdated: now,
+        createdAt: now,
+      };
+    } else if (HEALTHCARE_PLACEHOLDER_KEYS.includes(metricKey as (typeof HEALTHCARE_PLACEHOLDER_KEYS)[number])) {
+      const key = metricKey as (typeof HEALTHCARE_PLACEHOLDER_KEYS)[number];
+      const now = new Date();
+      metric = {
+        _id: new ObjectId(),
+        metricKey: key,
+        name: HEALTHCARE_PLACEHOLDER_NAMES[key],
+        category: "Healthcare",
+        value: "placeholder",
+        unit: key === "elective_backlog" ? "" : "%",
+        ragStatus: "amber",
+        dataDate: `${now.getFullYear()}`,
+        sourceUrl: null,
+        lastUpdated: now,
+        createdAt: now,
+      };
+    } else if (DEFENCE_PLACEHOLDER_KEYS.includes(metricKey as (typeof DEFENCE_PLACEHOLDER_KEYS)[number])) {
+      const key = metricKey as (typeof DEFENCE_PLACEHOLDER_KEYS)[number];
+      const now = new Date();
+      metric = {
+        _id: new ObjectId(),
+        metricKey: key,
+        name: DEFENCE_PLACEHOLDER_NAMES[key],
+        category: "Defence",
+        value: "placeholder",
+        unit: "%",
+        ragStatus: "amber",
+        dataDate: `${now.getFullYear()}`,
+        sourceUrl: null,
+        lastUpdated: now,
+        createdAt: now,
+      };
     } else {
       return undefined;
     }
+  }
+
+  // Employment: only the five allowed metrics have detail pages; others 404
+  if (metric.category === "Employment" && !EMPLOYMENT_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
+    return undefined;
+  }
+  // Education: only the five allowed metrics have detail pages; others 404
+  if (metric.category === "Education" && !EDUCATION_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
+    return undefined;
+  }
+  // Crime: only the five allowed metrics have detail pages; others 404
+  if (metric.category === "Crime" && !CRIME_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
+    return undefined;
+  }
+  // Healthcare: only the five allowed metrics have detail pages; others 404
+  if (metric.category === "Healthcare" && !HEALTHCARE_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
+    return undefined;
+  }
+  // Defence: only the five allowed metrics have detail pages; others 404
+  if (metric.category === "Defence" && !DEFENCE_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
+    return undefined;
   }
 
   const normalized = normalizeOutputPerHourUnit(metric);

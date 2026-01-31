@@ -27,6 +27,16 @@ RAG_THRESHOLDS = {
         "green": 3.0,   # Low NEET rate
         "amber": 5.0,   # Moderate NEET rate
         # Red: > 5.0
+    },
+    "persistent_absence": {
+        "green": 10.0,  # Low % missing 10%+ days
+        "amber": 15.0,  # Moderate
+        # Red: > 15.0 (lower is better)
+    },
+    "apprentice_starts": {
+        "green": 250000,  # Healthy pipeline (higher is better)
+        "amber": 200000,
+        # Red: < 200000
     }
 }
 
@@ -46,14 +56,22 @@ def calculate_rag_status(metric_name, value):
         else:
             return "red"
     
-    # For vacancy and NEET rates (lower is better)
-    else:
-        if value < thresholds["green"]:
+    # For apprentice_starts (higher is better)
+    if metric_name == "apprentice_starts":
+        if value >= thresholds["green"]:
             return "green"
-        elif value < thresholds["amber"]:
+        elif value >= thresholds["amber"]:
             return "amber"
         else:
             return "red"
+    
+    # For vacancy and NEET rates (lower is better)
+    if value < thresholds["green"]:
+        return "green"
+    elif value < thresholds["amber"]:
+        return "amber"
+    else:
+        return "red"
 
 def fetch_attainment8_data():
     """
@@ -179,7 +197,7 @@ def fetch_neet_data():
     
     # Placeholder data
     return {
-        "metric_name": "NEET Rate (16-17)",
+        "metric_name": "NEET Rate (16-24)",
         "metric_key": "neet_rate",
         "category": "Education",
         "value": 4.2,  # Placeholder
@@ -189,6 +207,82 @@ def fetch_neet_data():
         "source_url": "https://explore-education-statistics.service.gov.uk/find-statistics/neet-statistics-annual-brief",
         "last_updated": datetime.now().isoformat()
     }
+
+def fetch_persistent_absence_data():
+    """
+    Fetch Persistent Absence (% pupils missing 10%+ of school days) from DfE Pupil Absence.
+    Data source: DfE: Pupil Absence - explore-education-statistics.
+    """
+    url = "https://explore-education-statistics.service.gov.uk/data-catalogue/data-set/01813f0b-fbbd-4e58-9bb6-4abd18d8a944/csv"
+    try:
+        print("\\nFetching Persistent Absence (DfE Pupil Absence)...")
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        df = pd.read_csv(io.BytesIO(response.content))
+        national = df[df["geographic_level"] == "National"]
+        if national.empty:
+            return None
+        if "education_phase" in national.columns:
+            total_phase = national[national["education_phase"] == "Total"]
+            subset = total_phase if not total_phase.empty else national
+        else:
+            subset = national
+        latest_period = subset["time_period"].max()
+        latest = subset[subset["time_period"] == latest_period]
+        if latest.empty or "enrolments_pa_10_exact_percent" not in latest.columns:
+            return None
+        value = float(latest["enrolments_pa_10_exact_percent"].iloc[0])
+        rag_status = calculate_rag_status("persistent_absence", value)
+        return {
+            "metric_name": "Persistent Absence",
+            "metric_key": "persistent_absence",
+            "category": "Education",
+            "value": round(value, 2),
+            "rag_status": rag_status,
+            "time_period": str(latest_period),
+            "data_source": "DfE: Pupil Absence",
+            "source_url": "https://explore-education-statistics.service.gov.uk/find-statistics/pupil-absence-in-schools-in-england",
+            "last_updated": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        print(f"  Error fetching persistent absence: {e}")
+        return None
+
+def fetch_apprentice_starts_data():
+    """
+    Fetch Apprentice Starts (total for latest academic year) from DfE Apprenticeships & Training.
+    Data source: DfE: Apprenticeships & Training - explore-education-statistics.
+    """
+    url = "https://explore-education-statistics.service.gov.uk/data-catalogue/data-set/693cfe5f-bd05-4fc0-af9c-d62ac61d00be/csv"
+    try:
+        print("\\nFetching Apprentice Starts (DfE Apprenticeships)...")
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        df = pd.read_csv(io.BytesIO(response.content))
+        national = df[df["geographic_level"] == "National"]
+        if national.empty or "starts" not in national.columns:
+            return None
+        latest_period = national["time_period"].max()
+        latest = national[national["time_period"] == latest_period]
+        total_starts = latest["starts"].replace("low", 0).apply(lambda x: int(x) if str(x).isdigit() else 0).sum()
+        if total_starts == 0:
+            total_starts = latest["starts"].apply(lambda x: int(x) if str(x).replace(".", "").isdigit() else 0).sum()
+        value = int(total_starts)
+        rag_status = calculate_rag_status("apprentice_starts", value)
+        return {
+            "metric_name": "Apprentice Starts",
+            "metric_key": "apprentice_starts",
+            "category": "Education",
+            "value": value,
+            "rag_status": rag_status,
+            "time_period": str(latest_period),
+            "data_source": "DfE: Apprenticeships & Training",
+            "source_url": "https://explore-education-statistics.service.gov.uk/find-statistics/apprenticeships",
+            "last_updated": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        print(f"  Error fetching apprentice starts: {e}")
+        return None
 
 def fetch_all_education_metrics():
     """Fetch all education metrics"""
@@ -208,6 +302,16 @@ def fetch_all_education_metrics():
     neet = fetch_neet_data()
     if neet:
         metrics.append(neet)
+    
+    # Fetch Persistent Absence (DfE: Pupil Absence)
+    persistent_absence = fetch_persistent_absence_data()
+    if persistent_absence:
+        metrics.append(persistent_absence)
+    
+    # Fetch Apprentice Starts (DfE: Apprenticeships & Training)
+    apprentice_starts = fetch_apprentice_starts_data()
+    if apprentice_starts:
+        metrics.append(apprentice_starts)
     
     return metrics
 

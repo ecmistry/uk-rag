@@ -8,6 +8,7 @@ import {
   getMetrics,
   getMetricByKey,
   getMetricHistory,
+  getMetricsDiagnostics,
   upsertMetric,
   addMetricHistory,
   createCommentary,
@@ -46,6 +47,9 @@ export const appRouter = router({
     /**
      * List all metrics, optionally filtered by category
      */
+    /**
+     * List all metrics (always read from MongoDB; no in-memory cache for list so portal reflects DB).
+     */
     list: publicProcedure
       .input(z.object({
         category: z.string().optional(),
@@ -67,9 +71,19 @@ export const appRouter = router({
      */
     clearCache: adminProcedure.mutation(async () => {
       const { cache } = await import("./cache");
-      cache.delete("metrics:all");
-      cache.delete("metrics:Economy");
+      const categories = ["all", "Economy", "Employment", "Education", "Crime", "Healthcare", "Defence", "Population"];
+      for (const c of categories) {
+        cache.delete(`metrics:${c}`);
+      }
+      console.log("[Metrics] Cache cleared for all categories");
       return { ok: true };
+    }),
+
+    /**
+     * Diagnostics: DB connection and metrics count (public, for debugging dashboard not showing cards).
+     */
+    getDiagnostics: publicProcedure.query(async () => {
+      return getMetricsDiagnostics();
     }),
 
     /**
@@ -193,9 +207,10 @@ export const appRouter = router({
         for (const metricData of results) {
           // Determine unit based on metric key
           const unit = metricData.unit || (
-            metricData.metric_key === 'cpi_inflation' || metricData.metric_key === 'real_gdp_growth' || metricData.metric_key.includes('rate') || metricData.metric_key === 'defence_spending_gdp' || metricData.metric_key === 'public_sector_net_debt' || metricData.metric_key === 'business_investment' ? '%' :
+            metricData.metric_key === 'cpi_inflation' || metricData.metric_key === 'real_gdp_growth' || metricData.metric_key.includes('rate') || metricData.metric_key.includes('vacancy') || metricData.metric_key === 'defence_spending_gdp' || metricData.metric_key === 'public_sector_net_debt' || metricData.metric_key === 'business_investment' || metricData.metric_key === 'persistent_absence' ? '%' :
             metricData.metric_key === 'output_per_hour' ? '%' :
             metricData.metric_key === 'attainment8' ? 'Score' :
+            metricData.metric_key === 'apprentice_starts' ? '' :
             metricData.metric_key === 'a_e_wait_time' ? '%' :
             metricData.metric_key === 'cancer_wait_time' ? ' days' :
             metricData.metric_key === 'ambulance_response_time' ? ' minutes' : ''

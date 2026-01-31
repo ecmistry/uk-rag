@@ -94,12 +94,12 @@ export default function DataRefreshPanel() {
   };
 
   const categories: Array<{ name: 'Economy' | 'Employment' | 'Education' | 'Crime' | 'Healthcare' | 'Defence' | 'Population'; description: string }> = [
-    { name: 'Economy', description: 'Output per Hour, GDP Growth (Year on Year), CPI Inflation, Public Sector Net Debt, Business Investment' },
+    { name: 'Economy', description: 'Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment' },
     { name: 'Employment', description: 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence' },
-    { name: 'Education', description: 'Attainment 8 Score, Teacher Vacancies, NEET Rate (16-24)' },
-    { name: 'Crime', description: 'Crime rates and outcomes' },
-    { name: 'Healthcare', description: 'NHS performance indicators' },
-    { name: 'Defence', description: 'Defence spending and readiness' },
+    { name: 'Education', description: 'Attainment 8 Score, Teacher Vacancies, NEET Rate (16-24), Persistent Absence, Apprentice Starts' },
+    { name: 'Crime', description: 'Total Recorded Crime, Charge Rate %, Perception of Safety, Crown Court Backlog, Reoffending Rate' },
+    { name: 'Healthcare', description: 'A&E 4-Hour Wait %, Elective Backlog, Ambulance (Cat 2), GP Appt. Access, Staff Vacancy Rate' },
+    { name: 'Defence', description: 'Spend as % of GDP, Trained Strength, Equipment Spend, Deployability %, Force Readiness' },
     { name: 'Population', description: 'Natural Change (Births vs Deaths), Old-Age Dependency Ratio, Net Migration (Long-term), Healthy Life Expectancy, Total Population' },
   ];
 
