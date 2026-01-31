@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import { cn } from "@/lib/utils";
 import type { Metric } from '@shared/types';
 import { getEconomyTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip } from "@/data/metricTooltips";
+import { EXPECTED_METRICS } from "@/data/expectedMetrics";
 
 export default function Home() {
   const { user } = useAuth();
@@ -52,18 +53,19 @@ export default function Home() {
     },
   });
 
-  // Group metrics by category (memoized for performance)
-  const metricsByCategory = useMemo(() => {
-    const grouped: Record<string, Metric[]> = {};
+  // Group metrics by category and by (category, metricKey) for slot lookup
+  const { metricsByCategory, metricsByKeyByCategory } = useMemo(() => {
+    const byCategory: Record<string, Metric[]> = {};
+    const byKeyByCategory: Record<string, Record<string, Metric>> = {};
     if (metrics) {
       for (const metric of metrics) {
-        if (!grouped[metric.category]) {
-          grouped[metric.category] = [];
-        }
-        grouped[metric.category].push(metric);
+        if (!byCategory[metric.category]) byCategory[metric.category] = [];
+        byCategory[metric.category].push(metric);
+        if (!byKeyByCategory[metric.category]) byKeyByCategory[metric.category] = {};
+        byKeyByCategory[metric.category][metric.metricKey] = metric;
       }
     }
-    return grouped;
+    return { metricsByCategory: byCategory, metricsByKeyByCategory: byKeyByCategory };
   }, [metrics]);
 
   /** RAG card styling per UNIFORM_SCORECARD_PATTERN: pale bg/border + value colour */
@@ -98,6 +100,8 @@ export default function Home() {
         {/* Metrics by category – RAG-of-RAGs style: section label + dense grid of small scorecards */}
         {['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population'].map((category, index) => {
           const categoryMetrics = metricsByCategory[category] || [];
+          const metricsByKey = metricsByKeyByCategory[category] ?? {};
+          const expectedSlots = EXPECTED_METRICS[category] ?? [];
           const categoryDescriptions: Record<string, string> = {
             'Economy': 'Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment',
             'Employment': 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence',
@@ -108,42 +112,37 @@ export default function Home() {
             'Population': 'Natural Change (Births vs Deaths), Old-Age Dependency Ratio, Net Migration (Long-term), Healthy Life Expectancy, Total Population',
           };
           const shouldDefer = index >= 2 && metricsLoading;
-
-          const hasNoData = categoryMetrics.length === 0;
-          const isPlaceholderOrEmpty = (m: Metric) =>
-            m.value === "placeholder" || Number.isNaN(parseFloat(String(m.value)));
-          const allPlaceholders =
-            categoryMetrics.length > 0 && categoryMetrics.every(isPlaceholderOrEmpty);
-          const pendingCount = categoryMetrics.filter(isPlaceholderOrEmpty).length;
-          const hasPartialData =
-            categoryMetrics.length > 0 &&
-            !allPlaceholders &&
-            pendingCount > 0;
-          const dataStatus =
-            hasNoData ? "no-data" : allPlaceholders ? "placeholders-only" : hasPartialData ? "partial" : "ok";
+          const dataCount = expectedSlots.filter((s) => metricsByKey[s.metricKey]).length;
+          const hasNoData = dataCount === 0;
+          const hasPartialData = dataCount > 0 && dataCount < expectedSlots.length;
 
           return (
             <section key={category} className="mb-4">
-              {/* Section header: category name + optional data-status indicator */}
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-semibold tracking-tight">{category}</h2>
-                {!metricsLoading && dataStatus === "no-data" && (
+                {!metricsLoading && hasNoData && (
                   <Badge variant="secondary" className="text-[10px] font-normal gap-1">
                     <AlertCircle className="h-3 w-3" />
                     No data — refresh to load
                   </Badge>
                 )}
-                {!metricsLoading && dataStatus === "placeholders-only" && (
-                  <Badge variant="outline" className="text-[10px] font-normal gap-1">
-                    <Info className="h-3 w-3" />
-                    Placeholder data
-                  </Badge>
-                )}
-                {!metricsLoading && dataStatus === "partial" && (
+                {!metricsLoading && hasPartialData && (
                   <Badge variant="outline" className="text-[10px] font-normal gap-1 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700">
                     <Info className="h-3 w-3" />
-                    {pendingCount === 1 ? '1 metric pending data' : `${pendingCount} metrics pending data`}
+                    {dataCount} of {expectedSlots.length} metrics have data
                   </Badge>
+                )}
+                {!metricsLoading && (hasNoData || hasPartialData) && isAdmin && ['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population'].includes(category) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[10px]"
+                    onClick={() => refreshMutation.mutate({ category: category as 'Economy' | 'Employment' | 'Education' | 'Crime' | 'Healthcare' | 'Defence' | 'Population' })}
+                    disabled={refreshMutation.isPending}
+                  >
+                    <RefreshCw className={cn('h-3 w-3 mr-1', refreshMutation.isPending && 'animate-spin')} />
+                    Fetch {category} Data
+                  </Button>
                 )}
                 <p className="text-muted-foreground text-[11px] mt-0.5 leading-tight w-full basis-full">{categoryDescriptions[category]}</p>
               </div>
@@ -174,11 +173,27 @@ export default function Home() {
                     </Card>
                   ))}
                 </div>
-              ) : categoryMetrics.length > 0 ? (
+              ) : (
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 grid-auto-rows-[4.25rem]">
-                  {categoryMetrics.map((metric: Metric) => {
+                  {expectedSlots.map((slot) => {
+                    const metric = metricsByKey[slot.metricKey];
+                    if (!metric) {
+                      return (
+                        <Card key={slot.metricKey} className="gap-0 py-0 h-full min-h-[4.25rem] flex flex-col border bg-muted/30 border-muted-foreground/20">
+                          <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
+                            <CardTitle className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full text-muted-foreground" title={slot.name}>
+                              {slot.name.includes(" (16-24)") ? slot.name.replace(" (16-24)", "\n(16-24)") : slot.name.includes(" (Cat 2)") ? slot.name.replace(" (Cat 2)", "\n(Cat 2)") : slot.name}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
+                            <div className="text-sm font-medium text-muted-foreground">No data available</div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
                     const rag = getRAGCardClasses(metric.ragStatus);
                     const cardTooltip = category === 'Economy' ? getEconomyTooltip(metric.metricKey) : category === 'Education' ? getEducationTooltip(metric.metricKey) : category === 'Crime' ? getCrimeTooltip(metric.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(metric.metricKey) : category === 'Defence' ? getDefenceTooltip(metric.metricKey) : undefined;
+                    const hasValue = metric.value != null && !Number.isNaN(parseFloat(String(metric.value)));
                     return (
                       <Link key={metric.metricKey} href={`/metric/${metric.metricKey}`} className="h-full min-h-[4.25rem]">
                         <Card
@@ -214,7 +229,7 @@ export default function Home() {
                               title={metric.name}
                             >
                               {(() => {
-                                let displayName = metric.name;
+                                let displayName = metric.name ?? slot.name;
                                 if (displayName.includes(" (Year on Year)"))
                                   displayName = displayName.replace(" (Year on Year)", "\n(Year on Year)");
                                 if (displayName.includes(" (16-64)"))
@@ -231,7 +246,7 @@ export default function Home() {
                           </CardHeader>
                           <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
                             <div className={cn('text-sm font-bold text-center w-full leading-tight', rag.value)}>
-                              {metric.value === "placeholder" || Number.isNaN(parseFloat(metric.value))
+                              {!hasValue
                                 ? "—"
                                 : metric.metricKey === "attainment8"
                                   ? parseFloat(metric.value).toFixed(1)
@@ -241,7 +256,7 @@ export default function Home() {
                                       ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
                                       : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
                             </div>
-                            {(metric.value === "placeholder" || Number.isNaN(parseFloat(metric.value))) && (
+                            {!hasValue && (
                               <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>
                             )}
                           </CardContent>
@@ -250,23 +265,7 @@ export default function Home() {
                     );
                   })}
                 </div>
-              ) : !metricsLoading ? (
-                <Card className="gap-0 py-0">
-                  <CardContent className="py-8 text-center p-4">
-                    <p className="text-muted-foreground text-sm mb-3">No metrics data available for {category}</p>
-                    {isAdmin && ['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population'].includes(category) && (
-                      <Button
-                        size="sm"
-                        onClick={() => refreshMutation.mutate({ category: category as 'Economy' | 'Employment' | 'Education' | 'Crime' | 'Healthcare' | 'Defence' | 'Population' })}
-                        disabled={refreshMutation.isPending}
-                      >
-                        <RefreshCw className={cn('h-4 w-4 mr-2', refreshMutation.isPending && 'animate-spin')} />
-                        Fetch {category} Data
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ) : null}
+              )}
             </section>
           );
         })}

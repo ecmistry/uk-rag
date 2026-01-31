@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Employment Data Fetcher for UK RAG Dashboard
-Phase 4: Fetches Employment metrics from ONS (PDF list: Inactivity Rate, Real Wage Growth,
-Job Vacancy Ratio, Underemployment, Sickness Absence). ONS for first three; placeholders for rest.
+Data Source & Location: see docs/DATA_SOURCES_UK_RAG.md (canonical).
+Uses ONS API: LF2S, A3WW, AP2Y, I7C4; Sickness: ONS Sickness absence in UK.
 """
 
 import requests
@@ -23,22 +23,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ONS Time Series for Employment (Phase 4)
+# Data Source & Location: see docs/DATA_SOURCES_UK_RAG.md. ONS API: LF2S, A3WW, AP2Y, I7C4; Sickness: ONS Sickness absence in UK
 ONS_EMPLOYMENT_SERIES = {
     'inactivity_rate': {
         'url': 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2s/lms',
         'name': 'Inactivity Rate',
         'unit': '%',
+        'data_source': 'ONS API: Series LF2S',
     },
     'real_wage_growth': {
         'url': 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/a3ww/lms',
         'name': 'Real Wage Growth',
         'unit': '%',
+        'data_source': 'ONS API: Series A3WW',
     },
     'job_vacancy_ratio': {
-        'url': 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ap2z/unem',
+        'url': 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ap2y/unem',
         'name': 'Job Vacancy Ratio',
-        'unit': '',  # per 100 jobs
+        'unit': '',
+        'data_source': 'ONS API: Series AP2Y',
     },
 }
 # Published estimates (ONS) when no single CSV series exists; updated periodically
@@ -47,10 +50,10 @@ EMPLOYMENT_PUBLISHED_ESTIMATES = [
         'metric_key': 'underemployment',
         'name': 'Underemployment',
         'unit': '%',
-        'value': 6.2,  # ONS EMP16 latest (UK rate, quarterly)
+        'value': 6.2,  # ONS EMP16 / Series I7C4 (UK rate, quarterly)
         'time_period': '2025 Q3',
         'source_url': 'https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/underemploymentandoveremploymentemp16/current',
-        'data_source': 'ONS EMP16',
+        'data_source': 'ONS API: Series I7C4',
     },
     {
         'metric_key': 'sickness_absence',
@@ -59,7 +62,7 @@ EMPLOYMENT_PUBLISHED_ESTIMATES = [
         'value': 2.0,  # ONS Sickness absence in the UK labour market 2024
         'time_period': '2024',
         'source_url': 'https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/sicknessabsenceinthelabourmarket',
-        'data_source': 'ONS',
+        'data_source': 'ONS: Sickness absence in UK',
     },
 ]
 
@@ -115,7 +118,7 @@ def _fetch_ons_series(metric_key: str, session: requests.Session) -> Optional[Di
             'time_period': latest['date'],
             'unit': config.get('unit', '%'),
             'rag_status': rag,
-            'data_source': 'ONS',
+            'data_source': config.get('data_source', 'ONS'),
             'source_url': config['url'],
             'last_updated': datetime.utcnow().isoformat(),
         }

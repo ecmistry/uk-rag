@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Population Data Fetcher for UK RAG Dashboard
-Phase 4: Total Population from ONS UKPOP; Natural Change from ONS Vital Statistics (VVHM source).
+Data Source & Location: see docs/DATA_SOURCES_UK_RAG.md (canonical).
+Natural Change: ONS Vital Statistics / Series VVHM | Old-Age Dependency: ONS API Population Projections
+Net Migration: ONS API Series BBGM | Healthy Life Expectancy: ONS Health State Life Expectancy | Total Population: ONS Total Population
 """
 
 import json

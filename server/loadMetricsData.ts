@@ -206,8 +206,8 @@ async function loadMetrics() {
     
     for (const metricData of crimeResult.data) {
       try {
-        // Determine unit based on metric key
-        const unit = metricData.metric_key.includes('rate') ? '%' : '';
+        // Determine unit: % for rates and perception_of_safety, else count/empty
+        const unit = (metricData.metric_key.includes('rate') || metricData.metric_key === 'perception_of_safety') ? '%' : '';
         
         await upsertMetric({
           metricKey: metricData.metric_key,
@@ -257,9 +257,10 @@ async function loadMetrics() {
     for (const metricData of healthcareResult.data) {
       try {
         // Determine unit based on metric key
-        const unit = metricData.metric_key === 'a_e_wait_time' ? ' hours' :
+        const unit = metricData.metric_key === 'a_e_wait_time' ? '%' :
                      metricData.metric_key === 'cancer_wait_time' ? ' days' :
-                     metricData.metric_key === 'ambulance_response_time' ? ' minutes' : '';
+                     metricData.metric_key === 'ambulance_response_time' ? ' minutes' :
+                     (metricData.metric_key === 'gp_appt_access' || metricData.metric_key === 'staff_vacancy_rate') ? '%' : '';
         
         await upsertMetric({
           metricKey: metricData.metric_key,
@@ -309,7 +310,9 @@ async function loadMetrics() {
     for (const metricData of defenceResult.data) {
       try {
         // Determine unit based on metric key
-        const unit = metricData.metric_key.includes('gdp') || metricData.metric_key.includes('readiness') || metricData.metric_key.includes('strength') ? '%' : '';
+        const unit = (metricData.metric_key.includes('gdp') || metricData.metric_key.includes('readiness') ||
+                     metricData.metric_key.includes('strength') || metricData.metric_key === 'equipment_spend' ||
+                     metricData.metric_key === 'deployability') ? '%' : '';
         
         await upsertMetric({
           metricKey: metricData.metric_key,

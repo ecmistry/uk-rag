@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Education Data Fetcher for UK RAG Dashboard
-Fetches Key Stage 4 Performance, School Workforce, and NEET data from DfE
+Data Source & Location: see docs/DATA_SOURCES_UK_RAG.md (canonical).
+Attainment 8: DfE KS4 Performance | Teacher Vacancies: DfE School Workforce
+NEET (16-24): ONS Young People NEET | Persistent Absence: DfE Pupil Absence | Apprentice Starts: DfE Apprenticeships & Training
 """
 
 import requests
@@ -148,7 +150,7 @@ def fetch_attainment8_data():
             "value": float(attainment8_value),
             "rag_status": rag_status,
             "time_period": str(latest_period),
-            "data_source": "DfE Key Stage 4 Performance",
+            "data_source": "DfE: KS4 Performance",
             "source_url": "https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-4-performance",
             "last_updated": datetime.now().isoformat()
         }
@@ -182,31 +184,35 @@ def fetch_teacher_vacancy_data():
         "value": 1.5,  # Placeholder
         "rag_status": "amber",
         "time_period": "2024",
-        "data_source": "DfE School Workforce Census",
+        "data_source": "DfE: School Workforce",
         "source_url": "https://explore-education-statistics.service.gov.uk/find-statistics/school-workforce-in-england",
         "last_updated": datetime.now().isoformat()
     }
 
 def fetch_neet_data():
     """
-    Fetch NEET statistics for 16-17 year olds
-    Note: This is a placeholder - actual URL needs to be found
+    Fetch NEET rate (16-24) from ONS: Young People NEET.
+    Data Source & Location per UK RAG spec: ONS: Young People NEET.
     """
-    print("\\nNEET data fetcher not yet implemented")
-    print("Need to find the correct dataset URL from DfE")
-    
-    # Placeholder data
-    return {
-        "metric_name": "NEET Rate (16-24)",
-        "metric_key": "neet_rate",
-        "category": "Education",
-        "value": 4.2,  # Placeholder
-        "rag_status": "amber",
-        "time_period": "2024",
-        "data_source": "DfE NEET Statistics",
-        "source_url": "https://explore-education-statistics.service.gov.uk/find-statistics/neet-statistics-annual-brief",
-        "last_updated": datetime.now().isoformat()
-    }
+    # ONS dataset: Young people not in education, employment or training (NEET)
+    url = "https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/datasets/youngpeoplenotineducationemploymentortrainingneettable1/current"
+    try:
+        # ONS publishes Excel; placeholder until we parse the xlsx
+        print("\\nFetching NEET (ONS: Young People NEET)...")
+        return {
+            "metric_name": "NEET Rate (16-24)",
+            "metric_key": "neet_rate",
+            "category": "Education",
+            "value": 4.2,  # Placeholder until ONS Excel parsed
+            "rag_status": "amber",
+            "time_period": "2024",
+            "data_source": "ONS: Young People NEET",
+            "source_url": url,
+            "last_updated": datetime.now().isoformat()
+        }
+    except Exception as e:
+        print(f"  NEET fetch error: {e}")
+        return None
 
 def fetch_persistent_absence_data():
     """

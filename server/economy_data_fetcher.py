@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Economy Data Fetcher for UK RAG Dashboard
-Fetches GDP Growth, CPI Inflation, and Productivity data from ONS CSV downloads
+Data Source & Location: see docs/DATA_SOURCES_UK_RAG.md (canonical).
+Uses ONS API: LZVD, IHYP, D7G7, HF6X, NPEL.
 """
 
 import requests
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 class ONSDataFetcher:
     """Fetches economic data from ONS CSV downloads"""
     
-    # ONS Time Series CSV URLs (Phase 4: real data for all Economy metrics)
+    # ONS Time Series – Data Source & Location per UK RAG spec:
+    # Output per Hour: ONS API Series LZVD | Real GDP Growth: IHYP | CPI Inflation: D7G7 | Public Sector Net Debt: HF6X | Business Investment: NPEL
     SERIES_URLS = {
         'real_gdp_growth': {
             'url': 'https://www.ons.gov.uk/generator?format=csv&uri=/economy/grossdomesticproductgdp/timeseries/ihyp/qna',

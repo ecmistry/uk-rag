@@ -165,7 +165,7 @@ export default function MetricDetail() {
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Current Value</div>
                     <div className="text-4xl font-bold">
-                      {metric.value === "placeholder" || Number.isNaN(parseFloat(metric.value))
+                      {metric.value == null || Number.isNaN(parseFloat(String(metric.value)))
                         ? "—"
                         : metric.metricKey === "attainment8"
                           ? parseFloat(metric.value).toFixed(1)
