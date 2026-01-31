@@ -11,7 +11,7 @@ import { Streamdown } from 'streamdown';
 import { useMemo } from 'react';
 import { cn } from "@/lib/utils";
 import type { Metric } from '@shared/types';
-import { getEconomyTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip } from "@/data/metricTooltips";
+import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip, getPopulationTooltip } from "@/data/metricTooltips";
 import { EXPECTED_METRICS } from "@/data/expectedMetrics";
 
 export default function Home() {
@@ -67,6 +67,19 @@ export default function Home() {
     }
     return { metricsByCategory: byCategory, metricsByKeyByCategory: byKeyByCategory };
   }, [metrics]);
+
+  /** Format metric/slot name with line breaks for card title (e.g. "Natural Change\n(Births vs Deaths)"). */
+  const formatCardTitle = (name: string) => {
+    let out = name;
+    if (out.includes(" (Year on Year)")) out = out.replace(" (Year on Year)", "\n(Year on Year)");
+    if (out.includes(" (16-64)")) out = out.replace(" (16-64)", "\n(16-64)");
+    if (out.includes(" (16-24)")) out = out.replace(" (16-24)", "\n(16-24)");
+    if (out.includes(" (% of GDP)")) out = out.replace(" (% of GDP)", "\n(% of GDP)");
+    if (out.includes(" (Cat 2)")) out = out.replace(" (Cat 2)", "\n(Cat 2)");
+    if (out.includes(" (Births vs Deaths)")) out = out.replace(" (Births vs Deaths)", "\n(Births vs Deaths)");
+    if (out.includes(" (Long-term)")) out = out.replace(" (Long-term)", "\n(Long-term)");
+    return out;
+  };
 
   /** RAG card styling per UNIFORM_SCORECARD_PATTERN: pale bg/border + value colour */
   const getRAGCardClasses = (status: string) => {
@@ -181,8 +194,8 @@ export default function Home() {
                       return (
                         <Card key={slot.metricKey} className="gap-0 py-0 h-full min-h-[4.25rem] flex flex-col border bg-muted/30 border-muted-foreground/20">
                           <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
-                            <CardTitle className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full text-muted-foreground" title={slot.name}>
-                              {slot.name.includes(" (16-24)") ? slot.name.replace(" (16-24)", "\n(16-24)") : slot.name.includes(" (Cat 2)") ? slot.name.replace(" (Cat 2)", "\n(Cat 2)") : slot.name}
+                            <CardTitle className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full text-muted-foreground whitespace-pre-line" title={slot.name}>
+                              {formatCardTitle(slot.name)}
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
@@ -192,56 +205,22 @@ export default function Home() {
                       );
                     }
                     const rag = getRAGCardClasses(metric.ragStatus);
-                    const cardTooltip = category === 'Economy' ? getEconomyTooltip(metric.metricKey) : category === 'Education' ? getEducationTooltip(metric.metricKey) : category === 'Crime' ? getCrimeTooltip(metric.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(metric.metricKey) : category === 'Defence' ? getDefenceTooltip(metric.metricKey) : undefined;
+                    const cardTooltip = category === 'Economy' ? getEconomyTooltip(metric.metricKey) : category === 'Employment' ? getEmploymentTooltip(metric.metricKey) : category === 'Education' ? getEducationTooltip(metric.metricKey) : category === 'Crime' ? getCrimeTooltip(metric.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(metric.metricKey) : category === 'Defence' ? getDefenceTooltip(metric.metricKey) : category === 'Population' ? getPopulationTooltip(metric.metricKey) : undefined;
                     const hasValue = metric.value != null && !Number.isNaN(parseFloat(String(metric.value)));
                     return (
                       <Link key={metric.metricKey} href={`/metric/${metric.metricKey}`} className="h-full min-h-[4.25rem]">
                         <Card
                           className={cn(
-                            'gap-0 py-0 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[4.25rem] flex flex-col border',
+                            'gap-0 py-0 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[4.25rem] flex flex-col border relative',
                             rag.card
                           )}
                         >
-                          <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center relative">
-                            {cardTooltip && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="absolute top-0.5 right-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
-                                    aria-label="Why this metric matters"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                    }}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                  >
-                                    <Info className="h-3 w-3" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-[280px] text-left text-xs whitespace-normal">
-                                  {cardTooltip}
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
+                          <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
                             <CardTitle
                               className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full whitespace-pre-line"
                               title={metric.name}
                             >
-                              {(() => {
-                                let displayName = metric.name ?? slot.name;
-                                if (displayName.includes(" (Year on Year)"))
-                                  displayName = displayName.replace(" (Year on Year)", "\n(Year on Year)");
-                                if (displayName.includes(" (16-64)"))
-                                  displayName = displayName.replace(" (16-64)", "\n(16-64)");
-                                if (displayName.includes(" (16-24)"))
-                                  displayName = displayName.replace(" (16-24)", "\n(16-24)");
-                                if (displayName.includes(" (% of GDP)"))
-                                  displayName = displayName.replace(" (% of GDP)", "\n(% of GDP)");
-                                if (displayName.includes(" (Cat 2)"))
-                                  displayName = displayName.replace(" (Cat 2)", "\n(Cat 2)");
-                                return displayName;
-                              })()}
+                              {formatCardTitle(metric.name ?? slot.name)}
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
@@ -260,6 +239,27 @@ export default function Home() {
                               <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>
                             )}
                           </CardContent>
+                          {cardTooltip && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="absolute bottom-0.5 left-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
+                                  aria-label="Why this metric matters"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                >
+                                  <Info className="h-3 w-3" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[280px] text-left text-xs whitespace-normal">
+                                {cardTooltip}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </Card>
                       </Link>
                     );

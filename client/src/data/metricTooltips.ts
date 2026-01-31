@@ -22,6 +22,24 @@ export function getEconomyTooltip(metricKey: string): string | undefined {
   return ECONOMY_TOOLTIPS[metricKey];
 }
 
+/** Employment section: metricKey -> tooltip text */
+export const EMPLOYMENT_TOOLTIPS: Record<string, string> = {
+  inactivity_rate:
+    "Why it matters to you if it gets worse: Fewer people paying tax to fund the NHS and state pensions, putting a greater tax burden on the working population.",
+  real_wage_growth:
+    "Why it matters to you if it gets worse: You are working harder just to afford the same lifestyle, or worse, falling behind financially year after year.",
+  job_vacancy_ratio:
+    "Why it matters to you if it gets worse: Businesses cannot hire staff, leading to worse customer service, long waits (e.g., at restaurants, airports), and higher prices.",
+  underemployment:
+    "Why it matters to you if it gets worse: People who want full-time work are stuck with part-time or zero-hour contracts, making it impossible to budget or afford major purchases like a house.",
+  sickness_absence:
+    "Why it matters to you if it gets worse: More disruption at work, leading to lower productivity for everyone and potential delays or losses for your employer/business.",
+};
+
+export function getEmploymentTooltip(metricKey: string): string | undefined {
+  return EMPLOYMENT_TOOLTIPS[metricKey];
+}
+
 /** Education section: metricKey -> tooltip text */
 export const EDUCATION_TOOLTIPS: Record<string, string> = {
   attainment8:
@@ -92,4 +110,22 @@ export const DEFENCE_TOOLTIPS: Record<string, string> = {
 
 export function getDefenceTooltip(metricKey: string): string | undefined {
   return DEFENCE_TOOLTIPS[metricKey];
+}
+
+/** Population section: metricKey -> tooltip text */
+export const POPULATION_TOOLTIPS: Record<string, string> = {
+  natural_change:
+    "Why it matters to you if it gets worse: The local population shrinks, leading to school closures, fewer shops, and a gradual decline of rural and local communities.",
+  old_age_dependency_ratio:
+    "Why it matters to you if it gets worse: A tiny workforce must fund the pensions and healthcare for a huge number of retirees, leading to massive tax hikes or benefit cuts.",
+  net_migration:
+    "Why it matters to you if it gets worse: A rapid decline in the working-age population needed to fill essential jobs in the NHS, social care, and other key sectors.",
+  healthy_life_expectancy:
+    "Why it matters to you if it gets worse: You spend a greater proportion of your final years in poor health, becoming dependent on family and straining the NHS/care system.",
+  total_population:
+    "Why it matters to you if it gets worse: (Note: A shrinking population slows economic growth, while a rapidly growing population strains housing and infrastructure.)",
+};
+
+export function getPopulationTooltip(metricKey: string): string | undefined {
+  return POPULATION_TOOLTIPS[metricKey];
 }
