@@ -2,13 +2,17 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { RefreshCw, ExternalLink, AlertCircle, Info } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { Streamdown } from 'streamdown';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { cn } from "@/lib/utils";
 import type { Metric } from '@shared/types';
 import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip, getPopulationTooltip } from "@/data/metricTooltips";
@@ -17,6 +21,7 @@ import { EXPECTED_METRICS } from "@/data/expectedMetrics";
 export default function Home() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const [metricInfoOpen, setMetricInfoOpen] = useState<{ title: string; content: string } | null>(null);
 
   // Fetch all metrics (no category filter to get all categories)
   // Cache for 5 minutes - data is relatively static
@@ -240,25 +245,22 @@ export default function Home() {
                             )}
                           </CardContent>
                           {cardTooltip && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  type="button"
-                                  className="absolute bottom-0.5 left-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
-                                  aria-label="Why this metric matters"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                  }}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                >
-                                  <Info className="h-3 w-3" />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-[min(420px,90vw)] max-h-[70vh] overflow-y-auto text-left text-xs whitespace-normal">
-                                {cardTooltip}
-                              </TooltipContent>
-                            </Tooltip>
+                            <button
+                              type="button"
+                              className="absolute bottom-0.5 left-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
+                              aria-label="Why this metric matters"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setMetricInfoOpen({
+                                  title: formatCardTitle(metric.name ?? slot.name),
+                                  content: cardTooltip,
+                                });
+                              }}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
+                              <Info className="h-3 w-3" />
+                            </button>
                           )}
                         </Card>
                       </Link>
@@ -327,6 +329,20 @@ export default function Home() {
           <p className="mt-1">Updated regularly to provide accurate insights</p>
         </div>
       </footer>
+
+      {/* Metric info dialog: click-on click-off, white bg, black text */}
+      <Dialog open={!!metricInfoOpen} onOpenChange={(open) => !open && setMetricInfoOpen(null)}>
+        <DialogContent className="bg-white text-black border border-gray-200 shadow-xl max-w-[min(480px,92vw)] max-h-[85vh] overflow-hidden flex flex-col p-0">
+          <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-2 border-b border-gray-200">
+            <DialogTitle className="text-base font-bold text-black leading-tight pr-8">
+              {metricInfoOpen?.title}
+            </DialogTitle>
+          </div>
+          <div className="px-5 py-4 overflow-y-auto flex-1 text-sm text-black whitespace-pre-line">
+            {metricInfoOpen?.content}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
