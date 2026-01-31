@@ -255,7 +255,7 @@ export default function Home() {
                                   <Info className="h-3 w-3" />
                                 </button>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-[280px] text-left text-xs whitespace-normal">
+                              <TooltipContent side="top" className="max-w-[min(420px,90vw)] max-h-[70vh] overflow-y-auto text-left text-xs whitespace-normal">
                                 {cardTooltip}
                               </TooltipContent>
                             </Tooltip>
