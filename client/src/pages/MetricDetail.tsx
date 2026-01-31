@@ -51,17 +51,22 @@ export default function MetricDetail() {
     if (!sourceUrl && !metricKey) {
       return 'Office for National Statistics (ONS)';
     }
-    
+
+    // Output per Hour: ONS labour productivity series LZVD
+    if (metricKey === 'output_per_hour') {
+      return 'ONS API: Series LZVD';
+    }
+
     // Check sourceUrl for Resolution Foundation
     if (sourceUrl && sourceUrl.includes('resolutionfoundation.org')) {
       return 'Resolution Foundation';
     }
-    
+
     // Check metricKey for employment metrics
     if (metricKey && (metricKey === 'employment_rate' || metricKey === 'employment_rate_16_64' || metricKey === 'unemployment_rate')) {
       return 'Resolution Foundation';
     }
-    
+
     // Check sourceUrl for other sources
     if (sourceUrl) {
       if (sourceUrl.includes('explore-education-statistics')) {
@@ -77,7 +82,7 @@ export default function MetricDetail() {
         return 'Office for National Statistics (ONS)';
       }
     }
-    
+
     // Default to ONS
     return 'Office for National Statistics (ONS)';
   };
@@ -138,6 +143,11 @@ export default function MetricDetail() {
                 <CardDescription className="text-base">
                   {metric.category} • as of {metric.dataDate}
                 </CardDescription>
+                {metric.metricKey === 'output_per_hour' && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Measures efficiency. Vital for long-term wage growth.
+                  </p>
+                )}
               </div>
               <Badge className={`${getRAGClassName(metric.ragStatus)} text-lg px-4 py-2`}>
                 {metric.ragStatus.toUpperCase()}

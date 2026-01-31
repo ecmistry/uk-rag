@@ -94,7 +94,7 @@ export default function DataRefreshPanel() {
   };
 
   const categories: Array<{ name: 'Economy' | 'Employment' | 'Education' | 'Crime' | 'Healthcare' | 'Defence' | 'Population'; description: string }> = [
-    { name: 'Economy', description: 'Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment' },
+    { name: 'Economy', description: 'Output per Hour, GDP Growth (Year on Year), CPI Inflation, Public Sector Net Debt, Business Investment' },
     { name: 'Employment', description: 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence' },
     { name: 'Education', description: 'Attainment 8 Score, Teacher Vacancies, NEET Rate (16-24)' },
     { name: 'Crime', description: 'Crime rates and outcomes' },

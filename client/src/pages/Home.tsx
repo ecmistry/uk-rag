@@ -96,7 +96,7 @@ export default function Home() {
         {['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population'].map((category, index) => {
           const categoryMetrics = metricsByCategory[category] || [];
           const categoryDescriptions: Record<string, string> = {
-            'Economy': 'Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment',
+            'Economy': 'Output per Hour, GDP Growth (Year on Year), CPI Inflation, Public Sector Net Debt, Business Investment',
             'Employment': 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence',
             'Education': 'Attainment 8 Score, Teacher Vacancies, NEET Rate (16-24), Persistent Absence, Apprentice Starts',
             'Crime': 'Total Recorded Crime, Charge Rate %, Perception of Safety, Crown Court Backlog, Reoffending Rate',

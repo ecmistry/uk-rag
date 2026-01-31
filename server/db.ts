@@ -287,6 +287,7 @@ const DISPLAY_NAME_OVERRIDES: Partial<Record<string, string>> = {
   defence_spending_gdp: "Spend as % of GDP",
   personnel_strength: "Trained Strength",
   equipment_readiness: "Force Readiness",
+  real_gdp_growth: "GDP Growth (Year on Year)",
 };
 
 function applyDisplayNameOverrides(m: Metric): Metric {
@@ -304,12 +305,32 @@ function normalizeOutputPerHourUnit(m: Metric): Metric {
   return m;
 }
 
-/** Exclude Output per hour from Economy section (comment in getMetrics). */
+/** Dedupe by metricKey (keep first) so the same metric never appears twice (e.g. duplicate GDP Growth when category is "All"). */
+function dedupeByMetricKey(metrics: Metric[]): Metric[] {
+  const seen = new Set<string>();
+  return metrics.filter((m) => {
+    if (seen.has(m.metricKey)) return false;
+    seen.add(m.metricKey);
+    return true;
+  });
+}
+
+/** After display names are applied: dedupe by (category, name) so we never show two cards with the same label (e.g. two "GDP Growth (Year on Year)" in Economy). */
+function dedupeByCategoryAndName(metrics: Metric[]): Metric[] {
+  const seen = new Set<string>();
+  return metrics.filter((m) => {
+    const key = `${m.category}\0${m.name ?? ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/** Exclude only productivity (duplicate of output_per_hour); keep Output per Hour in Economy. Dedupe so only one GDP Growth card shows. */
 function filterEconomyMetrics(metrics: Metric[], category?: string): Metric[] {
   if (category && category !== "Economy") return metrics;
-  return metrics.filter(
-    (m) => m.metricKey !== "output_per_hour" && m.metricKey !== "productivity"
-  );
+  const filtered = metrics.filter((m) => m.metricKey !== "productivity");
+  return dedupeByMetricKey(filtered);
 }
 
 /**
@@ -333,7 +354,9 @@ export async function getMetrics(category?: string): Promise<Metric[]> {
         : cached;
     if (!category || category === "Population")
       merged = ensurePopulationPlaceholders(merged);
-    return merged.map(normalizeOutputPerHourUnit).map(applyDisplayNameOverrides);
+    merged = dedupeByMetricKey(merged);
+    const withOverrides = merged.map(normalizeOutputPerHourUnit).map(applyDisplayNameOverrides);
+    return dedupeByCategoryAndName(withOverrides);
   }
 
   // Fetch from database
@@ -366,13 +389,17 @@ export async function getMetrics(category?: string): Promise<Metric[]> {
   if (!category || category === "Population")
     merged = ensurePopulationPlaceholders(merged);
 
+  // Dedupe by metricKey so duplicate cards (e.g. second GDP Growth when category is "All") never appear
+  merged = dedupeByMetricKey(merged);
+
   // Exclude Output per hour from Economy section
   const filtered = filterEconomyMetrics(merged, category);
 
   // Cache for 5 minutes
   cache.set(cacheKey, filtered, 5 * 60 * 1000);
 
-  return filtered.map(applyDisplayNameOverrides);
+  const withOverrides = filtered.map(applyDisplayNameOverrides);
+  return dedupeByCategoryAndName(withOverrides);
 }
 
 /**
