@@ -10,6 +10,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { RefreshCw, ExternalLink, AlertCircle, Info } from "lucide-react";
 import { Link } from "wouter";
+import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { Streamdown } from 'streamdown';
 import { useMemo, useState } from 'react';
@@ -133,11 +134,35 @@ export default function Home() {
           const dataCount = expectedSlots.filter((s) => metricsByKey[s.metricKey]).length;
           const hasNoData = dataCount === 0;
           const hasPartialData = dataCount > 0 && dataCount < expectedSlots.length;
+          // Latest refresh time for this category (most recent lastUpdated among metrics)
+          const lastRefreshedAt = categoryMetrics.length > 0
+            ? categoryMetrics.reduce<Date | null>((latest, m) => {
+                const t = m.lastUpdated ? new Date(m.lastUpdated) : null;
+                if (!t) return latest;
+                return !latest || t > latest ? t : latest;
+              }, null)
+            : null;
 
           return (
             <section key={category} className="mb-4">
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-semibold tracking-tight">{category}</h2>
+                {!metricsLoading && lastRefreshedAt != null && (
+                  <>
+                    <span
+                      className="text-muted-foreground text-xs font-normal"
+                      title={lastRefreshedAt.toLocaleString()}
+                    >
+                      Last refreshed {formatDistanceToNow(lastRefreshedAt, { addSuffix: true })}
+                    </span>
+                    <Link
+                      href="/data-refresh"
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Refresh data
+                    </Link>
+                  </>
+                )}
                 {!metricsLoading && hasNoData && (
                   <Badge variant="secondary" className="text-[10px] font-normal gap-1">
                     <AlertCircle className="h-3 w-3" />

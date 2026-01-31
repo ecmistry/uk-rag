@@ -28,20 +28,21 @@ const COLLECTIONS = {
 } as const;
 
 /**
- * Get MongoDB database connection
+ * Get MongoDB database connection.
+ * Uses ENV.databaseUrl (DATABASE_URL or MONGODB_URI) so connection config is consistent across the app.
  */
 export async function getDb(): Promise<Db | null> {
-  if (!process.env.DATABASE_URL) {
+  const url = ENV.databaseUrl;
+  if (!url) {
     return null;
   }
 
   if (!_db) {
     try {
-      _client = new MongoClient(process.env.DATABASE_URL);
+      _client = new MongoClient(url);
       await _client.connect();
       // Extract database name from connection string
       // Format: mongodb://host:port/database or mongodb://host/database
-      const url = process.env.DATABASE_URL;
       // Match database name after the last slash before query params
       const dbMatch = url.match(/\/\/(?:[^\/]+)\/([^?]+)/);
       const dbName = dbMatch ? dbMatch[1] : "uk_rag_portal";

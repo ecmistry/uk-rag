@@ -1,4 +1,4 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME, DEFAULT_DEV_USER, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
@@ -26,15 +26,15 @@ export function registerOAuthRoutes(app: Express) {
       const devOpenId = "dev-user-local";
       await db.upsertUser({
         openId: devOpenId,
-        name: "Development User",
-        email: "dev@localhost",
+        name: DEFAULT_DEV_USER.name,
+        email: DEFAULT_DEV_USER.email,
         loginMethod: "dev",
         lastSignedIn: new Date(),
         role: "admin", // Give dev user admin access
       });
 
       const sessionToken = await sdk.createSessionToken(devOpenId, {
-        name: "Development User",
+        name: DEFAULT_DEV_USER.name,
         expiresInMs: ONE_YEAR_MS,
       });
 

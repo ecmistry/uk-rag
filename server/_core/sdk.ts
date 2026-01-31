@@ -1,4 +1,4 @@
-import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { AXIOS_TIMEOUT_MS, COOKIE_NAME, DEFAULT_DEV_USER, ONE_YEAR_MS } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
@@ -297,10 +297,22 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
+    // Sync local dev user display to current default so portal shows correct name/email
+    if (user.openId === "dev-user-local" && (user.name !== DEFAULT_DEV_USER.name || user.email !== DEFAULT_DEV_USER.email)) {
+      await db.upsertUser({
+        openId: user.openId,
+        name: DEFAULT_DEV_USER.name,
+        email: DEFAULT_DEV_USER.email,
+        lastSignedIn: signedInAt,
+      });
+      const updated = await db.getUserByOpenId(user.openId);
+      if (updated) user = updated;
+    } else {
+      await db.upsertUser({
+        openId: user.openId,
+        lastSignedIn: signedInAt,
+      });
+    }
 
     return user;
   }
