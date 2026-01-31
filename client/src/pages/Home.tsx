@@ -166,7 +166,7 @@ export default function Home() {
               </div>
 
               {shouldDefer ? (
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 grid-auto-rows-[4.25rem]">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 grid-auto-rows-[4.25rem]">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Card key={i} className="animate-pulse gap-0 py-0">
                       <CardHeader className="py-0.5 px-1.5">
@@ -179,7 +179,7 @@ export default function Home() {
                   ))}
                 </div>
               ) : metricsLoading ? (
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 grid-auto-rows-[4.25rem]">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 grid-auto-rows-[4.25rem]">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Card key={i} className="animate-pulse gap-0 py-0">
                       <CardHeader className="py-0.5 px-1.5">
@@ -192,7 +192,7 @@ export default function Home() {
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 grid-auto-rows-[4.25rem]">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 grid-auto-rows-[4.25rem]">
                   {expectedSlots.map((slot) => {
                     const metric = metricsByKey[slot.metricKey];
                     if (!metric) {
