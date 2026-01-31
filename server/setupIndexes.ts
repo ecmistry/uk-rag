@@ -33,6 +33,7 @@ async function setupIndexes() {
     await db.collection("metricHistory").createIndex({ metricKey: 1 });
     await db.collection("metricHistory").createIndex({ recordedAt: -1 });
     await db.collection("metricHistory").createIndex({ metricKey: 1, recordedAt: -1 });
+    await db.collection("metricHistory").createIndex({ metricKey: 1, dataDate: -1, recordedAt: -1 });
     console.log("✓ Created indexes on metricHistory");
 
     // Commentary collection indexes

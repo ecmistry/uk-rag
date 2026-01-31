@@ -496,33 +496,20 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
   const collection = await getCollection<MetricHistory>(COLLECTIONS.metricHistory);
   if (!collection) throw new Error("Database not available");
 
-  // Check for duplicate entry (same metricKey and dataDate)
-  const existing = await collection.findOne({
-    metricKey: history.metricKey,
-    dataDate: history.dataDate,
-  });
+  const now = new Date();
+  const recordedAt = history.recordedAt || now;
 
-  if (existing) {
-    // Update existing entry instead of creating duplicate
-    const now = new Date();
-    await collection.updateOne(
-      { metricKey: history.metricKey, dataDate: history.dataDate },
-      {
-        $set: {
-          value: history.value,
-          ragStatus: history.ragStatus,
-          recordedAt: history.recordedAt || now,
-        },
-      }
-    );
-  } else {
-    // Insert new entry
-    const now = new Date();
-    await collection.insertOne({
-      ...history,
-      recordedAt: history.recordedAt || now,
-    } as MetricHistory);
-  }
+  await collection.findOneAndUpdate(
+    { metricKey: history.metricKey, dataDate: history.dataDate },
+    {
+      $set: {
+        value: history.value,
+        ragStatus: history.ragStatus,
+        recordedAt,
+      },
+    },
+    { upsert: true }
+  );
 
   // Invalidate cache for this metric's history
   // Clear all history caches for this metric (different limits)
@@ -531,19 +518,24 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
     cache.delete(`metricHistory:${history.metricKey}:${i}`);
   }
   cache.delete(`metricHistory:${history.metricKey}:50`); // Default limit
-  cache.delete(`metricHistory:${history.metricKey}:100`); // Common limit used in frontend
+  cache.delete(`metricHistory:${history.metricKey}:100`); // Common limit
+  cache.delete(`metricHistory:${history.metricKey}:500`); // Max limit
 }
 
 /**
  * Get metric history for a specific metric
  * Uses caching to improve performance
  */
+const METRIC_HISTORY_MAX_LIMIT = 500;
+
 export async function getMetricHistory(metricKey: string, limit: number = 50): Promise<MetricHistory[]> {
+  const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), METRIC_HISTORY_MAX_LIMIT);
+
   // Import cache dynamically to avoid circular dependencies
   const { cache } = await import("./cache");
   
   // Check cache first
-  const cacheKey = `metricHistory:${metricKey}:${limit}`;
+  const cacheKey = `metricHistory:${metricKey}:${cappedLimit}`;
   const cached = cache.get<MetricHistory[]>(cacheKey);
   if (cached && cached.length > 0) {
     // Only use cache if it has data (don't cache empty arrays)
@@ -559,8 +551,8 @@ export async function getMetricHistory(metricKey: string, limit: number = 50): P
 
   const history = await collection
     .find({ metricKey })
-    .sort({ dataDate: -1, recordedAt: -1 }) // Sort by dataDate first (chronological), then recordedAt
-    .limit(limit)
+    .sort({ dataDate: -1, recordedAt: -1 }) // Compound index (metricKey, dataDate, recordedAt) supports this
+    .limit(cappedLimit)
     .toArray();
   
   // Ensure recordedAt is a Date object (MongoDB may return it as string in some cases)

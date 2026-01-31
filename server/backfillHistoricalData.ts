@@ -212,7 +212,7 @@ async function backfillCategory(
             ? " days"
             : metricData.metric_key === "ambulance_response_time"
             ? " minutes"
-            : "";
+            : "");
 
         // Update current metric (only for the latest data point)
         // For historical backfill, we'll update with the most recent value

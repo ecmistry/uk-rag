@@ -52,11 +52,12 @@ export const appRouter = router({
      */
     list: publicProcedure
       .input(z.object({
-        category: z.string().optional(),
+        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population', 'All']).optional(),
       }).optional())
       .query(async ({ input }) => {
         const category = input?.category;
-        const metrics = await getMetrics(category);
+        const categoryForDb = category === 'All' ? undefined : category;
+        const metrics = await getMetrics(categoryForDb);
         // Sort by category and name for consistent ordering
         return metrics.sort((a, b) => {
           if (a.category !== b.category) {
@@ -91,8 +92,8 @@ export const appRouter = router({
      */
     getById: publicProcedure
       .input(z.object({
-        metricKey: z.string(),
-        historyLimit: z.number().optional().default(50),
+        metricKey: z.string().min(1).max(128),
+        historyLimit: z.number().min(1).max(500).optional().default(50),
       }))
       .query(async ({ input }) => {
         const metric = await getMetricByKey(input.metricKey);

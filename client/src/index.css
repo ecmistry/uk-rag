@@ -42,6 +42,15 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Ensure app fills viewport width so main content uses full space */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+}
+
 :root {
   --primary: var(--color-blue-700);
   --primary-foreground: var(--color-blue-50);

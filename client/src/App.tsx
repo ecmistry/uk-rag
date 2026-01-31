@@ -11,6 +11,7 @@ import Commentary from "./pages/Commentary";
 import Documentation from "./pages/Documentation";
 import ApiDocs from "./pages/ApiDocs";
 import DataRefresh from "./pages/DataRefresh";
+import { useHidePreviewBanner } from "./hooks/useHidePreviewBanner";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
 }
 
 function App() {
+  useHidePreviewBanner();
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
