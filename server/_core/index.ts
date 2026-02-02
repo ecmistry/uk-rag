@@ -50,10 +50,23 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  const preferredPort = parseInt(process.env.PORT || "3000", 10);
+  const isProduction = process.env.NODE_ENV === "production";
 
-  if (port !== preferredPort) {
+  // In production, nginx proxies to PORT (e.g. 3000). We must listen on that port only;
+  // if we fall back to another port, nginx gets 502. So fail fast if PORT is busy.
+  const port = isProduction
+    ? preferredPort
+    : await findAvailablePort(preferredPort);
+
+  if (isProduction) {
+    const available = await isPortAvailable(port);
+    if (!available) {
+      throw new Error(
+        `Port ${port} is in use. Stop the process using it or set PORT to a different value. Nginx expects the app on port ${port}.`
+      );
+    }
+  } else if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 

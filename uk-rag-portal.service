@@ -1,17 +1,24 @@
 [Unit]
 Description=UK RAG Portal Application
-After=network.target
+# Start after network is up (helps after reboot/EC2 maintenance)
+After=network.target network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=ec2-user
 WorkingDirectory=/home/ec2-user/uk-rag-portal
-Environment="NODE_ENV=development"
+# Always run on port 3000 (nginx proxies to this port)
+Environment="NODE_ENV=production"
 Environment="PORT=3000"
-EnvironmentFile=/home/ec2-user/uk-rag-portal/.env
-ExecStart=/home/ec2-user/uk-rag-portal/start-dev.sh
+EnvironmentFile=-/home/ec2-user/uk-rag-portal/.env
+ExecStart=/home/ec2-user/uk-rag-portal/start.sh
 Restart=always
 RestartSec=10
+# Keep retrying forever (don't give up after a few crashes)
+StartLimitIntervalSec=0
+# Allow 2 minutes for app to start (e.g. DB connect)
+TimeoutStartSec=120
 StandardOutput=journal
 StandardError=journal
 

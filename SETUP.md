@@ -82,6 +82,59 @@ npx --yes pnpm@10.4.1 build
 sudo systemctl restart uk-rag-portal
 ```
 
+**Install or update the systemd service (always on port 3000):**
+
+The service runs the production app on **port 3000** and restarts automatically on failure or reboot. After changing `uk-rag-portal.service` in the repo:
+
+```bash
+sudo cp /home/ec2-user/uk-rag-portal/uk-rag-portal.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable uk-rag-portal   # start on boot
+sudo systemctl start uk-rag-portal   # start now
+sudo systemctl status uk-rag-portal
+```
+
+Ensure the app is built before first start: `npm run build` from the project directory.
+
+### Preventing sign-in 502 / downtime (recurring outages)
+
+If the portal goes down (e.g. 502 on Sign in) after reboots or overnight, do the following once so it does not happen again:
+
+1. **Start on boot**  
+   The service must be **enabled** so it starts after EC2 reboot or maintenance:
+   ```bash
+   sudo systemctl enable uk-rag-portal
+   sudo systemctl status uk-rag-portal   # confirm it is enabled and active
+   ```
+
+2. **Use the hardened systemd unit**  
+   The repo’s `uk-rag-portal.service` is set up to:
+   - Start after the network is up (`network-online.target`)
+   - Retry forever on crash (`StartLimitIntervalSec=0`)
+   - Allow up to 2 minutes for startup (`TimeoutStartSec=120`)  
+   After any change to the unit file:
+   ```bash
+   sudo cp /home/ec2-user/uk-rag-portal/uk-rag-portal.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable uk-rag-portal
+   sudo systemctl restart uk-rag-portal
+   ```
+
+3. **Optional: watchdog cron**  
+   To automatically restart the app if it stops responding (e.g. stuck process), run the watchdog script every 5 minutes:
+   ```bash
+   chmod +x /home/ec2-user/uk-rag-portal/scripts/ensure-uk-rag-portal-up.sh
+   crontab -e
+   ```
+   Add this line (ec2-user must be able to run `sudo systemctl restart uk-rag-portal`):
+   ```
+   */5 * * * * /home/ec2-user/uk-rag-portal/scripts/ensure-uk-rag-portal-up.sh
+   ```
+   Restarts are logged under `logs/watchdog.log`.
+
+4. **If it still goes down**  
+   Check why the process stopped: `sudo journalctl -u uk-rag-portal -n 100 --no-pager`. Common causes: out-of-memory, MongoDB unreachable, or port 3000 in use. See `docs/EC2_DASHBOARD_TROUBLESHOOTING.md` (section 6).
+
 ### Next Steps
 
 1. **Database Setup**: Configure `DATABASE_URL` in `.env` file
