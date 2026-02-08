@@ -5,15 +5,17 @@ Data Source & Location: see docs/DATA_SOURCES_UK_RAG.md (canonical).
 Uses ONS API: LZVD, IHYP, D7G7, HF6X, NPEL.
 """
 
-import requests
-import pandas as pd
-from io import StringIO
-from datetime import datetime
-from typing import Dict, Optional, List
-import logging
+import csv
 import json
+import logging
 import os
+import requests
+from datetime import datetime
+from io import StringIO
 from os import path
+from typing import Dict, List, Optional
+
+import pandas as pd
 
 # Configure logging
 logging.basicConfig(
@@ -42,7 +44,10 @@ class ONSDataFetcher:
         'output_per_hour': {
             'url': 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/labourproductivity/timeseries/lzvd/prdy',
             'name': 'Output per Hour',
-            'unit': '%'  # ONS LZVD is % change per annum (year-on-year growth)
+            'unit': '%',  # ONS LZVD is % change per annum (year-on-year growth)
+            # Quarterly data from full PRDY dataset (generator returns annual only)
+            'prdy_csv_url': 'https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/labourproductivity/datasets/labourproductivity/current/prdy.csv',
+            'prdy_lzvd_column': 'LZVD',
         },
         'public_sector_net_debt': {
             'url': 'https://www.ons.gov.uk/generator?format=csv&uri=/economy/governmentpublicsectorandtaxes/publicsectorfinance/timeseries/hf6x/pusf',
@@ -54,6 +59,8 @@ class ONSDataFetcher:
             'name': 'Business Investment',
             'unit': '%',  # We compute YoY % change from NPEL levels (£m)
             'is_level': True,  # NPEL is level; we output YoY % change
+            'cxnv_csv_url': 'https://www.ons.gov.uk/file?uri=/economy/grossdomesticproductgdp/datasets/businessinvestment/current/cxnv.csv',
+            'cxnv_npel_column': 'NPEL',
         }
     }
     PLACEHOLDER_METRICS = []  # Phase 4: all Economy metrics from ONS
@@ -64,6 +71,175 @@ class ONSDataFetcher:
             'User-Agent': 'UK-RAG-Dashboard/1.0'
         })
     
+    def fetch_output_per_hour_quarterly(self, historical: bool = False):
+        """
+        Fetch Output per Hour (LZVD) as quarterly data from the full PRDY dataset CSV.
+        The generator for LZVD returns annual only; the PRDY CSV has quarterly rows.
+        """
+        config = self.SERIES_URLS['output_per_hour']
+        url = config.get('prdy_csv_url')
+        if not url:
+            return None
+        metric_name = config['name']
+        cdid = config.get('prdy_lzvd_column', 'LZVD')
+        try:
+            logger.info(f"Fetching {metric_name} (quarterly from PRDY)")
+            response = self.session.get(url, timeout=45)
+            response.raise_for_status()
+            reader = csv.reader(StringIO(response.text))
+            rows = list(reader)
+            if len(rows) < 2:
+                return None
+            # Row 0 = titles, Row 1 = CDID (series codes)
+            header = rows[1]
+            try:
+                col_idx = header.index(cdid)
+            except ValueError:
+                logger.error(f"LZVD column not found in PRDY CSV")
+                return None
+            # Data rows: find first row where first cell matches "YYYY Qn"
+            data_rows = []
+            for row in rows[2:]:
+                if not row or len(row) <= col_idx:
+                    continue
+                period = str(row[0]).strip()
+                if not period or ' Q' not in period:
+                    continue
+                try:
+                    value = float(row[col_idx])
+                except (ValueError, TypeError):
+                    continue
+                data_rows.append({'date': period, 'value': value})
+            if not data_rows:
+                logger.error(f"No quarterly data found for {metric_name}")
+                return None
+            source_url = config['url']
+            if historical:
+                historical_results = []
+                for row in data_rows:
+                    rag = self.calculate_rag_status('output_per_hour', row['value'])
+                    historical_results.append({
+                        'metric_name': metric_name,
+                        'metric_key': 'output_per_hour',
+                        'category': 'Economy',
+                        'value': row['value'],
+                        'time_period': row['date'],
+                        'unit': config['unit'],
+                        'rag_status': rag,
+                        'data_source': 'ONS',
+                        'source_url': source_url,
+                        'last_updated': datetime.utcnow().isoformat()
+                    })
+                logger.info(f"✓ {metric_name}: Fetched {len(historical_results)} quarterly historical data points")
+                return historical_results
+            latest = data_rows[-1]
+            rag = self.calculate_rag_status('output_per_hour', latest['value'])
+            return {
+                'metric_name': metric_name,
+                'metric_key': 'output_per_hour',
+                'category': 'Economy',
+                'value': latest['value'],
+                'time_period': latest['date'],
+                'unit': config['unit'],
+                'rag_status': rag,
+                'data_source': 'ONS',
+                'source_url': source_url,
+                'last_updated': datetime.utcnow().isoformat()
+            }
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to fetch {metric_name} (quarterly): {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to parse {metric_name} quarterly data: {e}")
+            logger.exception(e)
+            return None
+
+    def fetch_business_investment_quarterly(self, historical: bool = False):
+        """
+        Fetch Business Investment (NPEL) as quarterly YoY % change from the full CXNV dataset CSV.
+        NPEL is level (£m); we compute year-on-year % change and output quarterly.
+        """
+        config = self.SERIES_URLS['business_investment']
+        url = config.get('cxnv_csv_url')
+        if not url:
+            return None
+        metric_name = config['name']
+        cdid = config.get('cxnv_npel_column', 'NPEL')
+        try:
+            logger.info(f"Fetching {metric_name} (quarterly from CXNV)")
+            response = self.session.get(url, timeout=60)
+            response.raise_for_status()
+            reader = csv.reader(StringIO(response.text))
+            rows = list(reader)
+            if len(rows) < 2:
+                return None
+            header = rows[1]
+            try:
+                col_idx = header.index(cdid)
+            except ValueError:
+                logger.error(f"NPEL column not found in CXNV CSV")
+                return None
+            data_rows = []
+            for row in rows[2:]:
+                if not row or len(row) <= col_idx:
+                    continue
+                period = str(row[0]).strip()
+                if not period or ' Q' not in period:
+                    continue
+                try:
+                    value = float(row[col_idx])
+                except (ValueError, TypeError):
+                    continue
+                data_rows.append({'date': period, 'value': value})
+            if not data_rows:
+                logger.error(f"No quarterly data found for {metric_name}")
+                return None
+            # Convert levels to YoY % change
+            data_rows = self._compute_yoy_pct_change(data_rows)
+            if not data_rows:
+                logger.error(f"Could not compute YoY % for {metric_name}")
+                return None
+            source_url = config['url']
+            if historical:
+                historical_results = []
+                for row in data_rows:
+                    rag = self.calculate_rag_status('business_investment', row['value'])
+                    historical_results.append({
+                        'metric_name': metric_name,
+                        'metric_key': 'business_investment',
+                        'category': 'Economy',
+                        'value': row['value'],
+                        'time_period': row['date'],
+                        'unit': config['unit'],
+                        'rag_status': rag,
+                        'data_source': 'ONS',
+                        'source_url': source_url,
+                        'last_updated': datetime.utcnow().isoformat()
+                    })
+                logger.info(f"✓ {metric_name}: Fetched {len(historical_results)} quarterly historical data points")
+                return historical_results
+            latest = data_rows[-1]
+            rag = self.calculate_rag_status('business_investment', latest['value'])
+            return {
+                'metric_name': metric_name,
+                'metric_key': 'business_investment',
+                'category': 'Economy',
+                'value': latest['value'],
+                'time_period': latest['date'],
+                'unit': config['unit'],
+                'rag_status': rag,
+                'data_source': 'ONS',
+                'source_url': source_url,
+                'last_updated': datetime.utcnow().isoformat()
+            }
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to fetch {metric_name} (quarterly): {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to parse {metric_name} quarterly data: {e}")
+            logger.exception(e)
+            return None
+
     def fetch_csv_series(self, metric_key: str, historical: bool = False) -> Optional[Dict]:
         """
         Fetch a time series from ONS CSV download
@@ -75,6 +251,13 @@ class ONSDataFetcher:
         Returns:
             Dictionary with data points (list if historical=True, single dict if False), or None if failed
         """
+        # Output per hour: use quarterly data from PRDY dataset (generator is annual only)
+        if metric_key == 'output_per_hour':
+            return self.fetch_output_per_hour_quarterly(historical=historical)
+        # Business investment: use quarterly data from CXNV (NPEL levels → YoY %)
+        if metric_key == 'business_investment':
+            return self.fetch_business_investment_quarterly(historical=historical)
+
         config = self.SERIES_URLS[metric_key]
         url = config['url']
         metric_name = config['name']

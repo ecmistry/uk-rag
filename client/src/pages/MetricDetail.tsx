@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ExternalLink, TrendingUp, TrendingDown, Minus, Download } from "lucide-react";
 import MetricHistoryChart from "@/components/MetricHistoryChart";
+import { filterToQuarterlyOnly, deduplicateByPeriod } from "@/data/quarterlyMetrics";
 
 export default function MetricDetail() {
   const [, params] = useRoute("/metric/:metricKey");
@@ -123,6 +124,9 @@ export default function MetricDetail() {
 
   const { metric, history } = data;
 
+  // All metric pages: show only quarterly historical data, one row per period (no duplicates)
+  const displayHistory = deduplicateByPeriod(filterToQuarterlyOnly(history ?? []));
+
   return (
     <div className="w-full">
       <div className="container py-8">
@@ -237,10 +241,10 @@ export default function MetricDetail() {
         </Card>
 
         {/* Historical Trends Chart */}
-        {history && history.length > 0 && (
+        {displayHistory && displayHistory.length > 0 ? (
           <div className="mb-8">
             <MetricHistoryChart 
-              history={history.map(h => ({
+              history={displayHistory.map(h => ({
                 value: h.value,
                 ragStatus: h.ragStatus,
                 dataDate: h.dataDate,
@@ -250,7 +254,11 @@ export default function MetricDetail() {
               unit={metric.unit}
             />
           </div>
-        )}
+        ) : history && history.length > 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6 mb-8">
+            No quarterly history for this metric yet. The data source may publish annual or monthly data; the chart will show quarterly data when available.
+          </p>
+        ) : null}
 
         {/* Historical Data Table */}
         <Card>
@@ -258,9 +266,11 @@ export default function MetricDetail() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Historical Data</CardTitle>
-                <CardDescription>Recent values and trends</CardDescription>
+                <CardDescription>
+                  Quarterly values and trends
+                </CardDescription>
               </div>
-              {history && history.length > 0 && (
+              {displayHistory && displayHistory.length > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -268,7 +278,7 @@ export default function MetricDetail() {
                     // Export to CSV
                     const csv = [
                       ['Period', 'Value', 'Status', 'Recorded'].join(','),
-                      ...history.map(h => [
+                      ...displayHistory.map(h => [
                         h.dataDate,
                         h.value,
                         h.ragStatus,
@@ -292,7 +302,7 @@ export default function MetricDetail() {
             </div>
           </CardHeader>
           <CardContent>
-            {history && history.length > 0 ? (
+            {displayHistory && displayHistory.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -304,7 +314,7 @@ export default function MetricDetail() {
                     </tr>
                   </thead>
                   <tbody>
-                    {history.map((record, index) => (
+                    {displayHistory.map((record, index) => (
                       <tr key={record._id?.toString() || index} className="border-b hover:bg-muted/50">
                         <td className="py-3 px-4">{record.dataDate}</td>
                         <td className="py-3 px-4 font-medium">
@@ -327,7 +337,11 @@ export default function MetricDetail() {
                 </table>
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-8">No historical data available</p>
+              <p className="text-muted-foreground text-center py-8">
+                {history && history.length > 0
+                  ? "No quarterly history for this metric yet. The data source may publish annual or monthly data; quarterly data will appear here when available."
+                  : "No historical data available"}
+              </p>
             )}
           </CardContent>
         </Card>

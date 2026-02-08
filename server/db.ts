@@ -491,6 +491,11 @@ export async function getMetricByKey(metricKey: string): Promise<Metric | undefi
 /**
  * Add a metric history entry
  */
+/** Normalise period string so the same logical period (e.g. "2026 Q1") is stored consistently and we avoid duplicate rows from "2026 Q1" vs "2026 Q1 " */
+function normaliseDataDate(dataDate: string): string {
+  return String(dataDate).trim();
+}
+
 export async function addMetricHistory(history: InsertMetricHistory): Promise<void> {
   // Import cache dynamically to avoid circular dependencies
   const { cache } = await import("./cache");
@@ -499,14 +504,16 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
 
   const now = new Date();
   const recordedAt = history.recordedAt || now;
+  const dataDate = normaliseDataDate(history.dataDate);
 
   await collection.findOneAndUpdate(
-    { metricKey: history.metricKey, dataDate: history.dataDate },
+    { metricKey: history.metricKey, dataDate },
     {
       $set: {
         value: history.value,
         ragStatus: history.ragStatus,
         recordedAt,
+        dataDate, // store normalised so future lookups match
       },
     },
     { upsert: true }
