@@ -1,351 +1,296 @@
-import { useRoute, Link } from "wouter";
-import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink, TrendingUp, TrendingDown, Minus, Download } from "lucide-react";
-import MetricHistoryChart from "@/components/MetricHistoryChart";
-import { filterToQuarterlyOnly, deduplicateByPeriod } from "@/data/quarterlyMetrics";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  getMetricTileSubtitle,
+  getMetricHistoryDescription,
+} from "@/data/metricDescriptions";
+import {
+  filterToQuarterlyOnly,
+  deduplicateByPeriod,
+} from "@/data/quarterlyMetrics";
+import { trpc } from "@/lib/trpc";
+import { Loader2 } from "lucide-react";
+import { useParams, Link } from "wouter";
+import { cn } from "@/lib/utils";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+
+/** Linear regression: returns { slope, intercept } for y ≈ intercept + slope * x (x = index). */
+function linearRegression(values: number[]): { slope: number; intercept: number } {
+  const n = values.length;
+  if (n === 0) return { slope: 0, intercept: 0 };
+  let sumX = 0,
+    sumY = 0,
+    sumXY = 0,
+    sumXX = 0;
+  for (let i = 0; i < n; i++) {
+    sumX += i;
+    sumY += values[i];
+    sumXY += i * values[i];
+    sumXX += i * i;
+  }
+  const slope = n * sumXX - sumX * sumX !== 0
+    ? (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
+    : 0;
+  const intercept = sumY / n - slope * (sumX / n);
+  return { slope, intercept };
+}
+
+type HistoryRow = {
+  value: string;
+  dataDate: string;
+  ragStatus: string;
+  recordedAt: Date | string;
+};
 
 export default function MetricDetail() {
-  const [, params] = useRoute("/metric/:metricKey");
-  const metricKey = params?.metricKey || '';
-
+  const { metricKey } = useParams<{ metricKey: string }>();
   const { data, isLoading, error } = trpc.metrics.getById.useQuery(
-    {
-      metricKey,
-      historyLimit: 100, // Increased to show more historical data
-    },
-    {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-    }
+    { metricKey: metricKey ?? "", historyLimit: 500 },
+    { enabled: !!metricKey }
   );
 
-  const getRAGClassName = (status: string) => {
-    switch (status) {
-      case 'green':
-        return 'rag-green';
-      case 'amber':
-        return 'rag-amber';
-      case 'red':
-        return 'rag-red';
-      default:
-        return 'bg-muted';
-    }
-  };
-
-  const getTrendIcon = (status: string) => {
-    switch (status) {
-      case 'green':
-        return <TrendingUp className="h-5 w-5" />;
-      case 'amber':
-        return <Minus className="h-5 w-5" />;
-      case 'red':
-        return <TrendingDown className="h-5 w-5" />;
-      default:
-        return null;
-    }
-  };
-
-  const getDataSourceName = (sourceUrl?: string | null, metricKey?: string): string => {
-    if (!sourceUrl && !metricKey) {
-      return 'Office for National Statistics (ONS)';
-    }
-
-    // Output per Hour: ONS labour productivity series LZVD
-    if (metricKey === 'output_per_hour') {
-      return 'ONS API: Series LZVD';
-    }
-
-    // Check sourceUrl for Resolution Foundation
-    if (sourceUrl && sourceUrl.includes('resolutionfoundation.org')) {
-      return 'Resolution Foundation';
-    }
-
-    // Check metricKey for employment metrics
-    if (metricKey && (metricKey === 'employment_rate' || metricKey === 'employment_rate_16_64' || metricKey === 'unemployment_rate')) {
-      return 'Resolution Foundation';
-    }
-
-    // Check sourceUrl for other sources
-    if (sourceUrl) {
-      if (sourceUrl.includes('explore-education-statistics')) {
-        return 'Department for Education (DfE)';
-      }
-      if (sourceUrl.includes('england.nhs.uk') || sourceUrl.includes('nhs.uk')) {
-        return 'NHS England';
-      }
-      if (sourceUrl.includes('gov.uk/government') && sourceUrl.includes('defence')) {
-        return 'Ministry of Defence (MOD)';
-      }
-      if (sourceUrl.includes('ons.gov.uk')) {
-        return 'Office for National Statistics (ONS)';
-      }
-    }
-
-    // Default to ONS
-    return 'Office for National Statistics (ONS)';
-  };
+  if (!metricKey) {
+    return (
+      <div className="w-full py-12 text-center text-muted-foreground">
+        No metric selected.
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
-      <div className="w-full">
-        <div className="container py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-muted rounded w-1/4 mb-8"></div>
-            <div className="h-64 bg-muted rounded mb-8"></div>
-            <div className="h-96 bg-muted rounded"></div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  if (error || !data) {
+  if (error || !data?.metric) {
     return (
-      <div className="w-full">
-        <div className="container py-8">
-          <Link href="/">
-            <Button variant="ghost" className="mb-6">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">Metric not found</p>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="w-full py-12 text-center">
+        <p className="text-muted-foreground">
+          {error?.message ?? "Metric not found."}
+        </p>
+        <Link href="/" className="text-primary hover:underline mt-2 inline-block">
+          Back to Dashboard
+        </Link>
       </div>
     );
   }
 
-  const { metric, history } = data;
+  const metric = data.metric as {
+    metricKey: string;
+    name: string;
+    category: string;
+    value: string;
+    unit: string;
+    ragStatus: string;
+    dataDate: string;
+  };
+  const rawHistory = (data.history ?? []) as HistoryRow[];
+  const filtered = filterToQuarterlyOnly(rawHistory);
+  const history = deduplicateByPeriod(filtered);
+  const periodSubtitle = getMetricTileSubtitle(metric.metricKey, metric.dataDate ?? "");
+  const periodLabel = periodSubtitle ?? metric.dataDate ?? null;
+  const historyDescription = getMetricHistoryDescription(metric.metricKey);
 
-  // All metric pages: show only quarterly historical data, one row per period (no duplicates)
-  const displayHistory = deduplicateByPeriod(filterToQuarterlyOnly(history ?? []));
+  // Chart: chronological order (oldest first), numeric value, plus trend line
+  const chartDataChronological = [...history].reverse();
+  const chartDataWithValue = chartDataChronological.map((row) => ({
+    date: row.dataDate,
+    value: parseFloat(String(row.value)),
+  }));
+  const values = chartDataWithValue.map((d) => d.value).filter((v) => !Number.isNaN(v));
+  const { slope, intercept } = linearRegression(values);
+  const chartData = chartDataWithValue.map((d, i) => ({
+    ...d,
+    value: Number.isNaN(d.value) ? undefined : d.value,
+    trendValue: values.length > 0 ? intercept + slope * i : undefined,
+  }));
+  const trendPerPeriod = slope;
+  const trendSubtitle =
+    history.length > 0
+      ? `Trending ${trendPerPeriod >= 0 ? "up" : "down"} (${trendPerPeriod >= 0 ? "+" : ""}${trendPerPeriod.toFixed(2)}% per period)`
+      : null;
 
   return (
-    <div className="w-full">
-      <div className="container py-8">
-        {/* Back Button */}
-        <Link href="/">
-          <Button variant="ghost" className="mb-6">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
+    <div className="w-full space-y-8">
+      <div>
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+          ← Back to Dashboard
         </Link>
+      </div>
 
-        {/* Metric Overview */}
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-3xl mb-2">{metric.name}</CardTitle>
-                <CardDescription className="text-base">
-                  {metric.category} • as of {metric.dataDate}
-                </CardDescription>
-                {metric.metricKey === 'output_per_hour' && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Measures efficiency. Vital for long-term wage growth.
-                  </p>
-                )}
-              </div>
-              <Badge className={`${getRAGClassName(metric.ragStatus)} text-lg px-4 py-2`}>
-                {metric.ragStatus.toUpperCase()}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-8 md:grid-cols-2">
-              {/* Current Value */}
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className={`${getRAGClassName(metric.ragStatus)} p-3 rounded-full`}>
-                    {getTrendIcon(metric.ragStatus)}
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">Current Value</div>
-                    <div className="text-4xl font-bold">
-                      {metric.value == null || Number.isNaN(parseFloat(String(metric.value)))
-                        ? "—"
-                        : metric.metricKey === "attainment8"
-                          ? parseFloat(metric.value).toFixed(1)
-                          : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
-                            ? `${(parseFloat(metric.value) / 1e6).toFixed(1)} million`
-                            : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Last updated: {new Date(metric.lastUpdated).toLocaleString()}
-                </div>
-              </div>
-
-              {/* Data Source */}
-              <div>
-                <div className="text-sm text-muted-foreground mb-2">Data Source</div>
-                <div className="text-sm mb-4">{getDataSourceName(metric.sourceUrl, metric.metricKey)}</div>
-                {metric.sourceUrl && (
-                  <a
-                    href={metric.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-sm text-primary hover:underline"
-                  >
-                    View source data
-                    <ExternalLink className="h-3 w-3 ml-1" />
-                  </a>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* RAG Status Explanation */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>RAG Status Criteria</CardTitle>
-            <CardDescription>How this metric is evaluated</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="border-l-4 rag-border-green pl-4">
-                <div className="font-semibold mb-1">Green (Good)</div>
-                <div className="text-sm text-muted-foreground">
-                  {metric.metricKey === 'real_gdp_growth' && '≥ 2.0% annual growth'}
-                  {metric.metricKey === 'cpi_inflation' && '1.5% - 2.5% (target range)'}
-                  {metric.metricKey === 'output_per_hour' && '≥ 1% year-on-year growth'}
-                </div>
-              </div>
-              <div className="border-l-4 rag-border-amber pl-4">
-                <div className="font-semibold mb-1">Amber (Moderate)</div>
-                <div className="text-sm text-muted-foreground">
-                  {metric.metricKey === 'real_gdp_growth' && '1.0% - 2.0% growth'}
-                  {metric.metricKey === 'cpi_inflation' && '1.0% - 1.5% or 2.5% - 3.5%'}
-                  {metric.metricKey === 'output_per_hour' && '0% to 1% growth'}
-                </div>
-              </div>
-              <div className="border-l-4 rag-border-red pl-4">
-                <div className="font-semibold mb-1">Red (Concern)</div>
-                <div className="text-sm text-muted-foreground">
-                  {metric.metricKey === 'real_gdp_growth' && '< 1.0% growth'}
-                  {metric.metricKey === 'cpi_inflation' && '< 1.0% or > 3.5%'}
-                  {metric.metricKey === 'output_per_hour' && '< 0% (declining)'}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Historical Trends Chart */}
-        {displayHistory && displayHistory.length > 0 ? (
-          <div className="mb-8">
-            <MetricHistoryChart 
-              history={displayHistory.map(h => ({
-                value: h.value,
-                ragStatus: h.ragStatus,
-                dataDate: h.dataDate,
-                recordedAt: h.recordedAt instanceof Date ? h.recordedAt.toISOString() : String(h.recordedAt)
-              }))} 
-              metricName={metric.name}
-              unit={metric.unit}
-            />
-          </div>
-        ) : history && history.length > 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6 mb-8">
-            No quarterly history for this metric yet. The data source may publish annual or monthly data; the chart will show quarterly data when available.
+      <Card
+        className={cn(
+          metric.ragStatus === "red" && "border-red-200 dark:border-red-900/50",
+          metric.ragStatus === "amber" &&
+            "border-amber-200 dark:border-amber-900/50",
+          metric.ragStatus === "green" &&
+            "border-green-200 dark:border-green-900/50"
+        )}
+      >
+        <CardHeader>
+          <CardTitle>{metric.name}</CardTitle>
+          {periodLabel && (
+            <CardDescription>
+              {periodLabel}
+            </CardDescription>
+          )}
+        </CardHeader>
+        <CardContent>
+          <p className="text-3xl font-semibold tabular-nums">
+            {metric.value}
+            <span className="text-base font-normal text-muted-foreground ml-2">
+              {metric.unit}
+            </span>
           </p>
-        ) : null}
+        </CardContent>
+      </Card>
 
-        {/* Historical Data Table */}
+      {historyDescription && (
+        <p className="text-sm text-muted-foreground">{historyDescription}</p>
+      )}
+
+      {chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Historical Data</CardTitle>
-                <CardDescription>
-                  Quarterly values and trends
-                </CardDescription>
-              </div>
-              {displayHistory && displayHistory.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Export to CSV
-                    const csv = [
-                      ['Period', 'Value', 'Status', 'Recorded'].join(','),
-                      ...displayHistory.map(h => [
-                        h.dataDate,
-                        h.value,
-                        h.ragStatus,
-                        new Date(h.recordedAt).toISOString()
-                      ].join(','))
-                    ].join('\n');
-                    
-                    const blob = new Blob([csv], { type: 'text/csv' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${metric.metricKey}_history.csv`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export CSV
-                </Button>
-              )}
-            </div>
+            <CardTitle>Historical trends</CardTitle>
+            <CardDescription>
+              {metric.name} over time
+              {trendSubtitle ? ` • ${trendSubtitle}` : ""}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {displayHistory && displayHistory.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-semibold">Period</th>
-                      <th className="text-left py-3 px-4 font-semibold">Value</th>
-                      <th className="text-left py-3 px-4 font-semibold">Status</th>
-                      <th className="text-left py-3 px-4 font-semibold">Recorded</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayHistory.map((record, index) => (
-                      <tr key={record._id?.toString() || index} className="border-b hover:bg-muted/50">
-                        <td className="py-3 px-4">{record.dataDate}</td>
-                        <td className="py-3 px-4 font-medium">
-                          {parseFloat(record.value).toFixed(1)}{metric.unit}
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge
-                            variant="outline"
-                            className={`${getRAGClassName(record.ragStatus)} border-0`}
-                          >
-                            {record.ragStatus.toUpperCase()}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {new Date(record.recordedAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                {history && history.length > 0
-                  ? "No quarterly history for this metric yet. The data source may publish annual or monthly data; quarterly data will appear here when available."
-                  : "No historical data available"}
-              </p>
-            )}
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 8, right: 16, left: 8, bottom: 24 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/50" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={56}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    tickFormatter={(v) => (metric.unit ? `${v}${metric.unit}` : String(v))}
+                    width={44}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+                    formatter={(value: number, name: string) => [
+                      typeof value === "number" && !Number.isNaN(value) ? `${value.toFixed(2)}${metric.unit}` : "—",
+                      name === "trendValue" ? "Trend line" : metric.name,
+                    ]}
+                    labelFormatter={(label) => label}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 12 }}
+                    formatter={(value) => (value === "trendValue" ? "Trend line" : metric.name)}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    name={metric.name}
+                    stroke="hsl(215, 20%, 25%)"
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls
+                  />
+                  <Line
+                    type="linear"
+                    dataKey="trendValue"
+                    name="trendValue"
+                    stroke="hsl(25, 65%, 45%)"
+                    strokeWidth={1.5}
+                    strokeDasharray="8 4"
+                    dot={false}
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Historical data</CardTitle>
+          <CardDescription>
+            {history.length > 0
+              ? "Quarterly values and trends."
+              : "No historical data available."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {history.length > 0 ? (
+            <div className="overflow-x-auto -mx-6 px-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Period</TableHead>
+                    <TableHead className="text-right">Value</TableHead>
+                    <TableHead className="w-20" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {history.map((row, i) => (
+                    <TableRow key={`${row.dataDate}-${i}`}>
+                      <TableCell className="font-medium">{row.dataDate}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {row.value} {metric.unit}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "inline-block w-2 h-2 rounded-full",
+                            row.ragStatus === "red" && "bg-red-500",
+                            row.ragStatus === "amber" && "bg-amber-500",
+                            row.ragStatus === "green" && "bg-green-500"
+                          )}
+                          aria-hidden
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm py-4">
+              No historical data available for this metric.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

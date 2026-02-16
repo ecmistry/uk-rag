@@ -4,6 +4,34 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.1] - 2026-02-16
+
+### Added
+
+- **metricDescriptions.ts** – metric-specific copy for tile period subtitles and detail-page history descriptions (e.g. Real GDP Growth “2025 Q4 vs 2024 Q4”).
+- **realGdpGrowthDisplay.ts** – display helpers for Real GDP Growth quarterly YoY labels and history description.
+- **server/loadEconomyFromJson.ts** – one-off script to load `economy_metrics.json` into MongoDB (metrics + metricHistory).
+- **server/ragOutputPerHour.ts** – RAG thresholds and helper for Output per Hour (labour productivity).
+
+### Changed
+
+- **Dashboard tiles (Home.tsx):** Reverted look-and-feel by fixing Tailwind class typos (`text-base`, `w-full`, `basis-full`, `sm:grid-cols-*`, etc.) so category headings, grid layout, and card styling render correctly again.
+- **DataRefreshPanel** – replaced with minimal placeholder; data refresh remains via CLI/scripts.
+- **MetricDetail** – refactored to use new metric description helpers; history presentation updated.
+- **Documentation** – content reduced/simplified.
+- **economy_data_fetcher.py** – simplified; economy metrics load path updated.
+- **metricTooltips.ts** and **quarterlyMetrics.ts** – small updates.
+
+### Removed
+
+- **DATA_SOURCES_VERIFICATION.md**
+- **MetricHistoryChart.tsx**
+- **server/backfillHistoricalData.ts**, **employment_data_fetcher.py**, **loadMetricsData.ts**, **migrateEmploymentCategory.ts**, **scheduledDataPull.ts**, **seedEconomyPlaceholders.ts** (removed as part of economy-focused data pipeline).
+
+### Fixed
+
+- **Production build:** Restored `server/db.ts`, `server/routers.ts`, `server/dataIngestion.ts`, and `server/alertService.ts` so the server bundle builds and the app can be built and deployed.
+
 ## [1.0.0] - 2026-01-31
 
 ### Added

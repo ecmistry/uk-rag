@@ -18,13 +18,16 @@ export function isQuarterlyPeriod(dataDate: string): boolean {
 
 /**
  * Filter history to only rows with quarterly periods.
+ * When no quarterly periods exist (e.g. annual-only metrics),
+ * returns the full history so annual data is still shown.
  * Safe to call with undefined/null history.
  */
 export function filterToQuarterlyOnly<T extends { dataDate: string }>(
   history: T[] | undefined | null
 ): T[] {
   if (!history || !Array.isArray(history)) return [];
-  return history.filter((h) => isQuarterlyPeriod(h.dataDate));
+  const quarterly = history.filter((h) => isQuarterlyPeriod(h.dataDate));
+  return quarterly.length > 0 ? quarterly : history;
 }
 
 /**
