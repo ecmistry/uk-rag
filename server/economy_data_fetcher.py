@@ -24,6 +24,7 @@ OUTPUT_PER_HOUR_AMBER_MAX = 1.5
 
 class ONSDataFetcher:
     # Real GDP Growth: ABMI/PN2 = Gross Domestic Product chained volume (£m SA). We compute YoY % growth from levels.
+    # ONS CSV may contain annual and quarterly rows; we use quarterly only so the dashboard is not confused.
     SERIES_URLS = {
         "real_gdp_growth": {
             "url": "https://www.ons.gov.uk/generator?format=csv&uri=/economy/grossdomesticproductgdp/timeseries/abmi/pn2",
@@ -92,10 +93,14 @@ class ONSDataFetcher:
         return None
 
     @staticmethod
+    def _quarterly_rows_only(rows: List[Dict]) -> List[Dict]:
+        """Keep only rows whose date is quarterly (e.g. '2025 Q2'). Drops annual lines (e.g. '2024') so the dashboard is not confused by a mix of annual and quarterly."""
+        return [r for r in rows if "Q" in r.get("date", "") and ONSDataFetcher._parse_quarter(r["date"])]
+
+    @staticmethod
     def _levels_to_yoy_growth(rows: List[Dict]) -> List[Dict]:
-        """Convert GDP level rows (£m) to year-on-year % growth. Uses quarterly rows only (same quarter, previous year)."""
-        # Keep only quarterly rows (e.g. "2025 Q2", "1955 Q1")
-        quarterly = [r for r in rows if "Q" in r["date"] and ONSDataFetcher._parse_quarter(r["date"])]
+        """Convert GDP level rows (£m) to year-on-year % growth. Uses quarterly rows only (same quarter, previous year). Annual rows are not used."""
+        quarterly = ONSDataFetcher._quarterly_rows_only(rows)
         if not quarterly:
             return []
         # Sort by (year, quarter)
@@ -158,6 +163,12 @@ class ONSDataFetcher:
             if not data_rows:
                 logger.error("No valid data for %s", metric_name)
                 return None
+            # For Real GDP (ABMI/PN2), ONS CSV can contain both annual and quarterly rows; remove all annual lines and use only quarterly so the dashboard is not confused.
+            if metric_key == "real_gdp_growth":
+                data_rows = self._quarterly_rows_only(data_rows)
+                if not data_rows:
+                    logger.warning("No quarterly rows for Real GDP Growth (only annual or other period types in CSV)")
+                    return None
             # ABMI/PN2 is levels (£m); convert to YoY % growth for real_gdp_growth
             if metric_key == "real_gdp_growth":
                 data_rows = self._levels_to_yoy_growth(data_rows)
