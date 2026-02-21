@@ -8,11 +8,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { RefreshCw, ExternalLink, AlertCircle, Info } from "lucide-react";
+import { RefreshCw, AlertCircle, Info } from "lucide-react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { Streamdown } from 'streamdown';
 import { useMemo, useState } from 'react';
 import { cn } from "@/lib/utils";
 import type { Metric } from '@shared/types';
@@ -37,16 +36,6 @@ export default function Home() {
       refetchOnMount: true, // Refetch when navigating back to dashboard so post-refresh data appears
     }
   );
-
-  // Fetch published commentaries
-  // Cache for 10 minutes - commentaries don't change frequently
-  // Defer loading - not critical for initial render
-  const { data: commentaries } = trpc.commentary.listPublished.useQuery(undefined, {
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    enabled: !metricsLoading, // Only fetch after metrics are loaded
-  });
-  const latestCommentary = commentaries?.[0];
 
   // Refresh mutation (used by empty-state "Fetch X Data" buttons)
   const refreshMutation = trpc.metrics.refresh.useMutation({
@@ -296,55 +285,6 @@ export default function Home() {
             </section>
           );
         })}
-
-        {/* Latest Commentary Section - Only show if loaded */}
-        {commentaries && latestCommentary && (
-          <section className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-semibold">Latest Commentary</h2>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Quarterly analysis and insights
-                </p>
-              </div>
-              <Link href="/commentary">
-                <Button variant="outline" size="sm">
-                  View All
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle>{latestCommentary.title}</CardTitle>
-                    <CardDescription>
-                      {latestCommentary.period} • Published {new Date(latestCommentary.publishedAt!).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="prose prose-sm max-w-none">
-                  <Streamdown>
-                    {latestCommentary.content.length > 500
-                      ? latestCommentary.content.substring(0, 500) + '...'
-                      : latestCommentary.content}
-                  </Streamdown>
-                </div>
-                {latestCommentary.content.length > 500 && (
-                  <Link href={`/commentary/${latestCommentary.id}`}>
-                    <Button variant="link" className="mt-4 px-0">
-                      Read more →
-                    </Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-        )}
       </div>
 
       {/* Footer */}

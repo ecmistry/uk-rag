@@ -7,9 +7,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
 import MetricDetail from "./pages/MetricDetail";
-import Commentary from "./pages/Commentary";
-import Documentation from "./pages/Documentation";
-import ApiDocs from "./pages/ApiDocs";
 import DataRefresh from "./pages/DataRefresh";
 import { useHidePreviewBanner } from "./hooks/useHidePreviewBanner";
 
@@ -19,10 +16,6 @@ function Router() {
       <Switch>
         <Route path={"/"} component={Home} />
         <Route path={"/metric/:metricKey"} component={MetricDetail} />
-        <Route path={"/commentary"} component={Commentary} />
-        <Route path={"/commentary/:id"} component={Commentary} />
-        <Route path={"/documentation"} component={Documentation} />
-        <Route path={"/api-docs"} component={ApiDocs} />
         <Route path={"/data-refresh"} component={DataRefresh} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}

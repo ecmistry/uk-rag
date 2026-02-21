@@ -92,7 +92,7 @@ export const appRouter = router({
      */
     getById: publicProcedure
       .input(z.object({
-        metricKey: z.string().min(1).max(128),
+        metricKey: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_]+$/, "metricKey must be alphanumeric or underscore"),
         historyLimit: z.number().min(1).max(500).optional().default(50),
       }))
       .query(async ({ input }) => {
@@ -102,13 +102,6 @@ export const appRouter = router({
         }
 
         const history = await getMetricHistory(input.metricKey, input.historyLimit);
-        
-        // Debug logging (can be removed in production)
-        if (history.length === 0) {
-          console.log(`[metrics.getById] No history found for metricKey: ${input.metricKey}, limit: ${input.historyLimit}`);
-        } else {
-          console.log(`[metrics.getById] Found ${history.length} history entries for metricKey: ${input.metricKey}`);
-        }
 
         return {
           metric,
@@ -265,7 +258,7 @@ export const appRouter = router({
     exportCsv: publicProcedure
       .input(z.object({
         category: z.string().optional(),
-        metricKey: z.string().optional(),
+        metricKey: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_]+$/).optional(),
       }).optional())
       .query(async ({ input }) => {
         let metrics: any[];
@@ -415,9 +408,9 @@ export const appRouter = router({
      */
     create: adminProcedure
       .input(z.object({
-        title: z.string().min(1),
-        content: z.string().min(1),
-        period: z.string().min(1),
+        title: z.string().min(1).max(500),
+        content: z.string().min(1).max(50000),
+        period: z.string().min(1).max(100),
         status: z.enum(['draft', 'published']).default('draft'),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -439,9 +432,9 @@ export const appRouter = router({
     update: adminProcedure
       .input(z.object({
         id: z.number(),
-        title: z.string().min(1).optional(),
-        content: z.string().min(1).optional(),
-        period: z.string().min(1).optional(),
+        title: z.string().min(1).max(500).optional(),
+        content: z.string().min(1).max(50000).optional(),
+        period: z.string().min(1).max(100).optional(),
         status: z.enum(['draft', 'published']).optional(),
       }))
       .mutation(async ({ input }) => {
