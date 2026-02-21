@@ -6,31 +6,148 @@
 
 /** Economy section: metricKey -> tooltip text */
 export const ECONOMY_TOOLTIPS: Record<string, string> = {
-  output_per_hour: `Output per hour is the UK's primary measure of labour productivity, calculated by dividing the total economic output (GDP) by the total hours worked across the economy. The ONS calculates this by taking the chained volume measure of GDP and dividing it by the total actual hours worked in the reference period. It's expressed as an index (with a base year = 100) or as a percentage change. Higher productivity means workers are generating more value per hour, which is the fundamental driver of sustainable wage increases and living standard improvements. The UK has historically lagged behind peer economies like Germany, France, and the US on this measure—a phenomenon economists call the 'productivity puzzle.'
+  output_per_hour: `Output per Hour (Labour Productivity) measures how much value the country creates for every hour of work put in.
 
-Data Source: ONS API: Series LZVD
+Think of it like this - If you are baking a cake, you can get more cake in two ways:
 
-Why it matters to you if it gets worse: Your wages won't keep up with the cost of living, making you permanently poorer. The UK is less competitive globally.`,
-  real_gdp_growth: `Real GDP (Gross Domestic Product) Growth measures the percentage change in the total value of goods and services produced in the UK economy, adjusted for inflation. The tile shows the most recent quarter compared with the same quarter in the previous year (year-on-year growth). The same calculation is used for each point in the historical data. The ONS calculates GDP using the 'output approach' (summing value added across all industries), the 'expenditure approach' (consumption + investment + government spending + net exports), and the 'income approach' (wages + profits + rents). The 'real' adjustment strips out price changes using a GDP deflator. Quarterly figures are seasonally adjusted. Two consecutive quarters of negative growth officially constitutes a recession.
+Work longer: Spend 4 hours in the kitchen instead of 2.
 
-Data Source: ONS ABMI/PN2 (quarterly chained volume levels, YoY % growth)
+Work smarter: Get a better mixer, a faster oven, or a more efficient recipe so you can bake the same cake in just 1 hour.
 
-Why it matters to you if it gets worse: A recession. Fewer jobs, lower business investment, and cuts to public services like schools and hospitals.`,
-  cpi_inflation: `The Consumer Price Index (CPI) measures the average change in prices paid by consumers for a representative 'basket' of around 700 goods and services. The ONS collects approximately 180,000 price quotes monthly from retailers across the UK, weighting items by their share of typical household spending (e.g., housing costs are weighted more heavily than cinema tickets). The index is calculated using a geometric mean formula that accounts for consumer substitution behaviour. CPI is expressed as an annual percentage change—if CPI is 3%, prices are on average 3% higher than 12 months ago. The Bank of England targets 2% CPI inflation as optimal for economic stability.
+Output per Hour tracks the second option. It doesn't ask "Are we working hard?" (most people in the UK work very hard); it asks "Is our hard work actually paying off?" It reveals if our tools, technology, and systems are helping us produce more without simply burning ourselves out with more hours.
 
-Data Source: ONS API: Series D7G7
+The Real-World Impact on You
 
-Why it matters to you if it gets worse: Your weekly shopping bill and energy costs spiral upwards, rapidly eroding the value of your savings and paycheque.`,
-  public_sector_net_debt: `Public Sector Net Debt (PSND) measures the total amount the government owes to external creditors minus its liquid financial assets. It's calculated by summing all outstanding government bonds (gilts), National Savings products, and other borrowing instruments, then subtracting holdings of foreign exchange reserves and other liquid assets. The ONS expresses this as a percentage of GDP to contextualise the debt burden relative to the economy's ability to service it. The figure excludes public sector pension liabilities and Bank of England operations. As of recent years, UK PSND has exceeded 100% of GDP—levels not seen since the post-WWII period.
+Even though "Productivity" sounds like corporate jargon, it is a vitally important factor for your quality of life over the long term. The concept is that if companies make more money for the time they put in (greater productivity) this increase in money will be distributed to staff in the form of increased wages, thus increasing your quality of life. When you sum up this effect for a whole nation and a country becomes productive, the government collects more tax from the same amount of work. This money pays for new MRI machines in the NHS or better equipment in schools without having to hike your tax rates.
 
-Data Source: ONS API: Series HF6X
+Why the RAG Thresholds were chosen
 
-Why it matters to you if it gets worse: Higher taxes (income or VAT) and/or future cuts to essential public services to pay the national credit card bill.`,
-  business_investment: `Business Investment measures the total capital expenditure by private sector companies on assets that will be used for future production—including machinery, equipment, buildings, vehicles, and intellectual property (like software and R&D). The ONS calculates this through quarterly surveys of businesses and administrative data, expressing it in chained volume measures to remove inflation effects. It's a subset of Gross Fixed Capital Formation (GFCF) that excludes government and household investment. This metric is a leading indicator of corporate confidence: when businesses invest, they're betting on future UK economic conditions being favourable for returns.
+🟢 Green - Above 1.5% - This was the UK's average growth rate for decades before 2008. At this speed, living standards double every generation. It is considered the 'healthy' benchmark for advanced economies and is currently (as of 2025) where the USA is performing.
 
-Data Source: ONS API: Series NPEL
+🟡 Amber - 0.5% – 1.5% - This is the "Sluggish" zone the UK has been stuck in since the 2008 crisis. It's enough to keep things ticking over, but not enough to significantly improve public services or raise real wages.
 
-Why it matters to you if it gets worse: Fewer new factories, offices, and R&D labs, leading to slower job creation and a stagnant, low-tech economy.`,
+🔴 Red - Below 0.5% / Negative - This is a "Productivity Crisis." It means the country is essentially standing still or getting less efficient. In this zone, the only way to grow the economy is to make everyone work longer hours or bring in more people, which strains housing and infrastructure. This is dangerous territory as lack of productivity points to a lack of innovation, which over time, means you will be less competitive on a global stage and less likely to have well paid jobs in the advancing sectors of the global economy.`,
+  real_gdp_growth: `Real GDP Growth measures the country's economic growth after stripping away the noise of rising prices (inflation).
+
+Think of it as the "Size of the National Pie." GDP is the total value of everything the UK produces—every coffee sold, every car manufactured, and every hour of legal advice given.
+
+"Real" means we've adjusted for inflation. If the pie looks 5% bigger just because prices went up by 5%, nobody is actually eating more. "Real" growth means there is actually more pie to go around. When the economy grows, it generally means businesses are selling more, which gives them the confidence to expand.
+
+The Real-World Impact on You
+
+Even though GDP feels like a number for billionaires and bankers, it dictates the "vibe" of your daily financial life in three major ways:
+
+1. Job Security and "The Hiring Shield"
+
+When GDP is growing, companies are usually making more profit. This acts as a shield for your job. When the pie is expanding, businesses look to hire more people to keep up with demand. If GDP is shrinking (a recession), businesses go into "survival mode," which often leads to pay freezes or redundancies.
+
+2. Better Public Services (Without Tax Hikes)
+
+A growing economy is the government's best friend. When people earn more and businesses sell more, the government automatically collects more tax (VAT, Income Tax, Corporation Tax). This allows them to spend more on schools, the NHS, and police without having to ask you for a higher percentage of your paycheck.
+
+3. Consumer Confidence
+
+Ever noticed how high-street shops seem busier and people seem more willing to book holidays when the news says the economy is "doing well"? That's the GDP effect. Growth creates a cycle of confidence: you feel safer in your job, so you spend a bit more; because you spend more, a local business survives and hires someone else, who then goes out and spends their new wage.
+
+Why the RAG Thresholds were chosen:
+
+🟢 Green - Above 2.0% - This is the "Prosperity Zone." Historically, the UK averaged around 2.2%–2.5% in the latter half of the 20th century. At this rate, the government can easily fund public services and debt interest while people feel a noticeable rise in their standard of living.
+
+🟡 Amber - 0.5% – 1.5% - This is the "Stagnation Trap." For 2026, the UK is currently forecast to grow at about 1.2%. This is enough to stay out of a recession, but because the population is also growing, the "pie per person" barely changes. It feels like "running to stay in the same place."
+
+🔴 Red - Below 0.5% / Negative - This is the "Recession Danger Zone." Growth this low is usually a sign that the economy is about to contract. It leads to rising unemployment and "fiscal black holes" where the government has to choose between massive borrowing or deep spending cuts.`,
+  cpi_inflation: `Think of it as the "Cost of Living Ticker." To calculate it, the government tracks a giant "shopping basket" of over 700 items that a typical UK household buys—everything from a loaf of bread and a liter of petrol to Netflix subscriptions and smartwatches. Inflation is simply the percentage change in the total cost of that basket compared to one year ago.
+
+The Real-World Impact on You
+
+Inflation is often called the "hidden tax" because it affects your wealth without you ever seeing a bill. It hits the person on the street in three direct ways:
+
+1. The "Shrinking Pound" (Purchasing Power)
+
+When inflation is high, your money loses its "muscle." If inflation is 10%, a £100 shop last year now costs £110. If your bank account hasn't grown by that same amount, you are effectively poorer, even if the number on your screen hasn't changed. You are forced to buy fewer items or switch to cheaper brands.
+
+2. The Interest Rate "Tug-of-War"
+
+The Bank of England uses interest rates as a brake for inflation. If inflation is too high: They raise interest rates to make borrowing expensive and saving attractive. This cools down spending but means your mortgage payments or car loans get more expensive. If inflation is low: They can lower interest rates, making it cheaper for you to borrow and spend.
+
+3. Savings Erosion
+
+If you have £1,000 in a savings account earning 2% interest, but inflation is 5%, you are actually losing money. Your "real" return is -3%. Over several years, high inflation can quietly eat away the value of a house deposit or a retirement fund.
+
+Why the RAG Thresholds were chosen:
+
+🟢 Green - 1.5% – 2.5% This is the "Goldilocks Zone." It is low enough that prices feel stable, but high enough to avoid Deflation (falling prices), which can cause people to stop spending and lead to job losses.
+
+🟡 Amber - 2.6% – 4.0% This is the "Warning Zone." In February 2026, the UK is sitting in this bracket (roughly 3.0%). It signals that the cost of living is rising faster than the target, putting pressure on the Bank of England to keep interest rates higher for longer.
+
+🔴 Red - Above 4.0% OR Below 0% This is the "Crisis Zone." High inflation (as seen in 2022-23) causes rapid hardship. Conversely, negative inflation (Deflation) is a red flag for a deep economic depression. Both require urgent, aggressive intervention.`,
+  public_sector_net_debt: `Public Sector Net Debt is the total amount of money the government has borrowed over the years that it hasn't paid back yet.
+
+Think of the UK like a massive household. Every year, it has money coming in (mostly from our taxes) and money going out (spending on schools, hospitals, and police). If it spends more than it earns in a year, it has to use a "national credit card" to cover the gap. The debt is the total balance sitting on that credit card.
+
+Why is this a valuable metric?
+It tells us if the country is living within its means or if it is building up a bill that will be harder to pay later.
+
+If the debt gets too high (into the "Red" zone), the government has to spend a huge portion of its income just paying off the interest on that credit card, rather than spending it on things we actually see and use. In 2026, the UK is expected to spend roughly £114 billion just on interest—that is money that isn't going to the NHS or schools.
+
+Real impact on the "Person on the Street"
+
+Even though you don't personally owe this debt, it affects your wallet and your life in three major ways:
+
+1. The "Tax Tug-of-War"
+
+When debt is high, the government has less "wiggle room." To pay the interest and keep the debt from spiralling, they often have to do one of two things:
+
+Raise Taxes: You might see higher Income Tax or National Insurance, or "stealth taxes" like frozen tax thresholds (where you pay more as your wages rise).
+
+Cut Spending: You might notice longer wait times for a GP, fewer potholes being fixed, or less funding for your local library.
+
+2. Mortgage and Loan Rates
+
+The "National Debt" sets the tone for all other borrowing. If lenders (big international banks) get nervous that the UK has too much debt, they will charge the government higher interest. This often ripples out into the economy, making it more expensive for you to get a mortgage, a car loan, or a business loan.
+
+3. Protection Against "Rainy Days"
+
+National debt is like a buffer. If a new crisis hits (like a pandemic or an energy spike), a country with low debt can easily borrow money to support its citizens (e.g., furlough schemes or energy bill support). A country already "maxed out" on its credit card might not be able to afford to help you when you need it most.
+
+Summary for your Dashboard
+
+When this metric is Green, the government has the "firepower" to invest in the future or lower your taxes. When it is Red, it means the country is in "survival mode"—prioritizing debt payments over the things that make your daily life better.
+
+🟢 Green - < 70% - Returns the UK to the lower end of G7 debt levels; provides "crisis headroom."
+
+🟡 Amber - 70% – 85% - Debt is high but "stable." Interest payments are high but not yet spiraling.
+
+🔴 Red - > 85% - Psychological and market "danger zone." Violates current UK fiscal sustainability rules.`,
+  business_investment: `In layman's terms, this is the "Reinvestment Rate." Imagine you run a delivery business. At the end of the year, you have a choice: you can take all your profit and spend it on a luxury holiday (Consumption), or you can use a portion of it to buy a new, faster van (Investment).
+
+The "Level" (£) is just the price of the van.
+
+The "% of GDP" is how much of your total income you are willing to sacrifice today to make sure your business is better tomorrow.
+
+If the UK's investment as a % of GDP is high, it means we are prioritizing long-term strength over short-term spending.
+
+How it is Calculated
+
+This metric is a ratio of two major ONS data points: The Numerator (Business Investment): The ONS surveys ~24,500 businesses quarterly to see what they spent on "Fixed Assets." These are items that last more than one year, such as assembly line robots, fleet vehicles, software development (Intellectual Property), and new factories. The Denominator (GDP): The total value of all goods and services produced in the UK in that same period.
+
+The Real-World Impact on You
+
+When this percentage drops, the "Person on the Street" feels it as a slow decay of the world around them.
+
+Stagnant Wages: If your employer only reinvests 5% of their income into new tech, you are stuck using old, slow tools. You can't become more productive, so the company can't afford to give you a "real" pay rise.
+
+The "Rusting" High Street: Low investment means companies aren't building new facilities or upgrading shops. You see older equipment, slower service, and a general lack of innovation in the products you buy.
+
+National Competitiveness: If French or American companies are reinvesting 13% of their GDP while the UK only does 9%, their products eventually become better and cheaper than ours. This leads to UK businesses closing and jobs being moved abroad.
+
+Why the RAG Thresholds were chosen
+
+🟢 Green - Above 12% - The Prosperity Zone: This matches the long-term average of high-performing economies like the US. At this level, the UK is actively modernizing and likely to see future wage growth.
+
+🟡 Amber - 10% – 12% - The "Muddling Through" Zone: This is where the UK has sat for much of the last decade. It's enough to keep the lights on, but it isn't enough to "level up" the economy or fix the productivity crisis.
+
+🔴 Red - Below 10% - The Decay Zone: In this zone, we aren't even replacing what is wearing out. This is a "Health Crisis" for the economy that leads to falling living standards in the years to follow.`,
 };
 
 export function getEconomyTooltip(metricKey: string): string | undefined {
