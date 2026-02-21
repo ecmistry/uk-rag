@@ -9,7 +9,7 @@ const DEFAULT_ADMIN_EMAIL = "admin@uk-rag.online";
 const DEFAULT_ADMIN_PASSWORD = "bC7ZhLh0T3S7arcUbUeg";
 
 const ADMIN_LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const ADMIN_LOGIN_MAX_ATTEMPTS = 5;
+const ADMIN_LOGIN_MAX_ATTEMPTS = 3;
 const adminLoginAttempts = new Map<string, { count: number; resetAt: number }>();
 
 function getClientIp(req: Request): string {
