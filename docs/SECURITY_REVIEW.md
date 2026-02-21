@@ -4,8 +4,8 @@ Summary of security and robustness measures applied to the UK RAG Portal.
 
 ## Authentication & Authorization
 
-- **Admin login**: Single admin account only; email must match configured `ADMIN_EMAIL` (env or default). No other email can log in.
-- **Rate limiting**: `POST /api/auth/admin-login` limited to 5 attempts per client IP per 15 minutes to mitigate brute force.
+- **Admin login**: Single admin account only; email must match `ADMIN_EMAIL` (env). No defaults in code; `ADMIN_EMAIL` and `ADMIN_PASSWORD` must be set for admin login to work.
+- **Rate limiting**: `POST /api/auth/admin-login` limited to 3 attempts per client IP per 15 minutes to mitigate brute force.
 - **Session cookie**: `httpOnly`, `secure` when over HTTPS, `sameSite` (lax/strict or none when secure). No script access to session.
 - **Admin procedures**: Data refresh, metrics refresh, commentary create/update/delete, and cache clear require `ctx.user.role === 'admin'`.
 
@@ -28,7 +28,7 @@ Summary of security and robustness measures applied to the UK RAG Portal.
 
 ## Operational Security
 
-- **Admin credentials**: Prefer `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables in production; defaults exist for development only.
+- **Admin credentials**: `ADMIN_EMAIL` and `ADMIN_PASSWORD` must be set in the environment; there are no default credentials in code. Rotate the password if it was ever committed to git history.
 - **Exec**: Data ingestion runs fixed Python scripts with fixed args (e.g. `--historical`); no user input is passed into shell commands.
 - **Logging**: No logging of passwords or session tokens. Debug logging of request inputs has been reduced.
 

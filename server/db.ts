@@ -672,8 +672,10 @@ export async function deleteCommentary(id: number): Promise<void> {
   await collection.deleteOne({ _id: objectId });
 }
 
+const COMMENTARY_LIST_MAX = 200;
+
 /**
- * Get all published commentaries
+ * Get all published commentaries (capped for performance)
  */
 export async function getPublishedCommentaries(): Promise<Commentary[]> {
   const collection = await getCollection<Commentary>(COLLECTIONS.commentary);
@@ -682,17 +684,18 @@ export async function getPublishedCommentaries(): Promise<Commentary[]> {
   return collection
     .find({ status: "published" })
     .sort({ publishedAt: -1 })
+    .limit(COMMENTARY_LIST_MAX)
     .toArray();
 }
 
 /**
- * Get all commentaries (including drafts) - admin only
+ * Get all commentaries (including drafts) - admin only (capped for performance)
  */
 export async function getAllCommentaries(): Promise<Commentary[]> {
   const collection = await getCollection<Commentary>(COLLECTIONS.commentary);
   if (!collection) return [];
 
-  return collection.find({}).sort({ createdAt: -1 }).toArray();
+  return collection.find({}).sort({ createdAt: -1 }).limit(COMMENTARY_LIST_MAX).toArray();
 }
 
 /**

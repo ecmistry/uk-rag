@@ -5,8 +5,7 @@ import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
 const ADMIN_OPENID = "admin-uk-rag-online";
-const DEFAULT_ADMIN_EMAIL = "admin@uk-rag.online";
-const DEFAULT_ADMIN_PASSWORD = "bC7ZhLh0T3S7arcUbUeg";
+// Admin credentials must be set via ADMIN_EMAIL and ADMIN_PASSWORD env vars (no defaults in code).
 
 const ADMIN_LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const ADMIN_LOGIN_MAX_ATTEMPTS = 3;
@@ -64,28 +63,35 @@ export function registerOAuthRoutes(app: Express) {
     try {
       const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
       const password = typeof req.body?.password === "string" ? req.body.password : "";
-      const adminEmail = process.env.ADMIN_EMAIL ?? DEFAULT_ADMIN_EMAIL;
-      const adminPassword = process.env.ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD;
+      const adminEmail = process.env.ADMIN_EMAIL;
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (!adminEmail?.trim() || !adminPassword) {
+        console.warn("[Auth] Admin login disabled: ADMIN_EMAIL and ADMIN_PASSWORD must be set");
+        recordAdminLoginAttempt(clientIp, false);
+        res.status(401).json({ error: "Invalid email or password" });
+        return;
+      }
       if (!email || !password) {
         res.status(400).json({ error: "Email and password are required" });
         return;
       }
       // Reject any email that is not the configured admin email (case-sensitive)
-      if (email !== adminEmail) {
+      if (email !== adminEmail.trim()) {
         recordAdminLoginAttempt(clientIp, false);
         res.status(401).json({ error: "Invalid email or password" });
         return;
       }
-      if (password !== adminPassword) {
+      if (password !== adminPassword.trim()) {
         recordAdminLoginAttempt(clientIp, false);
         res.status(401).json({ error: "Invalid email or password" });
         return;
       }
       recordAdminLoginAttempt(clientIp, true);
+      const emailForDb = adminEmail.trim();
       await db.upsertUser({
         openId: ADMIN_OPENID,
         name: "Admin",
-        email: adminEmail,
+        email: emailForDb,
         loginMethod: "admin-login",
         lastSignedIn: new Date(),
         role: "admin",
@@ -104,8 +110,12 @@ export function registerOAuthRoutes(app: Express) {
     }
   });
 
-  // Development login endpoint - creates a session when OAuth is not configured
+  // Development login endpoint - creates a session when OAuth is not configured. Disabled in production so only admin-login (ADMIN_EMAIL/ADMIN_PASSWORD from .env) can sign in.
   app.get("/api/auth/dev-login", async (req: Request, res: Response) => {
+    if (process.env.NODE_ENV === "production") {
+      res.status(404).send("Not found");
+      return;
+    }
     try {
       // Check if OAuth is configured
       const oauthServerUrl = process.env.OAUTH_SERVER_URL;

@@ -279,9 +279,11 @@ export const appRouter = router({
               h.recordedAt.toISOString()
             ].join(','))
           ].join('\n');
-          return { csv, filename: `${input.metricKey}_history.csv` };
+          const safeMetricKey = input.metricKey.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64) || 'metric';
+          return { csv, filename: `${safeMetricKey}_history.csv` };
         } else {
           metrics = await getMetrics(input?.category);
+          const safeCategory = (input?.category ?? 'all').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 32) || 'all';
           const csv = [
             ['Name', 'Category', 'Value', 'Unit', 'Status', 'Data Date', 'Last Updated'].join(','),
             ...metrics.map(m => [
@@ -294,7 +296,7 @@ export const appRouter = router({
               m.lastUpdated.toISOString()
             ].join(','))
           ].join('\n');
-          return { csv, filename: `metrics_${input?.category || 'all'}.csv` };
+          return { csv, filename: `metrics_${safeCategory}.csv` };
         }
       }),
 
