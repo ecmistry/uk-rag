@@ -11,6 +11,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "db:index": "tsx server/setupIndexes.ts",
+    "db:drop-unused": "tsx server/dropUnusedCollections.ts",
     "backfill:historical": "tsx server/backfillHistoricalData.ts",
     "load:metrics": "tsx server/loadMetricsData.ts",
     "pull:scheduled": "tsx server/scheduledDataPull.ts"

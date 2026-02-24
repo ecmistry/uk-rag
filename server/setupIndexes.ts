@@ -36,19 +36,6 @@ async function setupIndexes() {
     await db.collection("metricHistory").createIndex({ metricKey: 1, dataDate: -1, recordedAt: -1 });
     console.log("✓ Created indexes on metricHistory");
 
-    // Commentary collection indexes
-    await db.collection("commentary").createIndex({ status: 1 });
-    await db.collection("commentary").createIndex({ publishedAt: -1 });
-    await db.collection("commentary").createIndex({ id: 1 });
-    await db.collection("commentary").createIndex({ createdAt: -1 });
-    console.log("✓ Created indexes on commentary");
-
-    // File metadata collection indexes (for delta detection)
-    await db.collection("fileMetadata").createIndex({ url: 1, metricKey: 1 }, { unique: true });
-    await db.collection("fileMetadata").createIndex({ category: 1 });
-    await db.collection("fileMetadata").createIndex({ lastChecked: -1 });
-    console.log("✓ Created indexes on fileMetadata");
-
     console.log("\nAll indexes created successfully!");
   } catch (error) {
     console.error("Error setting up indexes:", error);

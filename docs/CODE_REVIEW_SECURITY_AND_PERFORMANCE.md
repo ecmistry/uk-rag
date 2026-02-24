@@ -46,8 +46,9 @@ Review date: 2026-01-31. Focus: security and performance before sharing the code
 
 ### Recommendations (optional)
 
-- **Metrics refresh**: Admin `metrics.refresh` calls `getMetricHistory(metric_key, 1000)` per metric in a loop. For very large metric sets, consider batching or a single aggregation if you need to scale further.
-- **Cache size**: If the number of metrics grows a lot, consider increasing cache `maxSize` or TTL in `server/cache.ts`.
+- **Metrics refresh**: Admin `metrics.refresh` uses `getMetricHistory(metric_key, 500)` per metric to check for existing periods (capped at 500; was 1000). For very large metric sets, consider batching or a single aggregation if you need to scale further.
+- **Cache size**: If the number of metrics grows a lot, consider increasing cache `maxSize` or TTL in `server/cache.ts` (currently 200 entries, 5 min TTL).
+- **Unused collections**: After removing commentary and fileMetadata code, run `pnpm run db:drop-unused` to drop the `commentary` and `fileMetadata` collections from MongoDB and free space (see `docs/DATABASE_USAGE_AND_REDUNDANCY.md`).
 
 ---
 

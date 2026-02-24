@@ -3,7 +3,7 @@
  * Replaces Drizzle ORM with native MongoDB driver
  */
 
-import { MongoClient, Db, Collection, ObjectId } from "mongodb";
+import { MongoClient, Db, Collection } from "mongodb";
 import { ENV } from "./_core/env";
 import type {
   User,
@@ -12,8 +12,6 @@ import type {
   InsertMetric,
   MetricHistory,
   InsertMetricHistory,
-  Commentary,
-  InsertCommentary,
 } from "./schema";
 
 let _client: MongoClient | null = null;
@@ -24,7 +22,6 @@ const COLLECTIONS = {
   users: "users",
   metrics: "metrics",
   metricHistory: "metricHistory",
-  commentary: "commentary",
 } as const;
 
 /**
@@ -84,40 +81,6 @@ export async function getMetricsDiagnostics(): Promise<{ dbConnected: boolean; m
     console.warn("[Metrics] Diagnostics count failed:", e);
     return { dbConnected: true, metricsCount: null };
   }
-}
-
-/**
- * Convert ObjectId to number for compatibility with existing code
- * Uses the timestamp portion of ObjectId to create a numeric ID
- */
-function objectIdToNumber(id: ObjectId): number {
-  // Use the timestamp (first 8 hex chars) converted to decimal
-  return parseInt(id.toString().substring(0, 8), 16);
-}
-
-/**
- * Find ObjectId by numeric ID (searches by id field or converts)
- */
-async function findObjectIdById(
-  collection: Collection<any>,
-  numericId: number
-): Promise<ObjectId | null> {
-  // First try to find by id field if it exists
-  const doc = await collection.findOne({ id: numericId });
-  if (doc) return doc._id;
-
-  // Otherwise, try to find by _id using the numeric ID as hex
-  // This is a fallback for documents without the id field
-  try {
-    const hexId = numericId.toString(16).padStart(24, "0");
-    const objectId = new ObjectId(hexId);
-    const doc2 = await collection.findOne({ _id: objectId });
-    if (doc2) return doc2._id;
-  } catch {
-    // Invalid ObjectId format
-  }
-
-  return null;
 }
 
 // ============================================================================
@@ -575,139 +538,4 @@ export async function getMetricHistory(metricKey: string, limit: number = 50): P
   }
   
   return normalizedHistory;
-}
-
-// ============================================================================
-// Commentary Operations
-// ============================================================================
-
-/**
- * Create a new commentary
- */
-export async function createCommentary(data: InsertCommentary): Promise<number> {
-  const collection = await getCollection<Commentary>(COLLECTIONS.commentary);
-  if (!collection) throw new Error("Database not available");
-
-  const now = new Date();
-  const newId = new ObjectId();
-  const numericId = objectIdToNumber(newId);
-
-  // Convert authorId to ObjectId
-  let authorId: ObjectId;
-  if (data.authorId instanceof ObjectId) {
-    authorId = data.authorId;
-  } else if (typeof data.authorId === "number") {
-    // For numeric authorId (legacy MySQL compatibility), try to find user
-    // This should not happen in normal operation, but handles edge cases
-    const usersCollection = await getCollection<User>(COLLECTIONS.users);
-    if (usersCollection) {
-      // Try to find a user - in practice, authorId should be ObjectId
-      const user = await usersCollection.findOne({});
-      authorId = user?._id || new ObjectId();
-    } else {
-      authorId = new ObjectId();
-    }
-  } else {
-    authorId = new ObjectId();
-  }
-
-  const commentaryData: Commentary = {
-    _id: newId,
-    id: numericId, // Store numeric ID for compatibility
-    title: data.title,
-    content: data.content,
-    period: data.period,
-    authorId: authorId,
-    status: data.status || "draft",
-    publishedAt: data.publishedAt || null,
-    createdAt: data.createdAt || now,
-    updatedAt: data.updatedAt || now,
-  };
-
-  await collection.insertOne(commentaryData);
-  return numericId;
-}
-
-/**
- * Update a commentary
- */
-export async function updateCommentary(id: number, data: Partial<InsertCommentary>): Promise<void> {
-  const collection = await getCollection<Commentary>(COLLECTIONS.commentary);
-  if (!collection) throw new Error("Database not available");
-
-  const objectId = await findObjectIdById(collection, id);
-  if (!objectId) {
-    throw new Error(`Commentary with id ${id} not found`);
-  }
-
-  const updateData: any = {
-    ...data,
-    updatedAt: new Date(),
-  };
-
-  // Remove undefined values and fields that shouldn't be updated directly
-  delete updateData._id;
-  delete updateData.id;
-  Object.keys(updateData).forEach((key) => {
-    if (updateData[key] === undefined) {
-      delete updateData[key];
-    }
-  });
-
-  await collection.updateOne({ _id: objectId }, { $set: updateData });
-}
-
-/**
- * Delete a commentary
- */
-export async function deleteCommentary(id: number): Promise<void> {
-  const collection = await getCollection<Commentary>(COLLECTIONS.commentary);
-  if (!collection) throw new Error("Database not available");
-
-  const objectId = await findObjectIdById(collection, id);
-  if (!objectId) {
-    throw new Error(`Commentary with id ${id} not found`);
-  }
-
-  await collection.deleteOne({ _id: objectId });
-}
-
-const COMMENTARY_LIST_MAX = 200;
-
-/**
- * Get all published commentaries (capped for performance)
- */
-export async function getPublishedCommentaries(): Promise<Commentary[]> {
-  const collection = await getCollection<Commentary>(COLLECTIONS.commentary);
-  if (!collection) return [];
-
-  return collection
-    .find({ status: "published" })
-    .sort({ publishedAt: -1 })
-    .limit(COMMENTARY_LIST_MAX)
-    .toArray();
-}
-
-/**
- * Get all commentaries (including drafts) - admin only (capped for performance)
- */
-export async function getAllCommentaries(): Promise<Commentary[]> {
-  const collection = await getCollection<Commentary>(COLLECTIONS.commentary);
-  if (!collection) return [];
-
-  return collection.find({}).sort({ createdAt: -1 }).limit(COMMENTARY_LIST_MAX).toArray();
-}
-
-/**
- * Get a single commentary by ID
- */
-export async function getCommentaryById(id: number): Promise<Commentary | undefined> {
-  const collection = await getCollection<Commentary>(COLLECTIONS.commentary);
-  if (!collection) return undefined;
-
-  const objectId = await findObjectIdById(collection, id);
-  if (!objectId) return undefined;
-
-  const commentary = await collection.findOne({ _id: objectId });
-  return commentary || undefined;
 }

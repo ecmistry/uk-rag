@@ -513,6 +513,9 @@ def fetch_population_breakdown() -> Optional[Dict[str, Any]]:
     session = requests.Session()
     session.headers.update({"User-Agent": "UK-RAG-Dashboard/1.0"})
 
+    # Fetch EMP16 underemployment first (2 requests) to avoid ONS 429 after multiple CSV requests
+    underemployed_by_q = _fetch_underemployed_by_quarter(session)
+
     total_rows = _fetch_series_csv(session, UKPOP_URL)
     working_rows = _fetch_series_csv(session, WORKING_POPULATION_URL)
     inactive_rows = _fetch_series_csv(session, ECONOMICALLY_INACTIVE_URL)
@@ -545,8 +548,7 @@ def fetch_population_breakdown() -> Optional[Dict[str, Any]]:
                 return float(r["value"])
         return 0.0
 
-    # Underemployment totals by (year, quarter)
-    underemployed_by_q = _fetch_underemployed_by_quarter(session)
+    # Underemployment totals by (year, quarter) – already fetched at start to avoid ONS 429
 
     # Common monthly dates across MGRZ, LF2M, MGSX
     working_dates = {r["date"] for r in working_rows}

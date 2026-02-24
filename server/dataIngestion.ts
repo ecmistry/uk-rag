@@ -356,8 +356,17 @@ export interface PopulationBreakdown {
 }
 
 /**
+ * Returns true if at least one period has underemployed > 0.
+ * Used in tests to catch regressions (e.g. ONS 429 causing EMP16 fetch to fail and all underemployed to be 0).
+ */
+export function hasNonZeroUnderemployed(data: PopulationBreakdown): boolean {
+  if (!data?.periods?.length) return false;
+  return data.periods.some((p) => Number(p.underemployed) > 0);
+}
+
+/**
  * Fetch population breakdown for stacked bar (historic quarters; UKPOP, MGRZ, LF2M, MGSX, LF24).
- * Runs population_data_fetcher.py --breakdown.
+ * Runs population_data_fetcher.py --breakdown. EMP16 underemployment is fetched first to avoid ONS 429.
  */
 export async function getPopulationBreakdown(): Promise<PopulationBreakdown | null> {
   try {

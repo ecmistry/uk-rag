@@ -11,12 +11,6 @@ import {
   getMetricsDiagnostics,
   upsertMetric,
   addMetricHistory,
-  createCommentary,
-  updateCommentary,
-  deleteCommentary,
-  getPublishedCommentaries,
-  getAllCommentaries,
-  getCommentaryById,
 } from "./db";
 import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchPopulationMetrics, fetchRegionalEducationData, getPopulationBreakdown, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
@@ -241,8 +235,8 @@ export const appRouter = router({
           });
 
           // Add to history (only if this time period doesn't already exist)
-          // Check if history entry already exists for this time period
-          const existingHistory = await getMetricHistory(metricData.metric_key, 1000);
+          // Check if history entry already exists for this time period (limit 500 matches getMetricHistory cap)
+          const existingHistory = await getMetricHistory(metricData.metric_key, 500);
           const periodExists = existingHistory.some(h => h.dataDate === metricData.time_period);
           
           if (!periodExists) {
@@ -391,97 +385,6 @@ export const appRouter = router({
         }
         
         return result.data;
-      }),
-  }),
-
-  commentary: router({
-    /**
-     * List published commentaries (public)
-     */
-    listPublished: publicProcedure.query(async () => {
-      return getPublishedCommentaries();
-    }),
-
-    /**
-     * List all commentaries including drafts (admin only)
-     */
-    listAll: adminProcedure.query(async () => {
-      return getAllCommentaries();
-    }),
-
-    /**
-     * Get a single commentary by ID
-     */
-    getById: publicProcedure
-      .input(z.object({
-        id: z.number(),
-      }))
-      .query(async ({ input }) => {
-        const item = await getCommentaryById(input.id);
-        if (!item) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Commentary not found' });
-        }
-        return item;
-      }),
-
-    /**
-     * Create a new commentary (admin only)
-     */
-    create: adminProcedure
-      .input(z.object({
-        title: z.string().min(1).max(500),
-        content: z.string().min(1).max(50000),
-        period: z.string().min(1).max(100),
-        status: z.enum(['draft', 'published']).default('draft'),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const id = await createCommentary({
-          title: input.title,
-          content: input.content,
-          period: input.period,
-          authorId: ctx.user._id,
-          status: input.status,
-          publishedAt: input.status === 'published' ? new Date() : null,
-        });
-
-        return { id };
-      }),
-
-    /**
-     * Update a commentary (admin only)
-     */
-    update: adminProcedure
-      .input(z.object({
-        id: z.number(),
-        title: z.string().min(1).max(500).optional(),
-        content: z.string().min(1).max(50000).optional(),
-        period: z.string().min(1).max(100).optional(),
-        status: z.enum(['draft', 'published']).optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...updates } = input;
-
-        // If publishing, set publishedAt
-        const updateData: any = { ...updates };
-        if (updates.status === 'published') {
-          updateData.publishedAt = new Date();
-        }
-
-        await updateCommentary(id, updateData);
-
-        return { success: true };
-      }),
-
-    /**
-     * Delete a commentary (admin only)
-     */
-    delete: adminProcedure
-      .input(z.object({
-        id: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        await deleteCommentary(input.id);
-        return { success: true };
       }),
   }),
 });

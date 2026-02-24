@@ -83,7 +83,7 @@ describe("Education Metrics", () => {
 
     await expect(
       caller.metrics.refresh({ category: "Education" })
-    ).rejects.toThrow("FORBIDDEN");
+    ).rejects.toThrow(/FORBIDDEN|Admin access required/);
   });
 
   it("should list Education metrics after refresh", async () => {

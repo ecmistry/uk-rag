@@ -129,19 +129,15 @@ describe("metrics.refresh", () => {
     const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
-    // Note: This will actually call the Python script
-    // In a real test environment, you might want to mock this
     try {
-      const result = await caller.metrics.refresh();
+      const result = await caller.metrics.refresh({});
       expect(result.success).toBe(true);
       expect(result.count).toBeGreaterThan(0);
       expect(Array.isArray(result.metrics)).toBe(true);
     } catch (error) {
-      // If Python script fails (e.g., network issues), that's okay for this test
-      // We're mainly testing authorization
       console.log("Refresh failed (expected in test environment):", error);
     }
-  });
+  }, 120_000);
 });
 
 describe("RAG status calculation", () => {

@@ -83,31 +83,3 @@ export interface InsertMetricHistory {
   dataDate: string;
   recordedAt?: Date;
 }
-
-// ============================================================================
-// Commentary Schema
-// ============================================================================
-
-export interface Commentary {
-  _id: ObjectId;
-  id?: number; // Numeric ID for compatibility with existing code
-  title: string;
-  content: string;
-  period: string;
-  authorId: ObjectId;
-  status: "draft" | "published";
-  publishedAt?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface InsertCommentary {
-  title: string;
-  content: string;
-  period: string;
-  authorId: ObjectId | number; // Accept both for compatibility
-  status?: "draft" | "published";
-  publishedAt?: Date | null;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
