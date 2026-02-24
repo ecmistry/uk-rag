@@ -118,10 +118,21 @@ export default function MetricDetail() {
   }));
   const values = chartDataWithValue.map((d) => d.value).filter((v) => !Number.isNaN(v));
   const { slope, intercept } = linearRegression(values);
+  const showMovingAvg12m = metricKey === "real_wage_growth";
+  const WINDOW = 4;
+  const movingAvg12m = showMovingAvg12m
+    ? chartDataWithValue.map((_, i) => {
+        if (i < WINDOW - 1) return undefined;
+        const slice = chartDataWithValue.slice(i - WINDOW + 1, i + 1).map((d) => d.value);
+        if (slice.some((v) => Number.isNaN(v))) return undefined;
+        return slice.reduce((a, b) => a + b, 0) / WINDOW;
+      })
+    : [];
   const chartData = chartDataWithValue.map((d, i) => ({
     ...d,
     value: Number.isNaN(d.value) ? undefined : d.value,
     trendValue: values.length > 0 ? intercept + slope * i : undefined,
+    ...(showMovingAvg12m && { movingAvg12m: movingAvg12m[i] }),
   }));
   const trendPerPeriod = slope;
   const trendSubtitle =
@@ -207,13 +218,15 @@ export default function MetricDetail() {
                     labelStyle={{ color: "hsl(var(--muted-foreground))" }}
                     formatter={(value: number, name: string) => [
                       typeof value === "number" && !Number.isNaN(value) ? `${value.toFixed(2)}${metric.unit}` : "—",
-                      name === "trendValue" ? "Trend line" : metric.name,
+                      name === "trendValue" ? "Trend line" : name === "movingAvg12m" ? "12-month moving average" : metric.name,
                     ]}
                     labelFormatter={(label) => label}
                   />
                   <Legend
                     wrapperStyle={{ fontSize: 12 }}
-                    formatter={(value) => (value === "trendValue" ? "Trend line" : metric.name)}
+                    formatter={(value) =>
+                      value === "trendValue" ? "Trend line" : value === "movingAvg12m" ? "12-month moving average" : metric.name
+                    }
                   />
                   <Line
                     type="monotone"
@@ -224,6 +237,18 @@ export default function MetricDetail() {
                     dot={false}
                     connectNulls
                   />
+                  {showMovingAvg12m && (
+                    <Line
+                      type="monotone"
+                      dataKey="movingAvg12m"
+                      name="movingAvg12m"
+                      stroke="hsl(262, 52%, 47%)"
+                      strokeWidth={2}
+                      strokeDasharray="6 4"
+                      dot={false}
+                      connectNulls
+                    />
+                  )}
                   <Line
                     type="linear"
                     dataKey="trendValue"

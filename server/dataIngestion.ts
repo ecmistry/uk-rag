@@ -341,6 +341,39 @@ export async function fetchRegionalEducationData(): Promise<RegionalDataResult> 
   }
 }
 
+export interface PopulationBreakdownPeriod {
+  period: string;
+  total: number;
+  working: number;
+  inactive: number;
+  unemployed: number;
+   underemployed: number;
+  under16Over64: number;
+}
+
+export interface PopulationBreakdown {
+  periods: PopulationBreakdownPeriod[];
+}
+
+/**
+ * Fetch population breakdown for stacked bar (historic quarters; UKPOP, MGRZ, LF2M, MGSX, LF24).
+ * Runs population_data_fetcher.py --breakdown.
+ */
+export async function getPopulationBreakdown(): Promise<PopulationBreakdown | null> {
+  try {
+    const projectRoot = getProjectRoot();
+    const scriptPath = path.join(projectRoot, 'server', 'population_data_fetcher.py');
+    const { stdout } = await execAsync(`python3 ${scriptPath} --breakdown`);
+    const trimmed = stdout.trim();
+    if (!trimmed || trimmed === '{}') return null;
+    const data = JSON.parse(trimmed) as PopulationBreakdown;
+    if (!data.periods || !Array.isArray(data.periods) || data.periods.length === 0) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * RAG threshold definitions for each metric
  */
@@ -359,6 +392,28 @@ export const RAG_THRESHOLDS = {
     green: 1.0,   // >= 1% year-on-year growth
     amber: 0.0,   // 0% to 1% growth
   },
+  /** Inactivity rate: lower is better. Green < 14%, Amber 14%–20%, Red > 20% */
+  inactivity_rate: {
+    green_max: 14,
+    amber_max: 20,
+  },
+  /** Real wage growth: Green > 2%, Amber 1%–2%, Red < 1% */
+  real_wage_growth: {
+    green_min: 2,
+    amber_min: 1,
+    amber_max: 2,
+  },
+  /** Job vacancy ratio: Green > 3.5%, Amber 2.5%–3.5%, Red < 2.5% */
+  job_vacancy_ratio: {
+    green_min: 3.5,
+    amber_min: 2.5,
+    amber_max: 3.5,
+  },
+  /** Underemployment: lower is better. Green < 5.5%, Amber 5.5%–8.5%, Red > 8.5% */
+  underemployment: {
+    green_max: 5.5,
+    amber_max: 8.5,
+  },
 } as const;
 
 /**
@@ -372,6 +427,38 @@ export function calculateRAGStatus(
     const t = RAG_THRESHOLDS.cpi_inflation;
     if (value >= t.green_min && value <= t.green_max) return 'green';
     if (value >= t.amber_min && value <= t.amber_max) return 'amber';
+    return 'red';
+  }
+
+  /** Inactivity rate: lower is better. Green < 14%, Amber 14%–20%, Red > 20% */
+  if (metricKey === 'inactivity_rate') {
+    const t = RAG_THRESHOLDS.inactivity_rate;
+    if (value < t.green_max) return 'green';
+    if (value <= t.amber_max) return 'amber';
+    return 'red';
+  }
+
+  /** Real wage growth: Green > 2%, Amber 1%–2%, Red < 1% */
+  if (metricKey === 'real_wage_growth') {
+    const t = RAG_THRESHOLDS.real_wage_growth;
+    if (value > t.green_min) return 'green';
+    if (value >= t.amber_min && value <= t.amber_max) return 'amber';
+    return 'red';
+  }
+
+  /** Job vacancy ratio: Green > 3.5%, Amber 2.5%–3.5%, Red < 2.5% */
+  if (metricKey === 'job_vacancy_ratio') {
+    const t = RAG_THRESHOLDS.job_vacancy_ratio;
+    if (value > t.green_min) return 'green';
+    if (value >= t.amber_min && value <= t.amber_max) return 'amber';
+    return 'red';
+  }
+
+  /** Underemployment: lower is better. Green < 5.5%, Amber 5.5%–8.5%, Red > 8.5% */
+  if (metricKey === 'underemployment') {
+    const t = RAG_THRESHOLDS.underemployment;
+    if (value < t.green_max) return 'green';
+    if (value <= t.amber_max) return 'amber';
     return 'red';
   }
 
@@ -394,9 +481,9 @@ export function getDataSourceUrl(metricKey: string): string {
     employment_rate: 'https://www.resolutionfoundation.org/our-work/estimates-of-uk-employment/',
     employment_rate_16_64: 'https://www.resolutionfoundation.org/our-work/estimates-of-uk-employment/',
     unemployment_rate: 'https://www.resolutionfoundation.org/our-work/estimates-of-uk-employment/',
-    inactivity_rate: 'https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2s/lms',
-    real_wage_growth: 'https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/a3ww/lms',
-    job_vacancy_ratio: 'https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ap2z/unem',
+    inactivity_rate: 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2s/lms',
+    real_wage_growth: 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/kab9/emp',
+    job_vacancy_ratio: 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ap2z/unem',
     attainment8: 'https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-4-performance',
     teacher_vacancy_rate: 'https://explore-education-statistics.service.gov.uk/find-statistics/school-workforce-in-england',
     neet_rate: 'https://explore-education-statistics.service.gov.uk/find-statistics/neet-statistics-annual-brief',

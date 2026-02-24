@@ -16,6 +16,12 @@ from io import BytesIO
 UKPOP_URL = "https://www.ons.gov.uk/generator?format=csv&uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/timeseries/ukpop/pop"
 TOTAL_POPULATION_SOURCE_URL = "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates"
 
+# ONS Labour Market (for population breakdown stacked bar) – 5 datasets: UKPOP (above), MGRZ, LF2M, MGSX, LF24
+WORKING_POPULATION_URL = "https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgrz/lms"
+ECONOMICALLY_INACTIVE_URL = "https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2m/lms"
+UNEMPLOYED_URL = "https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms"
+EMPLOYMENT_RATE_16_64_URL = "https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf24/lms"
+
 # ONS Vital Statistics: births, deaths, natural change (Series VVHM source – Excel only, no CSV generator)
 VITAL_STATISTICS_EXCEL_URL = (
     "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/"
@@ -60,6 +66,9 @@ HEALTH_STATE_LE_SOURCE_URL = (
 )
 
 POPULATION_PLACEHOLDERS: List[Dict[str, Any]] = []
+
+# ONS EMP16: Underemployment – latest file URL is discovered at runtime via ons_emp16.get_latest_emp16_xls_url()
+# so we do not rely on a fixed filename (e.g. emp16feb2026.xls) that changes each quarter.
 
 
 def _parse_ons_csv(response_text: str) -> List[Dict[str, Any]]:
@@ -455,7 +464,181 @@ def fetch_population_metrics() -> List[Dict[str, Any]]:
     return results
 
 
+def _fetch_series_csv(session: requests.Session, url: str) -> List[Dict[str, Any]]:
+    """Fetch ONS generator CSV and return list of {date, value}."""
+    try:
+        r = session.get(url, timeout=30)
+        r.raise_for_status()
+        return _parse_ons_csv(r.text)
+    except Exception:
+        return []
+
+
+def _month_to_quarter(date_str: str) -> Optional[tuple]:
+    """Parse ONS date like '2024 SEP' or '2024 MAR' and return (year, quarter) or None. Only quarter-end months."""
+    parts = date_str.strip().upper().split()
+    if len(parts) != 2:
+        return None
+    try:
+        year = int(parts[0])
+    except ValueError:
+        return None
+    mon = parts[1][:3] if len(parts[1]) >= 3 else parts[1]
+    if mon == "MAR":
+        return (year, 1)
+    if mon == "JUN":
+        return (year, 2)
+    if mon == "SEP":
+        return (year, 3)
+    if mon == "DEC":
+        return (year, 4)
+    return None
+
+
+def _fetch_underemployed_by_quarter(session: requests.Session) -> Dict[tuple, float]:
+    """
+    Fetch underemployed totals by quarter from EMP16 'Levels' sheet.
+    Uses ons_emp16 to discover the latest XLS URL (no fixed filename).
+    Returns mapping {(year, quarter): underemployed_raw_count}.
+    """
+    from ons_emp16 import fetch_emp16_underemployment_level_by_quarter
+    return fetch_emp16_underemployment_level_by_quarter(session)
+
+
+def fetch_population_breakdown() -> Optional[Dict[str, Any]]:
+    """
+    Population breakdown from 5 ONS datasets: UKPOP (total), MGRZ (working), LF2M (inactive), MGSX (unemployed), LF24 (employment rate).
+    Under 16 & Over 64 = Total - (working + inactive + unemployed). Returns historic quarters; each bar is one quarter.
+    """
+    session = requests.Session()
+    session.headers.update({"User-Agent": "UK-RAG-Dashboard/1.0"})
+
+    total_rows = _fetch_series_csv(session, UKPOP_URL)
+    working_rows = _fetch_series_csv(session, WORKING_POPULATION_URL)
+    inactive_rows = _fetch_series_csv(session, ECONOMICALLY_INACTIVE_URL)
+    unemployed_rows = _fetch_series_csv(session, UNEMPLOYED_URL)
+    employment_rate_rows = _fetch_series_csv(session, EMPLOYMENT_RATE_16_64_URL)
+
+    if not total_rows or not working_rows or not inactive_rows or not unemployed_rows:
+        return None
+
+    # UKPOP: annual total (date = year). Build year -> value; normalize to raw count.
+    total_by_year: Dict[int, float] = {}
+    for r in total_rows:
+        try:
+            y = int(str(r["date"]).strip()[:4])
+            v = float(r["value"])
+            if v > 1e6:
+                total_by_year[y] = v
+            elif v < 1000:
+                total_by_year[y] = v * 1e6
+            else:
+                total_by_year[y] = v * 1000.0
+        except (ValueError, TypeError):
+            continue
+    if not total_by_year:
+        return None
+
+    def get_val(rows: List[Dict], date: str) -> float:
+        for r in rows:
+            if r["date"] == date:
+                return float(r["value"])
+        return 0.0
+
+    # Underemployment totals by (year, quarter)
+    underemployed_by_q = _fetch_underemployed_by_quarter(session)
+
+    # Common monthly dates across MGRZ, LF2M, MGSX
+    working_dates = {r["date"] for r in working_rows}
+    inactive_dates = {r["date"] for r in inactive_rows}
+    unemployed_dates = {r["date"] for r in unemployed_rows}
+    common_dates = working_dates & inactive_dates & unemployed_dates
+    quarter_end_dates = [d for d in common_dates if _month_to_quarter(d) is not None]
+    if not quarter_end_dates:
+        return None
+
+    # Sort by (year, quarter) and take unique quarters (one date per quarter)
+    def sort_key(d: str) -> tuple:
+        t = _month_to_quarter(d)
+        return (t[0], t[1]) if t else (0, 0)
+
+    quarter_end_dates.sort(key=sort_key)
+    # Deduplicate by (year, quarter) keeping one date per quarter
+    seen_quarter: set = set()
+    unique_by_quarter: List[str] = []
+    for d in quarter_end_dates:
+        t = _month_to_quarter(d)
+        if t and t not in seen_quarter:
+            seen_quarter.add(t)
+            unique_by_quarter.append(d)
+
+    periods_out: List[Dict[str, Any]] = []
+    for date_str in unique_by_quarter:
+        t = _month_to_quarter(date_str)
+        if not t:
+            continue
+        year, q = t
+        if year not in total_by_year:
+            continue
+        total_raw = total_by_year[year]
+        total_000s = total_raw / 1000.0
+
+        working_000s = get_val(working_rows, date_str)
+        inactive_000s = get_val(inactive_rows, date_str)
+        unemployed_val = get_val(unemployed_rows, date_str)
+
+        # MGSX: if value looks like rate (< 30), treat as unemployment rate (%); else level (000s)
+        if unemployed_val < 30:
+            if unemployed_val >= 100:
+                unemployed_000s = 0.0
+            else:
+                unemployed_000s = working_000s * (unemployed_val / 100.0) / (1.0 - unemployed_val / 100.0)
+        else:
+            unemployed_000s = unemployed_val
+
+        # Labour series are in thousands; total_raw is in raw count. Convert labour and underemployment to raw.
+        working_raw_total = working_000s * 1000.0
+        inactive_raw = inactive_000s * 1000.0
+        unemployed_raw = unemployed_000s * 1000.0
+
+        underemployed_raw = underemployed_by_q.get((year, q), 0.0)
+        # Ensure underemployed does not exceed total working population.
+        if underemployed_raw < 0:
+            underemployed_raw = 0.0
+        if underemployed_raw > working_raw_total:
+            underemployed_raw = working_raw_total
+
+        # Adjust working population to exclude underemployed portion.
+        working_raw = working_raw_total - underemployed_raw
+
+        labour_raw = working_raw + inactive_raw + unemployed_raw + underemployed_raw
+        under16_over64_raw = total_raw - labour_raw
+        if under16_over64_raw < 0:
+            under16_over64_raw = 0.0
+
+        period_label = f"{year} Q{q}"
+        periods_out.append({
+            "period": period_label,
+            "total": round(total_raw, 0),
+            "working": round(working_raw, 0),
+            "inactive": round(inactive_raw, 0),
+            "unemployed": round(unemployed_raw, 0),
+            "underemployed": round(underemployed_raw, 0),
+            "under16Over64": round(under16_over64_raw, 0),
+        })
+
+    if not periods_out:
+        return None
+    return {"periods": periods_out}
+
+
 def main():
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "--breakdown":
+        result = fetch_population_breakdown()
+        print(json.dumps(result if result else {}))
+        return
+
     print("=" * 60)
     print("UK RAG Dashboard - Population Metrics Fetcher (Phase 4)")
     print("=" * 60)

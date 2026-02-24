@@ -12,7 +12,7 @@ This document is the single source of truth for which data source each metric mu
 | Employment| Inactivity Rate             | Tracks those "hidden" from the labor market (e.g., sick).                   | ONS API: Series LF2S         |
 | Employment| Real Wage Growth            | Whether people are actually richer after inflation.                         | ONS API: Series A3WW         |
 | Employment| Job Vacancy Ratio           | Measures labor shortages (vacancies per 100 jobs).                           | ONS API: Series AP2Y         |
-| Employment| Underemployment             | % of workers wanting more hours than they have.                             | ONS API: Series I7C4         |
+| Employment| Underemployment             | % of workers wanting more hours than they have.                             | ONS: EMP16 dataset (current edition page → latest XLS); see docs/ONS_EMP16_UNDEREMPLOYMENT.md |
 | Employment| Sickness Absence            | Labor health; % of hours lost to illness.                                   | ONS: Sickness absence in UK  |
 | Healthcare| A&E 4-Hour Wait %           | Proxy for total system "flow" and bed availability.                         | NHS England: A&E Attendances |
 | Healthcare| Elective Backlog            | The total "queue" for surgeries and specialists.                            | NHS England: RTT Waiting Times|

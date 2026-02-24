@@ -156,26 +156,84 @@ export function getEconomyTooltip(metricKey: string): string | undefined {
 
 /** Employment section: metricKey -> tooltip text */
 export const EMPLOYMENT_TOOLTIPS: Record<string, string> = {
-  inactivity_rate: `The Economic Inactivity Rate measures the percentage of the working-age population (16-64) who are neither employed nor actively seeking work—making them 'economically inactive.' The ONS calculates this through the Labour Force Survey (LFS), a rolling quarterly survey of approximately 80,000 households. Inactive individuals include students, those looking after family, the long-term sick or disabled, early retirees, and discouraged workers. Unlike unemployment (which counts those actively job-seeking), inactivity captures the 'hidden' labour supply. Post-pandemic, the UK has seen a concerning rise in inactivity due to long-term sickness, particularly among the 50-64 age group.
+  inactivity_rate: `Think of this as the "Missing Workers" metric. It measures the percentage of people who are of working age but have dropped out of the workforce entirely. It is different from unemployment: an unemployed person is like someone standing on the sidelines of a football pitch, kit on, waiting to be subbed in. An "Inactive" person has left the stadium. They aren't working, and they aren't looking for work. This group includes students, retirees, and stay-at-home parents, but in 2026, the biggest concern for the UK is the millions of people who are inactive because they are too sick to work. If this number is high, the "engine" of the country is running on fewer cylinders.
 
-Data Source: ONS API: Series LF2S
+How it is Calculated
 
-Why it matters to you if it gets worse: Fewer people paying tax to fund the NHS and state pensions, putting a greater tax burden on the working population.`,
-  real_wage_growth: `Real Wage Growth measures the change in average earnings after adjusting for inflation, showing whether workers' purchasing power is actually increasing. The ONS calculates this by taking Average Weekly Earnings (AWE) data—collected from around 9,000 employers covering 14 million employees—and deflating it by CPI or CPIH inflation. The result shows the 'real' percentage change in what workers can actually buy with their wages. Positive real wage growth means living standards are rising; negative means workers are getting poorer despite nominal pay increases. The UK experienced historically rare prolonged periods of negative real wage growth following both the 2008 financial crisis and the 2022 inflation spike.
+The Office for National Statistics (ONS) calculates this using a massive ongoing study called the Labour Force Survey. They look at the total number of people in the UK aged between 16 and 64 and then subtract everyone who currently has a job and everyone who is actively looking for one. The people left over are classified as "Economically Inactive." The final metric is simply the percentage of the total working-age population that these "leftover" people represent. It provides a much more honest picture of the nation's health than the unemployment rate alone, because it captures those who have given up on finding work or are physically unable to do so.
 
-Data Source: ONS API: Series A3WW
+Real Impact on the Person on the Street
 
-Why it matters to you if it gets worse: You are working harder just to afford the same lifestyle, or worse, falling behind financially year after year.`,
-  job_vacancy_ratio: `The Job Vacancy Ratio measures the number of unfilled job vacancies per 100 employee jobs in the economy, indicating the tightness of the labour market. The ONS calculates this using the Vacancy Survey, which samples approximately 6,000 businesses monthly, combined with employee jobs data. A high ratio indicates labour shortages—more positions than available workers—while a low ratio suggests slack in the labour market. The ratio spiked to historic highs post-pandemic as businesses struggled to recruit following Brexit-related migration changes and workers leaving certain sectors permanently. Sectoral breakdowns reveal particular shortages in hospitality, healthcare, and logistics.
+When Inactivity is high, it hits your wallet and your daily life through "The Tax Squeeze." A smaller group of workers is left to generate the tax money needed to fund the entire country. If 1 in 5 people are inactive, the remaining 4 have to work harder and pay more to keep the NHS, schools, and pensions running. You also feel it through "Service Slowdowns"—it is the reason you see "Help Wanted" signs in every shop window and why it takes longer to get a GP appointment or a plumber. Finally, when long-term sickness is the main driver of inactivity it is a sign that the general health of your community is declining, which puts more pressure on the local services you rely on.
 
-Data Source: ONS API: Series AP2Y
+Why the RAG Thresholds were chosen:
 
-Why it matters to you if it gets worse: Businesses cannot hire staff, leading to worse customer service, long waits (e.g., at restaurants, airports), and higher prices.`,
-  underemployment: `Underemployment measures the percentage of employed workers who want to work more hours than they currently have. The ONS calculates this through the Labour Force Survey by identifying workers who: (a) are working part-time but want full-time work, or (b) want additional hours in their current role. It's expressed as a percentage of total employment. This metric captures 'hidden' labour market slack that unemployment figures miss—someone working 10 hours a week counts as 'employed' but may be struggling financially. High underemployment often indicates an economy creating low-quality, insecure jobs rather than stable full-time positions. Zero-hours contracts and the gig economy have contributed to this measure.
+The thresholds are based on the UK's "Sustainability Limit"—the point at which the number of workers can no longer comfortably support the number of non-workers.
 
-Data Source: ONS API: Series I7C4
+🟢 Green - (Below 14%): This is the "Global Leader" zone. It matches Iceland's performance, indicating a society with world-class parental support, health rehabilitation, and flexible working that keeps almost the entire population active.
 
-Why it matters to you if it gets worse: People who want full-time work are stuck with part-time or zero-hour contracts, making it impossible to budget or afford major purchases like a house.`,
+🟡 Amber - (14% – 20%): This is the "High Performance" zone. It's better than most of the G7 and represents a significant improvement for the UK. It signals that the country is successfully fixing its long-term sickness and childcare barriers.
+
+🔴 Red - (Above 20%): This is the "Systemic Failure" zone. This would signal that the country is suffering from a deep health and labor crisis that puts it at a massive disadvantage compared to the world's most efficient economies.`,
+  real_wage_growth: `Think of this as the "True Pay Rise" metric. It measures whether your paycheck is actually winning the race against the rising cost of living. If your boss gives you a 3% pay rise, but the price of milk, rent, and electricity has gone up by 5%, you are actually poorer than you were last year despite having more money in your bank account. "Real" wage growth only happens when your pay increases faster than inflation. It is the difference between feeling like you are getting ahead and feeling like you are running up a down-escalator.
+
+How it is Calculated:
+
+The Office for National Statistics (ONS) calculates this by taking the "Average Weekly Earnings" data (which they get from surveying thousands of UK businesses about what they pay their staff) and UK RAG then uses CPI Inflation data we collect to adjust for inflation. This essentially "strips away" the effect of price rises from your pay rise. If the resulting number is positive, peoples "purchasing power" has grown; if it is negative, peoples wages are "shrinking" in real terms, even if the number on your payslip has stayed the same or gone up slightly.
+
+Real Impact on the Person on the Street:
+
+When Real Wage Growth is positive, it feels like "Breathing Room." It means that after you've paid for your essentials—food, housing, and bills—you have more money left over for things that improve your life, like holidays, savings, or a meal out. When it is negative, you experience a "Cost of Living Squeeze." You find yourself making "triage" decisions at the supermarket, cancelling subscriptions, or dipping into savings just to cover the basics. Over several years, negative or flat real wage growth leads to a "standard of living crisis," where the nation feels poorer and more stressed, regardless of what the headline economic growth figures say.
+
+Why the RAG Thresholds were chosen:
+
+These thresholds are based on the need for the UK to recover from the "lost decade" of wage growth following the 2008 financial crisis.
+
+🟢 Green - (Above 2.0%): This is the "Prosperity Zone." It represents a healthy, productive economy where workers are seeing a clear and meaningful improvement in their standard of living every single year.
+
+🟡 Amber - (1.0% – 2.0%): This is the "Low Growth Zone." Most workers in 2026 find themselves here. It means you aren't falling behind, but you aren't significantly moving forward either. It feels like "standing still."
+
+🔴 Red - (Below 1.0%): This is the "Squeeze Zone." Anything below 1.0% is too close to zero for comfort, and negative numbers represent an active decline in the nation's health. In this zone, the person on the street is becoming poorer in real-time.`,
+  job_vacancy_ratio: `What it is in Layman's Terms:
+
+Think of this as the "Help Wanted" in the shop front meter for the entire country. It measures how many empty jobs there are for every 100 filled ones. When this number is high, it's a "Job Hunter's Market"—you have the power to ask for better pay and perks because employers are desperate to hire. When it's low, it's an "Employer's Market"—openings are rare, and finding a new role or a promotion becomes much harder.
+
+How it is Calculated:
+
+The Office for National Statistics (ONS) calculates this by surveying around 6,000 businesses every month to count how many positions they are actively trying to fill (The Vacancy Survey). They then compare this number to the total number of "Workforce Jobs" (everyone currently employed). By dividing the vacancies by the total jobs and multiplying by 100, we get a simple ratio: the number of available openings for every 100 existing jobs. It provides a more accurate "vibe check" of the economy than unemployment because it shows the actual real-time demand for labor across all sectors.
+
+Real Impact on the Person on the Street:
+
+For you, this metric is about "Choice and Power." In a high-ratio economy like the Netherlands (which maintains a ratio of over 4% and considered the gold standard for mature economies), workers feel safe and confident; if they don't like their boss or their commute, they can move almost immediately. If this measure gets worse and moves toward amber and red you might feel "stuck" in your current role because there are fewer alternatives to jump to. For young people and graduates, a Red status means their first step onto the career ladder is much steeper and more competitive, often leading to people taking jobs they are overqualified for just to secure an income.
+
+Why the RAG Thresholds were chosen:
+
+These thresholds are calibrated against the Global Gold Standard (The Netherlands ~4.1%) to show how the UK compares to the world's most dynamic and efficient labor markets.
+
+🟢 Green - (Above 3.5%): The "Growth Leader" zone. Matches the world's best-performing economies, where labor demand is consistently high and workers have maximum leverage for pay rises.
+
+🟡 Amber - (2.5% – 3.5%): The "Competitive Zone." Represents a healthy, balanced advanced economy with a good level of opportunity and professional movement.
+
+🔴 Red - (Below 2.5%): The "Stagnation Zone." This is a clear Red against global benchmarks, signaling a lack of economic "hunger" and a difficult environment for those seeking career progression.`,
+  underemployment: `Think of this as the "Hidden Unemployment" metric. It doesn't look at people who are out of work, but at people who are already in work but are effectively being "wasted." It primarily captures "time-related underemployment"—people who are working part-time hours but desperately want and are available to work more. It is the difference between someone having "a job" and someone having "enough work" to actually pay their bills. When this number is high, it means the economy is full of "zombie roles" that don't provide a living wage, even if the headline unemployment figure looks good.
+
+How it is Calculated:
+
+This metric is calculated by identifying individuals who meet three specific criteria: they are currently in employment, they want to work more hours (either in their current job, a second job, or a new job), and they are available to start those extra hours within a short timeframe (usually two weeks). To turn this into a rate, the number of these "underemployed" people is divided by the total number of people currently in the labor force. This provides a percentage that shows the "slack" or unused capacity sitting inside the workforce that isn't being captured by standard unemployment figures.
+
+Real Impact on the Person on the Street:
+
+For the person on the street, high underemployment feels like "Financial Limbo." You are officially "employed," so you don't show up in the crisis headlines, but you aren't earning enough to cover your rent or rising food costs. It leads to the "Working Poor" phenomenon, where people are working multiple small jobs just to survive. In a healthy economy (Green), a part-time job is usually a choice (like for students or parents); in an underemployed economy (Red), part-time work is often a trap that leaves you with too much month at the end of your money. It also impacts mental health, as the constant search for more hours creates a permanent state of job insecurity and prevents long-term life planning.
+
+Why the RAG Thresholds were chosen:
+
+These thresholds are calibrated against "Gold Standard" mature, flexible labor markets (such as the Netherlands or the USA's "U-6" measure), where underemployment is historically kept low through high labor demand and efficient job matching.
+
+🟢 Green (Below 5.5%): The "Global Leader" zone. This matches top-performing mature economies where labor markets are highly efficient. It indicates a "High-Quality" market where almost everyone in work is getting the amount of work they actually desire.
+
+🟡 Amber (5.5% – 8.5%): The "Muddling Through" zone. This signals that while the economy is creating jobs, a significant minority of the workforce is "stuck" in roles that do not meet their financial needs, creating a drag on national productivity and spending power.
+
+🔴 Red (Above 8.5%): The "Hidden Crisis" zone. At this level, the labor market is failing to provide adequate hours for a large portion of its workers. It signals a systemic issue where jobs exist but aren't "proper" roles that sustain a household, leading to widespread financial strain despite a seemingly "low" headline unemployment rate.`,
   sickness_absence: `The Sickness Absence Rate measures the percentage of total working hours lost to employee sickness or injury. The ONS calculates this annually using Labour Force Survey data, asking respondents whether they had any time off work due to illness in the reference week and for how long. The rate is calculated as: (hours lost to sickness ÷ total usual hours) × 100. Data is broken down by sector, age, sex, and cause of absence. Common causes include minor illnesses (colds, flu), musculoskeletal problems (back pain), and increasingly, mental health conditions (stress, anxiety, depression). The metric is a proxy for workforce health and can indicate broader public health trends.
 
 Data Source: ONS: Sickness absence in UK

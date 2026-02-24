@@ -18,7 +18,7 @@ import {
   getAllCommentaries,
   getCommentaryById,
 } from "./db";
-import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchPopulationMetrics, fetchRegionalEducationData, getDataSourceUrl, type MetricData } from "./dataIngestion";
+import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchPopulationMetrics, fetchRegionalEducationData, getPopulationBreakdown, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 
 // Admin-only procedure
@@ -85,6 +85,13 @@ export const appRouter = router({
      */
     getDiagnostics: publicProcedure.query(async () => {
       return getMetricsDiagnostics();
+    }),
+
+    /**
+     * Population breakdown for stacked bar (Total, Working, Inactive, Unemployed, Under 16 & Over 64).
+     */
+    getPopulationBreakdown: publicProcedure.query(async () => {
+      return getPopulationBreakdown();
     }),
 
     /**
@@ -199,6 +206,18 @@ export const appRouter = router({
 
         // Update metrics in database
         for (const metricData of results) {
+          // Recompute RAG for metrics that use server-side thresholds
+          const ragStatus =
+            metricData.metric_key === 'inactivity_rate'
+              ? calculateRAGStatus('inactivity_rate', Number(metricData.value))
+              : metricData.metric_key === 'real_wage_growth'
+                ? calculateRAGStatus('real_wage_growth', Number(metricData.value))
+                : metricData.metric_key === 'job_vacancy_ratio'
+                  ? calculateRAGStatus('job_vacancy_ratio', Number(metricData.value))
+                  : metricData.metric_key === 'underemployment'
+                    ? calculateRAGStatus('underemployment', Number(metricData.value))
+                    : metricData.rag_status;
+
           // Determine unit based on metric key
           const unit = metricData.unit || (
             metricData.metric_key === 'cpi_inflation' || metricData.metric_key === 'real_gdp_growth' || metricData.metric_key.includes('rate') || metricData.metric_key.includes('vacancy') || metricData.metric_key === 'defence_spending_gdp' || metricData.metric_key === 'public_sector_net_debt' || metricData.metric_key === 'business_investment' || metricData.metric_key === 'persistent_absence' ? '%' :
@@ -216,7 +235,7 @@ export const appRouter = router({
             category: metricData.category,
             value: metricData.value.toString(),
             unit: unit,
-            ragStatus: metricData.rag_status,
+            ragStatus,
             dataDate: metricData.time_period,
             sourceUrl: metricData.source_url,
           });
@@ -230,7 +249,7 @@ export const appRouter = router({
             await addMetricHistory({
               metricKey: metricData.metric_key,
               value: metricData.value.toString(),
-              ragStatus: metricData.rag_status,
+              ragStatus,
               dataDate: metricData.time_period,
             });
             console.log(`  ✓ Added history: ${metricData.metric_name} - ${metricData.time_period}`);

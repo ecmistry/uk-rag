@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import type { Metric } from '@shared/types';
 import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip, getPopulationTooltip } from "@/data/metricTooltips";
 import { EXPECTED_METRICS } from "@/data/expectedMetrics";
+import PopulationBreakdownChart from "@/components/PopulationBreakdownChart";
 
 export default function Home() {
   const { user } = useAuth();
@@ -117,7 +118,7 @@ export default function Home() {
             'Crime': 'Total Recorded Crime, Charge Rate %, Perception of Safety, Crown Court Backlog, Reoffending Rate',
             'Healthcare': 'A&E 4-Hour Wait %, Elective Backlog, Ambulance (Cat 2), GP Appt. Access, Staff Vacancy Rate',
             'Defence': 'Spend as % of GDP, Trained Strength, Equipment Spend, Deployability %, Force Readiness',
-            'Population': 'Natural Change (Births vs Deaths), Old-Age Dependency Ratio, Net Migration (Long-term), Healthy Life Expectancy, Total Population',
+            'Population': 'Natural Change (Births vs Deaths), Old-Age Dependency Ratio, Net Migration (Long-term), Healthy Life Expectancy',
           };
           const shouldDefer = index >= 2 && metricsLoading;
           const dataCount = expectedSlots.filter((s) => metricsByKey[s.metricKey]).length;
@@ -285,6 +286,11 @@ export default function Home() {
             </section>
           );
         })}
+      </div>
+
+      {/* Population breakdown stacked bar (below Population tiles) */}
+      <div className="container px-4 py-6">
+        <PopulationBreakdownChart />
       </div>
 
       {/* Footer */}

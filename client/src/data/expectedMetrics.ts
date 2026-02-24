@@ -53,6 +53,5 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
     { metricKey: "old_age_dependency_ratio", name: "Old-Age Dependency Ratio" },
     { metricKey: "net_migration", name: "Net Migration (Long-term)" },
     { metricKey: "healthy_life_expectancy", name: "Healthy Life Expectancy" },
-    { metricKey: "total_population", name: "Total Population" },
   ],
 };
