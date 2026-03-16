@@ -47,7 +47,9 @@ def fetch_regional_attainment8() -> list:
         print(f"Total rows: {len(df)}")
         print(f"Columns: {list(df.columns)}")
         
-        # Filter for latest time period
+        if df.empty or 'time_period' not in df.columns:
+            return []
+
         latest_period = df['time_period'].max()
         print(f"\nLatest time period: {latest_period}")
         

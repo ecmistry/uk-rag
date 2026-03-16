@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional
 import os
 import requests
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import sys
 import io
@@ -1035,7 +1035,7 @@ def fetch_sea_mass() -> Optional[Dict[str, Any]]:
 
         # Label Sea Mass snapshots by calendar quarter (e.g. "2026 Q1").
         # This ensures we only ever store and visualise quarterly data points.
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         quarter = (now.month - 1) // 3 + 1
         time_period = f"{now.year} Q{quarter}"
 
@@ -1114,7 +1114,7 @@ def fetch_land_mass() -> Optional[Dict[str, Any]]:
         score_pct = compute_land_mass_score()
         rag = calculate_rag_status("land_mass", score_pct)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         quarter = (now.month - 1) // 3 + 1
         time_period = f"{now.year} Q{quarter}"
 
@@ -1157,7 +1157,7 @@ def fetch_land_mass() -> Optional[Dict[str, Any]]:
                 "MOD equipment and personnel statistics"
             ),
             "source_url": "https://www.janes.com/",
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
             "information": information,
         }
 
@@ -1206,7 +1206,7 @@ def fetch_air_mass() -> Optional[Dict[str, Any]]:
         score_pct = compute_air_mass_score()
         rag = calculate_rag_status("air_mass", score_pct)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         quarter = (now.month - 1) // 3 + 1
         time_period = f"{now.year} Q{quarter}"
 
@@ -1239,7 +1239,7 @@ def fetch_air_mass() -> Optional[Dict[str, Any]]:
                 "IISS Military Balance, RUSI air power analysis"
             ),
             "source_url": "https://www.flightglobal.com/defence/2026-world-air-forces-directory/165267.article",
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
             "information": information,
         }
 
@@ -1271,7 +1271,7 @@ def fetch_defence_industry_vitality() -> Optional[Dict[str, Any]]:
 
     value_pct = data.get("value")
     rag_str = data.get("rag_status", "amber")
-    time_period = data.get("time_period") or f"{datetime.utcnow().year} Q{(datetime.utcnow().month - 1) // 3 + 1}"
+    time_period = data.get("time_period") or f"{datetime.now(timezone.utc).year} Q{(datetime.now(timezone.utc).month - 1) // 3 + 1}"
 
     if value_pct is None:
         return None
@@ -1285,7 +1285,7 @@ def fetch_defence_industry_vitality() -> Optional[Dict[str, Any]]:
         "time_period": time_period,
         "data_source": "",
         "source_url": "",
-        "last_updated": data.get("updated_at") or datetime.utcnow().isoformat(),
+        "last_updated": data.get("updated_at") or datetime.now(timezone.utc).isoformat(),
     }
     print(f"[Defence]   Defence Industry Vitality: {value_pct}% ({rag_str.upper()}) [from cache]", file=sys.stderr, flush=True)
     return metric

@@ -158,7 +158,13 @@ def get_workforce_by_quarter() -> Dict[str, float]:
 
         wf = {}
         for p in periods:
-            wf[p["period"]] = p["working"] + p["underemployed"]
+            if not isinstance(p, dict):
+                continue
+            period = p.get("period")
+            working = p.get("working", 0)
+            underemployed = p.get("underemployed", 0)
+            if period is not None:
+                wf[period] = working + underemployed
         log(f"Got workforce data for {len(wf)} quarters")
         return wf
     except Exception as e:
@@ -255,7 +261,7 @@ def run() -> None:
 
             rolling = rolling_starts[quarter]
             wf = workforce.get(quarter)
-            if not wf:
+            if not wf or wf < 1.0:
                 log(f"  Skipping {quarter}: no workforce data available")
                 continue
 

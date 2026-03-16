@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional
 
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import sys
 import io
@@ -799,8 +799,6 @@ def fetch_a_e_wait_time_historical(months: int = 12):
 
 def main():
     """Main function to fetch all Healthcare metrics"""
-    import sys
-    
     # Check if historical mode is requested
     historical = '--historical' in sys.argv or '-h' in sys.argv
     

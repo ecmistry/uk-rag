@@ -488,12 +488,7 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
     { upsert: true }
   );
 
-  for (let i = 10; i <= 100; i += 10) {
-    cache.delete(`metricHistory:${history.metricKey}:${i}`);
-  }
-  cache.delete(`metricHistory:${history.metricKey}:50`);
-  cache.delete(`metricHistory:${history.metricKey}:100`);
-  cache.delete(`metricHistory:${history.metricKey}:500`);
+  cache.deleteByPrefix(`metricHistory:${history.metricKey}:`);
   cache.delete(`metricTrends:all`);
 }
 

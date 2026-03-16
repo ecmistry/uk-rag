@@ -241,64 +241,65 @@ AIR_MASS_DATA = [
 def main():
     url = os.environ.get("DATABASE_URL") or os.environ.get("MONGODB_URI") or "mongodb://localhost:27017/uk_rag_portal"
     client = MongoClient(url)
-    # Use database from URI path (mongodb://host:port/dbname) or default
-    db_name = "uk_rag_portal"
-    if "/" in url:
-        path = url.split("?")[0].rstrip("/")
-        if path.count("/") >= 3:  # mongodb://host/db or mongodb://host:port/db
-            db_name = path.split("/")[-1] or db_name
-    db = client[db_name]
-    coll = db["metricHistory"]
+    try:
+        db_name = "uk_rag_portal"
+        if "/" in url:
+            path = url.split("?")[0].rstrip("/")
+            if path.count("/") >= 3:
+                db_name = path.split("/")[-1] or db_name
+        db = client[db_name]
+        coll = db["metricHistory"]
 
-    updated_sea = 0
-    for data_date, score, information, counts in SEA_MASS_DATA:
-        path = get_sea_mass_path_to_green(
-            carriers=counts[0], ssbns=counts[1], ssns=counts[2],
-            escorts=counts[3], rfa=counts[4], patrol_mcm=counts[5],
-            current_score=float(score),
-        )
-        full_info = information + ("\n\n" + path if path else "")
-        result = coll.update_many(
-            {"metricKey": "sea_mass", "dataDate": data_date},
-            {"$set": {"information": full_info}},
-        )
-        if result.modified_count > 0 or result.matched_count > 0:
-            updated_sea += result.matched_count
-            print(f"  sea_mass {data_date}: {result.matched_count} doc(s)")
+        updated_sea = 0
+        for data_date, score, information, counts in SEA_MASS_DATA:
+            path = get_sea_mass_path_to_green(
+                carriers=counts[0], ssbns=counts[1], ssns=counts[2],
+                escorts=counts[3], rfa=counts[4], patrol_mcm=counts[5],
+                current_score=float(score),
+            )
+            full_info = information + ("\n\n" + path if path else "")
+            result = coll.update_many(
+                {"metricKey": "sea_mass", "dataDate": data_date},
+                {"$set": {"information": full_info}},
+            )
+            if result.modified_count > 0 or result.matched_count > 0:
+                updated_sea += result.matched_count
+                print(f"  sea_mass {data_date}: {result.matched_count} doc(s)")
 
-    updated_land = 0
-    for data_date, information, counts in LAND_MASS_DATA:
-        path = get_land_mass_path_to_green(
-            mbts=counts[0], afvs=counts[1], regulars=counts[2],
-            modern_artillery=counts[3], ad_batteries=counts[4],
-            active_reserves=counts[5], recall_veterans=counts[6],
-        )
-        full_info = information + ("\n\n" + path if path else "")
-        result = coll.update_many(
-            {"metricKey": "land_mass", "dataDate": data_date},
-            {"$set": {"information": full_info}},
-        )
-        if result.modified_count > 0 or result.matched_count > 0:
-            updated_land += result.matched_count
-            print(f"  land_mass {data_date}: {result.matched_count} doc(s)")
+        updated_land = 0
+        for data_date, information, counts in LAND_MASS_DATA:
+            path = get_land_mass_path_to_green(
+                mbts=counts[0], afvs=counts[1], regulars=counts[2],
+                modern_artillery=counts[3], ad_batteries=counts[4],
+                active_reserves=counts[5], recall_veterans=counts[6],
+            )
+            full_info = information + ("\n\n" + path if path else "")
+            result = coll.update_many(
+                {"metricKey": "land_mass", "dataDate": data_date},
+                {"$set": {"information": full_info}},
+            )
+            if result.modified_count > 0 or result.matched_count > 0:
+                updated_land += result.matched_count
+                print(f"  land_mass {data_date}: {result.matched_count} doc(s)")
 
-    updated_air = 0
-    for data_date, information, counts in AIR_MASS_DATA:
-        path = get_air_mass_path_to_green(
-            fighters=counts[0], force_multipliers=counts[1],
-            strategic_lift=counts[2], autonomous=counts[3],
-        )
-        full_info = information + ("\n\n" + path if path else "")
-        result = coll.update_many(
-            {"metricKey": "air_mass", "dataDate": data_date},
-            {"$set": {"information": full_info}},
-        )
-        if result.modified_count > 0 or result.matched_count > 0:
-            updated_air += result.matched_count
-            print(f"  air_mass {data_date}: {result.matched_count} doc(s)")
+        updated_air = 0
+        for data_date, information, counts in AIR_MASS_DATA:
+            path = get_air_mass_path_to_green(
+                fighters=counts[0], force_multipliers=counts[1],
+                strategic_lift=counts[2], autonomous=counts[3],
+            )
+            full_info = information + ("\n\n" + path if path else "")
+            result = coll.update_many(
+                {"metricKey": "air_mass", "dataDate": data_date},
+                {"$set": {"information": full_info}},
+            )
+            if result.modified_count > 0 or result.matched_count > 0:
+                updated_air += result.matched_count
+                print(f"  air_mass {data_date}: {result.matched_count} doc(s)")
 
-    print(f"\nDone. Updated {updated_sea} sea_mass, {updated_land} land_mass, {updated_air} air_mass history document(s) with information.")
-    client.close()
+        print(f"\nDone. Updated {updated_sea} sea_mass, {updated_land} land_mass, {updated_air} air_mass history document(s) with information.")
+    finally:
+        client.close()
 
 
 if __name__ == "__main__":

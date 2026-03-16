@@ -9,7 +9,7 @@ Net Migration: ONS API Series BBGM | Healthy Life Expectancy: ONS Health State L
 import json
 import sys
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from io import BytesIO
 
@@ -158,7 +158,7 @@ def _fetch_natural_change(session: requests.Session) -> Optional[Dict[str, Any]]
             "rag_status": "green" if value_thousands > 0 else "red" if value_thousands < 0 else "amber",
             "data_source": "ONS Vital Statistics (VVHM)",
             "source_url": VITAL_STATISTICS_SOURCE_URL,
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as e:
         print(f"[Population] Error fetching natural change: {e}", file=sys.stderr)
@@ -209,7 +209,7 @@ def _fetch_healthy_life_expectancy(session: requests.Session) -> Optional[Dict[s
             "rag_status": rag,
             "data_source": "ONS Health State Life Expectancy",
             "source_url": HEALTH_STATE_LE_SOURCE_URL,
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as e:
         print(f"[Population] Error fetching healthy life expectancy: {e}", file=sys.stderr)
@@ -263,7 +263,7 @@ def _fetch_net_migration(session: requests.Session) -> Optional[Dict[str, Any]]:
             "rag_status": rag,
             "data_source": "ONS Series BBGM",
             "source_url": BBGM_SOURCE_URL,
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as e:
         print(f"[Population] Error fetching net migration: {e}", file=sys.stderr)
@@ -321,7 +321,7 @@ def _fetch_old_age_dependency_ratio(session: requests.Session) -> Optional[Dict[
             "rag_status": rag,
             "data_source": "ONS Population Projections",
             "source_url": OADR_SOURCE_URL,
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as e:
         print(f"[Population] Error fetching old-age dependency ratio: {e}", file=sys.stderr)
@@ -348,7 +348,7 @@ def _fetch_total_population(session: requests.Session) -> Optional[Dict[str, Any
             "rag_status": "amber",
             "data_source": "ONS: Total Population",
             "source_url": TOTAL_POPULATION_SOURCE_URL,
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as e:
         print(f"[Population] Error fetching total population: {e}", file=sys.stderr)
@@ -357,7 +357,7 @@ def _fetch_total_population(session: requests.Session) -> Optional[Dict[str, Any
 
 def fetch_population_metrics() -> List[Dict[str, Any]]:
     """Return 5 Population metrics: Total Population from ONS, others placeholder."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     period = str(now.year)
     results = []
     session = requests.Session()

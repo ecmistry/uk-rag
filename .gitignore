@@ -109,4 +109,6 @@ temp/
 
 # Generated data files
 server/economy_metrics.json
+server/defence_industry_vitality_cache.json
+server/sickness_absence_cache.json
 DATABASE_DATA_REPORT.txt

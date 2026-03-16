@@ -91,7 +91,13 @@ export const appRouter = router({
      * Population breakdown for stacked bar (Total, Working, Inactive, Unemployed, Under 16 & Over 64).
      */
     getPopulationBreakdown: publicProcedure.query(async () => {
-      return getPopulationBreakdown();
+      const { cache } = await import("./cache");
+      const cacheKey = "populationBreakdown";
+      const cached = cache.get<Awaited<ReturnType<typeof getPopulationBreakdown>>>(cacheKey);
+      if (cached) return cached;
+      const result = await getPopulationBreakdown();
+      cache.set(cacheKey, result, 15 * 60 * 1000);
+      return result;
     }),
 
     /**
@@ -285,7 +291,7 @@ export const appRouter = router({
      */
     exportCsv: publicProcedure
       .input(z.object({
-        category: z.string().optional(),
+        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population', 'All']).optional(),
         metricKey: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_]+$/).optional(),
       }).optional())
       .query(async ({ input }) => {

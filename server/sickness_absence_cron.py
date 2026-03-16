@@ -156,6 +156,9 @@ def get_monthly_publication_slugs(session: requests.Session) -> List[str]:
 
 
 def fetch_csv_url_from_pub_page(session: requests.Session, slug: str) -> Optional[str]:
+    if ".." in slug or "/" in slug:
+        log(f"Rejecting suspicious slug: {slug}")
+        return None
     url = f"{BASE_URL}/data-and-information/publications/statistical/nhs-sickness-absence-rates/{slug}"
     try:
         r = session.get(url, timeout=15)

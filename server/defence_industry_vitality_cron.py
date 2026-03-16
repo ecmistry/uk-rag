@@ -176,10 +176,8 @@ def compute_all_quarters(
         vehicles_m = rolling_vehicles[i]
         sum_m = weapons_m + vehicles_m
 
-        # Sub-Pillar 1.1: Weapons & Ammunition (4Q avg) vs £1,000m
-        sub_1_1 = min(1.0, weapons_m / TARGET_WEAPONS_MILLION)
-        # Sub-Pillar 1.2: Military Fighting Vehicles (4Q avg) vs £975m
-        sub_1_2 = min(1.0, vehicles_m / TARGET_VEHICLES_MILLION)
+        sub_1_1 = min(1.0, max(0.0, weapons_m / TARGET_WEAPONS_MILLION))
+        sub_1_2 = min(1.0, max(0.0, vehicles_m / TARGET_VEHICLES_MILLION))
         pillar1 = 0.5 * sub_1_1 + 0.5 * sub_1_2
 
         # Pillar 2: YoY momentum of 4Q rolling sum (vs same quarter previous year)

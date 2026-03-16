@@ -8,3 +8,16 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
 };
+
+if (ENV.isProduction) {
+  const required: [string, string][] = [
+    ["databaseUrl", "DATABASE_URL or MONGODB_URI"],
+    ["cookieSecret", "JWT_SECRET"],
+  ];
+  for (const [key, envName] of required) {
+    if (!ENV[key as keyof typeof ENV]) {
+      console.error(`[ENV] Missing required env var: ${envName}`);
+      process.exit(1);
+    }
+  }
+}

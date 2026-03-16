@@ -46,7 +46,9 @@ export default function DashboardLayout({
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-    return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
+    if (!saved) return DEFAULT_WIDTH;
+    const parsed = parseInt(saved, 10);
+    return Number.isNaN(parsed) ? DEFAULT_WIDTH : parsed;
   });
   const { loading, user } = useAuth();
 
@@ -208,7 +210,7 @@ function DashboardLayoutContent({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem
-                    onClick={logout}
+                    onClick={() => logout().catch(() => {})}
                     className="cursor-pointer text-destructive focus:text-destructive"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
