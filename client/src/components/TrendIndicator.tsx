@@ -11,7 +11,7 @@ interface TrendIndicatorProps {
  * Small trend arrow with a mini wavy line, coloured by whether the
  * change is positive (green), negative (red), or neutral (grey).
  */
-export default function TrendIndicator({
+function TrendIndicator({
   metricKey,
   currentValue,
   previousValue,
@@ -104,3 +104,5 @@ export default function TrendIndicator({
     </svg>
   );
 }
+
+export default React.memo(TrendIndicator);

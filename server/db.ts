@@ -180,6 +180,7 @@ export async function upsertMetric(metric: InsertMetric): Promise<void> {
 
   cache.delete(`metric:${metric.metricKey}`);
   cache.delete(`metricTrends:all`);
+  cache.deleteByPrefix("metrics:list:");
 }
 
 /**
@@ -375,16 +376,36 @@ export async function getMetrics(category?: string): Promise<Metric[]> {
     },
   }).toArray();
 
-  // Dedupe by metricKey so duplicate cards never appear
-  const merged = dedupeByMetricKey(metrics);
+  const ALLOWED_BY_CATEGORY: Record<string, Set<string>> = {
+    Employment: EMPLOYMENT_ALLOWED_METRIC_KEYS,
+    Education: EDUCATION_ALLOWED_METRIC_KEYS,
+    Crime: CRIME_ALLOWED_METRIC_KEYS,
+    Healthcare: HEALTHCARE_ALLOWED_METRIC_KEYS,
+    Defence: DEFENCE_ALLOWED_METRIC_KEYS,
+  };
 
-  // Economy: exclude only productivity; include Output per Hour
-  const filtered = filterEconomyMetrics(merged, category);
+  const seenKey = new Set<string>();
+  const seenCategoryName = new Set<string>();
+  const result: Metric[] = [];
 
-  const withOverrides = filtered.map(applyDisplayNameOverrides);
-  const result = dedupeByCategoryAndName(
-    dropLegacyGdpGrowthLabel(filterEmploymentMetrics(filterEducationMetrics(filterCrimeMetrics(filterHealthcareMetrics(filterDefenceMetrics(withOverrides, category), category), category), category), category))
-  );
+  for (const raw of metrics) {
+    if (raw.metricKey === "productivity") continue;
+    if ((raw.name ?? "").startsWith("GDP Growth (Year on")) continue;
+
+    const allowed = ALLOWED_BY_CATEGORY[raw.category];
+    if (allowed && !allowed.has(raw.metricKey)) continue;
+
+    if (seenKey.has(raw.metricKey)) continue;
+    seenKey.add(raw.metricKey);
+
+    const m = normalizeOutputPerHourUnit(applyDisplayNameOverrides(raw));
+
+    const cnKey = `${m.category}\0${m.name ?? ""}`;
+    if (seenCategoryName.has(cnKey)) continue;
+    seenCategoryName.add(cnKey);
+
+    result.push(m);
+  }
   if (process.env.DEBUG) {
     console.debug(`[Metrics] list category=${category ?? "all"} source=db rawCount=${metrics.length} finalCount=${result.length}`);
   }
@@ -493,6 +514,29 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
 }
 
 /**
+ * Batch-check which metricKey+dataDate pairs already exist in history.
+ * Returns a Set of "metricKey|dataDate" strings for existing entries.
+ */
+export async function getExistingHistoryPeriods(
+  pairs: Array<{ metricKey: string; dataDate: string }>
+): Promise<Set<string>> {
+  if (pairs.length === 0) return new Set();
+  const collection = await getCollection<MetricHistory>(COLLECTIONS.metricHistory);
+  if (!collection) return new Set();
+
+  const metricKeys = [...new Set(pairs.map(p => p.metricKey))];
+  const docs = await collection
+    .find({ metricKey: { $in: metricKeys } }, { projection: { metricKey: 1, dataDate: 1 } })
+    .toArray();
+
+  const existing = new Set<string>();
+  for (const d of docs) {
+    existing.add(`${d.metricKey}|${d.dataDate}`);
+  }
+  return existing;
+}
+
+/**
  * Get metric history for a specific metric
  * Uses caching to improve performance
  */
@@ -559,10 +603,22 @@ export async function getMetricTrends(): Promise<
     {
       $group: {
         _id: "$metricKey",
-        entries: { $push: { value: "$value" } },
+        current: { $first: "$value" },
+        entries: { $push: { value: "$value", dataDate: "$dataDate" } },
       },
     },
-    { $project: { entries: { $slice: ["$entries", 2] } } },
+    {
+      $project: {
+        current: 1,
+        previous: {
+          $cond: {
+            if: { $gte: [{ $size: "$entries" }, 2] },
+            then: { $getField: { field: "value", input: { $arrayElemAt: ["$entries", 1] } } },
+            else: null,
+          },
+        },
+      },
+    },
   ];
 
   const results = await collection.aggregate(pipeline).toArray();
@@ -570,15 +626,12 @@ export async function getMetricTrends(): Promise<
 
   for (const doc of results) {
     const key = doc._id as string;
-    const entries = doc.entries as { value: string }[];
-    if (entries.length >= 1) {
-      trends[key] = {
-        current: entries[0].value,
-        previous: entries.length >= 2 ? entries[1].value : null,
-      };
-    }
+    trends[key] = {
+      current: doc.current as string,
+      previous: (doc.previous as string) ?? null,
+    };
   }
 
-  cache.set(cacheKey, trends, 5 * 60 * 1000);
+  cache.set(cacheKey, trends, 10 * 60 * 1000);
   return trends;
 }
