@@ -81,6 +81,7 @@ export function getTrendSentiment(
   currentValue: number,
   previousValue: number,
 ): "positive" | "negative" | "neutral" {
+  if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) return "neutral";
   if (currentValue === previousValue) return "neutral";
 
   const direction = METRIC_DIRECTION[metricKey];

@@ -178,10 +178,8 @@ export async function upsertMetric(metric: InsertMetric): Promise<void> {
     { upsert: true }
   );
 
-  // Invalidate cache for this metric and all metrics lists
   cache.delete(`metric:${metric.metricKey}`);
-  cache.delete(`metrics:all`);
-  cache.delete(`metrics:${metric.category}`);
+  cache.delete(`metricTrends:all`);
 }
 
 /**
@@ -488,15 +486,13 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
     { upsert: true }
   );
 
-  // Invalidate cache for this metric's history
-  // Clear all history caches for this metric (different limits)
-  // Clear common limit values
   for (let i = 10; i <= 100; i += 10) {
     cache.delete(`metricHistory:${history.metricKey}:${i}`);
   }
-  cache.delete(`metricHistory:${history.metricKey}:50`); // Default limit
-  cache.delete(`metricHistory:${history.metricKey}:100`); // Common limit
-  cache.delete(`metricHistory:${history.metricKey}:500`); // Max limit
+  cache.delete(`metricHistory:${history.metricKey}:50`);
+  cache.delete(`metricHistory:${history.metricKey}:100`);
+  cache.delete(`metricHistory:${history.metricKey}:500`);
+  cache.delete(`metricTrends:all`);
 }
 
 /**

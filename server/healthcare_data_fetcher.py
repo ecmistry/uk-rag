@@ -130,7 +130,7 @@ def fetch_a_e_wait_time():
                         csv_url = test_url
                         print(f"Found CSV at: {test_url}")
                         break
-                except:
+                except Exception:
                     continue
             
             if csv_url:
@@ -283,7 +283,7 @@ def fetch_cancer_wait_time():
                         csv_url = test_url
                         print(f"Found CSV at: {test_url}")
                         break
-                except:
+                except Exception:
                     continue
             
             if csv_url:
@@ -449,7 +449,7 @@ def fetch_ambulance_response_time():
                         excel_url = test_url
                         print(f"Found Excel at: {test_url}")
                         break
-                except:
+                except Exception:
                     continue
             
             if excel_url:

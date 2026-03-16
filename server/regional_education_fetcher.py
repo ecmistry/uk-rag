@@ -39,7 +39,7 @@ def fetch_regional_attainment8():
         try:
             content = gzip.decompress(response.content)
             df = pd.read_csv(io.BytesIO(content))
-        except:
+        except Exception:
             # If not gzipped, read directly
             df = pd.read_csv(io.BytesIO(response.content))
         

@@ -5,6 +5,7 @@ Data Source & Location: see docs/DATA_SOURCES_UK_RAG.md (canonical).
 Spend as % GDP: MOD Finance & Economics | Trained Strength: MOD Service Personnel Stats
 Equipment Spend: MOD Trade & Contracts | Deployability %: MOD Health & Wellbeing | Force Readiness: MOD Annual Reports
 """
+from __future__ import annotations
 
 import os
 import requests
@@ -115,12 +116,12 @@ def compute_sea_mass_score(
     TARGET_RFA = 12
     TARGET_PATROL_MCM = 24
 
-    actual_carriers = carriers
-    actual_ssbns = ssbns
-    actual_ssns = ssns
-    actual_escorts = escorts
-    actual_rfa = rfa
-    actual_patrol_mcm = patrol_mcm
+    actual_carriers = max(0, carriers)
+    actual_ssbns = max(0, ssbns)
+    actual_ssns = max(0, ssns)
+    actual_escorts = max(0, escorts)
+    actual_rfa = max(0, rfa)
+    actual_patrol_mcm = max(0, patrol_mcm)
 
     # Strategic pillar: average of carrier and SSBN ratios, then apply weight.
     strategic_ratio = (
@@ -638,7 +639,7 @@ def fetch_defence_spending():
         # pandas can read ODS with openpyxl or odfpy
         try:
             df = pd.read_excel(io.BytesIO(response.content), engine='odf')
-        except:
+        except Exception:
             # Try with openpyxl if odfpy not available
             # ODS files need odfpy library: pip install odfpy
             # For now, we'll parse manually or use a workaround
@@ -674,7 +675,7 @@ def fetch_defence_spending():
                                 if gdp_value > 1000:  # GDP should be in billions
                                     latest_gdp = gdp_value
                                     break
-                            except:
+                            except Exception:
                                 continue
                 
                 # MOD spending 2023-24: £53.9 billion (published figure)
@@ -880,7 +881,7 @@ def fetch_personnel_strength():
                     excel_url = None
             else:
                 excel_url = None
-        except:
+        except Exception:
             excel_url = None
         
         # If we found Excel URL, parse it

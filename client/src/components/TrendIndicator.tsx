@@ -1,3 +1,4 @@
+import React from "react";
 import { getTrendSentiment } from "@/data/metricDirections";
 
 interface TrendIndicatorProps {
@@ -15,7 +16,7 @@ export default function TrendIndicator({
   currentValue,
   previousValue,
 }: TrendIndicatorProps) {
-  if (previousValue === null || previousValue === undefined) {
+  if (previousValue === null || previousValue === undefined || !Number.isFinite(currentValue) || !Number.isFinite(previousValue)) {
     return (
       <svg
         width="12"

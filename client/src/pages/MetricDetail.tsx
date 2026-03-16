@@ -117,8 +117,15 @@ export default function MetricDetail() {
     date: row.dataDate,
     value: parseFloat(String(row.value)),
   }));
-  const values = chartDataWithValue.map((d) => d.value).filter((v) => !Number.isNaN(v));
-  const { slope, intercept } = linearRegression(values);
+  const validIndices: number[] = [];
+  const validValues: number[] = [];
+  chartDataWithValue.forEach((d, i) => {
+    if (!Number.isNaN(d.value)) {
+      validIndices.push(i);
+      validValues.push(d.value);
+    }
+  });
+  const { slope, intercept } = linearRegression(validValues);
   const showMovingAvg12m = metricKey === "real_wage_growth";
   const WINDOW = 4;
   const movingAvg12m = showMovingAvg12m
@@ -132,7 +139,7 @@ export default function MetricDetail() {
   const chartData = chartDataWithValue.map((d, i) => ({
     ...d,
     value: Number.isNaN(d.value) ? undefined : d.value,
-    trendValue: values.length > 0 ? intercept + slope * i : undefined,
+    trendValue: validValues.length > 0 ? intercept + slope * i : undefined,
     ...(showMovingAvg12m && { movingAvg12m: movingAvg12m[i] }),
   }));
   const trendPerPeriod = slope;

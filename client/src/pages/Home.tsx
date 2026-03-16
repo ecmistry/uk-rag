@@ -285,7 +285,7 @@ export default function Home() {
                                           : `${parseFloat(metric.value).toFixed(1)}${metric.unit ? metric.unit : ""}`
                                         : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
                                           ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
-                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit ?? ""}`}
                                 </span>
                                 {hasValue && trends && (
                                   <TrendIndicator
@@ -306,12 +306,14 @@ export default function Home() {
                             type="button"
                             className="absolute bottom-0.5 left-0.5 z-20 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground/60"
                             aria-label="Why this metric matters"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setMetricInfoOpen({
                                 title: formatCardTitle(metric.name ?? slot.name),
                                 content: cardTooltip,
                               });
                             }}
+                            onMouseDown={(e) => e.stopPropagation()}
                           >
                             <Info className="h-3 w-3" />
                           </button>

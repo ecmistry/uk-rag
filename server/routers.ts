@@ -16,6 +16,14 @@ import {
 import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchPopulationMetrics, fetchRegionalEducationData, getPopulationBreakdown, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 
+function csvEscape(field: unknown): string {
+  const s = String(field ?? "");
+  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
@@ -67,11 +75,8 @@ export const appRouter = router({
      */
     clearCache: adminProcedure.mutation(async () => {
       const { cache } = await import("./cache");
-      const categories = ["all", "Economy", "Employment", "Education", "Crime", "Healthcare", "Defence", "Population"];
-      for (const c of categories) {
-        cache.delete(`metrics:${c}`);
-      }
-      console.log("[Metrics] Cache cleared for all categories");
+      cache.clear();
+      console.log("[Metrics] All caches cleared");
       return { ok: true };
     }),
 
@@ -294,10 +299,10 @@ export const appRouter = router({
           const csv = [
             ['Period', 'Value', 'Status', 'Recorded'].join(','),
             ...history.map(h => [
-              h.dataDate,
-              h.value,
-              h.ragStatus,
-              h.recordedAt.toISOString()
+              csvEscape(h.dataDate),
+              csvEscape(h.value),
+              csvEscape(h.ragStatus),
+              csvEscape(h.recordedAt.toISOString()),
             ].join(','))
           ].join('\n');
           const safeMetricKey = input.metricKey.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64) || 'metric';
@@ -308,13 +313,13 @@ export const appRouter = router({
           const csv = [
             ['Name', 'Category', 'Value', 'Unit', 'Status', 'Data Date', 'Last Updated'].join(','),
             ...metrics.map(m => [
-              `"${m.name}"`,
-              m.category,
-              m.value,
-              m.unit,
-              m.ragStatus,
-              m.dataDate,
-              m.lastUpdated.toISOString()
+              csvEscape(m.name),
+              csvEscape(m.category),
+              csvEscape(m.value),
+              csvEscape(m.unit),
+              csvEscape(m.ragStatus),
+              csvEscape(m.dataDate),
+              csvEscape(m.lastUpdated.toISOString()),
             ].join(','))
           ].join('\n');
           return { csv, filename: `metrics_${safeCategory}.csv` };
