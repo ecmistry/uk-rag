@@ -287,11 +287,11 @@ export default function Home() {
                                           ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
                                           : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
                                 </span>
-                                {hasValue && trends?.[metric.metricKey] && (
+                                {hasValue && trends && (
                                   <TrendIndicator
                                     metricKey={metric.metricKey}
                                     currentValue={parseFloat(metric.value)}
-                                    previousValue={trends[metric.metricKey].previous != null ? parseFloat(trends[metric.metricKey].previous!) : null}
+                                    previousValue={trends[metric.metricKey]?.previous != null ? parseFloat(trends[metric.metricKey].previous!) : null}
                                   />
                                 )}
                               </div>

@@ -15,7 +15,21 @@ export default function TrendIndicator({
   currentValue,
   previousValue,
 }: TrendIndicatorProps) {
-  if (previousValue === null || previousValue === undefined) return null;
+  if (previousValue === null || previousValue === undefined) {
+    return (
+      <svg
+        width="12"
+        height="16"
+        viewBox="0 0 12 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="Single data point — no trend yet"
+        className="inline-block"
+      >
+        <circle cx="6" cy="8" r="3" fill="#9ca3af" />
+      </svg>
+    );
+  }
 
   const sentiment = getTrendSentiment(metricKey, currentValue, previousValue);
   const went = currentValue > previousValue ? "up" : currentValue < previousValue ? "down" : "flat";
