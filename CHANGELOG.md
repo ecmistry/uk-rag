@@ -4,6 +4,49 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.4] - 2026-03-16
+
+### Added
+
+- **Dashboard trend indicators** – Each metric tile now shows a small directional arrow (up/down/flat) colour-coded by sentiment: green for positive change, red for negative, grey for neutral. Metrics where "down is good" (e.g. unemployment, crime) correctly show green when decreasing. Single-data-point metrics display a grey dot instead of a blank space.
+- **`metrics.trends` tRPC procedure** – Server-side endpoint returning the two most recent values per metric, with 10-minute cached TTL (invalidated on writes).
+- **`metricDirections.ts`** – Centralised direction rules (higher_better / lower_better / target_band) and `getTrendSentiment()` for all metrics.
+- **Test framework** – Vitest for TypeScript (server & client) with `@testing-library/react` and `jsdom`; Python `unittest` for defence computations. 91 tests total (66 TS + 25 Python).
+- **`.env.example`** – Template with all required and optional environment variables for onboarding.
+- **Gzip compression** – Added `compression` middleware to Express; all HTTP responses are now compressed.
+- **Server-side caching** – `metrics.list` (2-min TTL), `getRegionalEducationData` (15-min TTL), `populationBreakdown` (15-min TTL). All invalidated on data writes.
+- **`getExistingHistoryPeriods()`** – Batch function to check history existence for all metrics in a single query, eliminating N+1 during refresh.
+
+### Changed
+
+- **metrics.refresh** – Category fetches now run in parallel via `Promise.allSettled`; history existence check uses batch query instead of per-metric `getMetricHistory`.
+- **`getMetrics()` filter chain** – Consolidated 10-pass filter/dedupe pipeline into a single-pass loop for better performance.
+- **`getMetricTrends()` aggregation** – Optimised pipeline with `$first` accumulator; TTL increased from 5 to 10 minutes.
+- **`TrendIndicator`** – Wrapped in `React.memo` to prevent unnecessary re-renders.
+- **`Home.tsx`** – Extracted `formatCardTitle`, `getRAGCardClasses`, `getTooltipForMetric` outside the component to avoid recreation on every render. Simplified tooltip lookup chains.
+- **Info tooltip button** – Made transparent (removed white background); reduced icon from 4×4 to 3×3 with tighter padding to prevent overlap with metric values.
+- **`DataRefreshPanel`** – Now invalidates `metrics.list` and `metrics.trends` queries after successful refresh.
+- **`DashboardLayout`** – Added `aria-label` to user menu; guarded `sidebarWidth` against NaN; handled logout promise rejection.
+- **`useAuth`** – Moved `localStorage.setItem` from `useMemo` into `useEffect` for correct side-effect handling.
+- **MongoDB updates** – `updateUnderemploymentRag.ts` and `updateInactivityRag.ts` use `bulkWrite` instead of per-document loops.
+- **Cache module** – Added `deleteByPrefix()` method; wrapped cleanup interval in try/catch.
+- **Environment validation** – Startup check for `DATABASE_URL` and `JWT_SECRET` in production.
+- **Python scripts** – Fixed bare `except:` clauses, standardised logging to stderr, replaced `datetime.utcnow()` with `datetime.now(timezone.utc)`, added type hints, implemented atomic cache file writes, added `from __future__ import annotations` for Python 3.9 compatibility.
+
+### Security
+
+- **SSRF hardening** – `voiceTranscription.ts` now validates URL scheme (http/https only) and blocks private/internal IPs before fetching.
+- **Path traversal hardening** – `storage.ts` `normalizeKey` rejects keys containing `..` segments.
+- **NoSQL injection** – Verified: all MongoDB queries use Zod-validated input; no operator injection possible.
+- **Auth model** – Verified: all sensitive operations (refresh, clearCache, checkDataQuality, checkAlerts) require `adminProcedure`.
+- **Map component** – Removed hardcoded Forge API fallback URL; `loadMapScript` promise now properly rejects on error.
+
+### Fixed
+
+- **MetricDetail regression line** – Fixed index calculation to correctly handle NaN gaps in chart data.
+- **`main.tsx`** – Added null check for `#root` element before `createRoot`.
+- **Metric value display** – Added `metric.unit ?? ""` fallback to prevent `undefined` appearing in tile values.
+
 ## [1.0.3] - 2026-03-16
 
 ### Added
