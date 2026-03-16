@@ -4,6 +4,30 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.3] - 2026-03-16
+
+### Added
+
+- **Defence: Sea Mass, Land Mass, Air Mass** – New composite metrics using weighted pillar models (e.g. Strategic, Undersea, Escort, Support, Constabulary for Sea Mass). Each metric includes `information` text explaining score drivers and a "path to green" recommendation. Computation functions, tooltips, and RAG thresholds added to `defence_data_fetcher.py`.
+- **Defence Industry Vitality** – Two-pillar index (Export Scale 50% + YoY Momentum 50%) using ONS international trade series via a daily cron (`server/defence_industry_vitality_cron.py`). Results cached to `defence_industry_vitality_cache.json` and read by the fetcher.
+- **Apprenticeship Intensity** – Replaces raw Apprentice Starts with a rate per 1,000 working-age population. Daily cron (`server/apprenticeship_intensity_cron.py`) fetches DfE data and computes the metric.
+- **Unauthorised Pupil Absence** – Replaces Persistent Absence as the attendance tile in Education.
+- **Sickness Absence (Employment)** – New fetcher (`server/sickness_absence_fetcher.py`) and daily cron (`server/sickness_absence_cron.py`) that scrape NHS Digital monthly sickness rates and cache results.
+- **MetricDetail: Information column** – History table now shows an `information` field per row when available (e.g. fleet breakdown for Sea Mass).
+- **scripts/seed_sea_mass_information.py** – One-off script to backfill `information` and path-to-green text on existing Sea/Land/Air Mass history rows.
+
+### Changed
+
+- **Dashboard tiles (Home.tsx)** – Tooltip info button now appears on tiles with no data; button moved outside the `<Link>` wrapper to prevent navigation on click; icon enlarged to 4×4 with semi-transparent background for visibility; dialog body uses `min-h-0` for proper scrolling of long tooltips.
+- **expectedMetrics.ts** – Education slots updated (removed Teacher Vacancies, Persistent Absence, Apprentice Starts; added Unauthorised Pupil Absence, Apprenticeship Intensity). Defence slots updated (removed Trained Strength, Equipment Spend, Deployability %, Force Readiness; added Sea Mass, Land Mass, Air Mass, Defence Industry Vitality).
+- **metricTooltips.ts** – Added detailed tooltips for Sea Mass, Land Mass, Air Mass, Defence Industry Vitality, Unauthorised Pupil Absence, and Apprenticeship Intensity; removed old `apprentice_starts` tooltip.
+- **vite.config.ts** – Added `Cache-Control: no-store` and `Pragma: no-cache` dev-server headers to prevent stale asset caching.
+
+### Removed
+
+- **server/crime_data_fetcher.py** – Removed (crime metrics now fetched by other pipelines).
+- **server/education_data_fetcher.py** – Removed (replaced by Apprenticeship Intensity cron and updated Education fetcher logic).
+
 ## [1.0.2] - 2026-02-24
 
 ### Added

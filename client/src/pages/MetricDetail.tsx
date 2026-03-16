@@ -56,6 +56,7 @@ type HistoryRow = {
   dataDate: string;
   ragStatus: string;
   recordedAt: Date | string;
+  information?: string;
 };
 
 export default function MetricDetail() {
@@ -283,6 +284,7 @@ export default function MetricDetail() {
                   <TableRow>
                     <TableHead>Period</TableHead>
                     <TableHead className="text-right">Value</TableHead>
+                    <TableHead className="min-w-[280px] max-w-md">Information</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
                 </TableHeader>
@@ -292,6 +294,9 @@ export default function MetricDetail() {
                       <TableCell className="font-medium">{row.dataDate}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {row.value} {metric.unit}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm align-top whitespace-pre-line">
+                        {row.information ?? "—"}
                       </TableCell>
                       <TableCell>
                         <span
