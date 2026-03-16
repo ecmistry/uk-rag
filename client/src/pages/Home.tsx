@@ -18,6 +18,7 @@ import type { Metric } from '@shared/types';
 import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip, getPopulationTooltip } from "@/data/metricTooltips";
 import { EXPECTED_METRICS } from "@/data/expectedMetrics";
 import PopulationBreakdownChart from "@/components/PopulationBreakdownChart";
+import TrendIndicator from "@/components/TrendIndicator";
 
 export default function Home() {
   const { user } = useAuth();
@@ -37,6 +38,13 @@ export default function Home() {
       refetchOnMount: true, // Refetch when navigating back to dashboard so post-refresh data appears
     }
   );
+
+  // Fetch trend data (previous values for each metric)
+  const { data: trends } = trpc.metrics.trends.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
 
   // Refresh mutation (used by empty-state "Fetch X Data" buttons)
   const refreshMutation = trpc.metrics.refresh.useMutation({
@@ -265,18 +273,27 @@ export default function Home() {
                               </CardTitle>
                             </CardHeader>
                             <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
-                              <div className={cn('text-sm font-bold text-center w-full leading-tight', rag.value)}>
-                                {!hasValue
-                                  ? "—"
-                                  : metric.metricKey === "attainment8"
-                                    ? parseFloat(metric.value).toFixed(1)
-                                    : metric.metricKey === "apprenticeship_intensity"
-                                      ? parseFloat(metric.value) >= 1000
-                                        ? `${parseInt(metric.value, 10).toLocaleString()}${metric.unit ? ` ${metric.unit}` : ""}`
-                                        : `${parseFloat(metric.value).toFixed(1)}${metric.unit ? metric.unit : ""}`
-                                      : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
-                                        ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
-                                        : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                              <div className={cn('text-sm font-bold text-center w-full leading-tight flex items-center justify-center gap-0.5', rag.value)}>
+                                <span>
+                                  {!hasValue
+                                    ? "—"
+                                    : metric.metricKey === "attainment8"
+                                      ? parseFloat(metric.value).toFixed(1)
+                                      : metric.metricKey === "apprenticeship_intensity"
+                                        ? parseFloat(metric.value) >= 1000
+                                          ? `${parseInt(metric.value, 10).toLocaleString()}${metric.unit ? ` ${metric.unit}` : ""}`
+                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit ? metric.unit : ""}`
+                                        : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
+                                          ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
+                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                                </span>
+                                {hasValue && trends?.[metric.metricKey] && (
+                                  <TrendIndicator
+                                    metricKey={metric.metricKey}
+                                    currentValue={parseFloat(metric.value)}
+                                    previousValue={trends[metric.metricKey].previous != null ? parseFloat(trends[metric.metricKey].previous!) : null}
+                                  />
+                                )}
                               </div>
                               {!hasValue && (
                                 <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>

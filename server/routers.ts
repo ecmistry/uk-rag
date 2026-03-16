@@ -9,6 +9,7 @@ import {
   getMetricByKey,
   getMetricHistory,
   getMetricsDiagnostics,
+  getMetricTrends,
   upsertMetric,
   addMetricHistory,
 } from "./db";
@@ -86,6 +87,13 @@ export const appRouter = router({
      */
     getPopulationBreakdown: publicProcedure.query(async () => {
       return getPopulationBreakdown();
+    }),
+
+    /**
+     * Trend data: the two most recent values for every metric (for dashboard sparklines).
+     */
+    trends: publicProcedure.query(async () => {
+      return getMetricTrends();
     }),
 
     /**

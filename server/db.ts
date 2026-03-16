@@ -278,13 +278,15 @@ function filterEmploymentMetrics(metrics: Metric[], category?: string): Metric[]
   );
 }
 
-/** Education section: only these five cards (and their detail pages). */
+/** Education section: allowed cards (and their detail pages). */
 const EDUCATION_ALLOWED_METRIC_KEYS = new Set([
   "attainment8",
   "teacher_vacancy_rate",
   "neet_rate",
   "persistent_absence",
   "apprentice_starts",
+  "pupil_attendance",
+  "apprenticeship_intensity",
 ]);
 
 function filterEducationMetrics(metrics: Metric[], category?: string): Metric[] {
@@ -326,13 +328,17 @@ function filterHealthcareMetrics(metrics: Metric[], category?: string): Metric[]
   );
 }
 
-/** Defence section: only these five cards (and their detail pages). */
+/** Defence section: allowed cards (and their detail pages). */
 const DEFENCE_ALLOWED_METRIC_KEYS = new Set([
   "defence_spending_gdp",
   "personnel_strength",
   "equipment_spend",
   "deployability",
   "equipment_readiness",
+  "sea_mass",
+  "land_mass",
+  "air_mass",
+  "defence_industry_vitality",
 ]);
 
 function filterDefenceMetrics(metrics: Metric[], category?: string): Metric[] {
@@ -538,4 +544,48 @@ export async function getMetricHistory(metricKey: string, limit: number = 50): P
   }
   
   return normalizedHistory;
+}
+
+/**
+ * Fetch the two most recent history entries per metric (for trend indicators).
+ * Returns { [metricKey]: { current: string; previous: string | null } }.
+ */
+export async function getMetricTrends(): Promise<
+  Record<string, { current: string; previous: string | null }>
+> {
+  const { cache } = await import("./cache");
+  const cacheKey = "metricTrends:all";
+  const cached = cache.get<Record<string, { current: string; previous: string | null }>>(cacheKey);
+  if (cached) return cached;
+
+  const collection = await getCollection<MetricHistory>(COLLECTIONS.metricHistory);
+  if (!collection) return {};
+
+  const pipeline = [
+    { $sort: { metricKey: 1 as const, dataDate: -1 as const, recordedAt: -1 as const } },
+    {
+      $group: {
+        _id: "$metricKey",
+        entries: { $push: { value: "$value" } },
+      },
+    },
+    { $project: { entries: { $slice: ["$entries", 2] } } },
+  ];
+
+  const results = await collection.aggregate(pipeline).toArray();
+  const trends: Record<string, { current: string; previous: string | null }> = {};
+
+  for (const doc of results) {
+    const key = doc._id as string;
+    const entries = doc.entries as { value: string }[];
+    if (entries.length >= 1) {
+      trends[key] = {
+        current: entries[0].value,
+        previous: entries.length >= 2 ? entries[1].value : null,
+      };
+    }
+  }
+
+  cache.set(cacheKey, trends, 5 * 60 * 1000);
+  return trends;
 }
