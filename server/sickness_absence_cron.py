@@ -161,7 +161,8 @@ def fetch_csv_url_from_pub_page(session: requests.Session, slug: str) -> Optiona
         r = session.get(url, timeout=15)
         if r.status_code != 200:
             return None
-    except Exception:
+    except Exception as e:
+        log(f"Failed to fetch publication page for {slug}: {e}")
         return None
 
     csv_links = re.findall(r'href="(https://files\.digital\.nhs\.uk/[^"]*\.csv)"', r.text)

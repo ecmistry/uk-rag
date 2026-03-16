@@ -19,6 +19,7 @@ Usage:
 Crontab (e.g. daily 06:00 UTC):
   0 6 * * * cd /home/ec2-user/uk-rag-portal && /usr/bin/python3 server/defence_industry_vitality_cron.py >> /var/log/defence_industry_vitality_cron.log 2>&1
 """
+from __future__ import annotations
 
 import csv
 import io
@@ -216,7 +217,7 @@ def compute_all_quarters(
     return result
 
 
-def get_db():
+def get_db() -> Any:
     client = MongoClient(MONGO_URI)
     db_match = re.search(r"//[^/]+/([^/?]+)", MONGO_URI)
     db_name = db_match.group(1) if db_match else "uk_rag_portal"
@@ -328,8 +329,10 @@ def write_cache(
         "yoy_growth_pct": yoy_pct,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
-    with open(cache_path, "w") as f:
+    tmp_path = cache_path + ".tmp"
+    with open(tmp_path, "w") as f:
         json.dump(payload, f, indent=2)
+    os.rename(tmp_path, cache_path)
     log(f"Wrote cache to {cache_path}")
 
 

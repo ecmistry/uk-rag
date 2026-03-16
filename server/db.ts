@@ -385,7 +385,9 @@ export async function getMetrics(category?: string): Promise<Metric[]> {
   const result = dedupeByCategoryAndName(
     dropLegacyGdpGrowthLabel(filterEmploymentMetrics(filterEducationMetrics(filterCrimeMetrics(filterHealthcareMetrics(filterDefenceMetrics(withOverrides, category), category), category), category), category))
   );
-  console.log(`[Metrics] list category=${category ?? "all"} source=db rawCount=${metrics.length} finalCount=${result.length}`);
+  if (process.env.DEBUG) {
+    console.debug(`[Metrics] list category=${category ?? "all"} source=db rawCount=${metrics.length} finalCount=${result.length}`);
+  }
   return result;
 }
 

@@ -259,7 +259,9 @@ export const appRouter = router({
               ragStatus,
               dataDate: metricData.time_period,
             });
-            console.log(`  ✓ Added history: ${metricData.metric_name} - ${metricData.time_period}`);
+            if (process.env.DEBUG) {
+              console.debug(`  ✓ Added history: ${metricData.metric_name} - ${metricData.time_period}`);
+            }
           }
         }
 
@@ -287,7 +289,7 @@ export const appRouter = router({
         metricKey: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_]+$/).optional(),
       }).optional())
       .query(async ({ input }) => {
-        let metrics: any[];
+        let metrics: Awaited<ReturnType<typeof getMetrics>>;
         
         if (input?.metricKey) {
           const metric = await getMetricByKey(input.metricKey);

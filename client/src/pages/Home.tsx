@@ -291,7 +291,7 @@ export default function Home() {
                                   <TrendIndicator
                                     metricKey={metric.metricKey}
                                     currentValue={parseFloat(metric.value)}
-                                    previousValue={trends[metric.metricKey]?.previous != null ? parseFloat(trends[metric.metricKey].previous!) : null}
+                                    previousValue={trends[metric.metricKey]?.previous != null ? parseFloat(trends[metric.metricKey].previous) : null}
                                   />
                                 )}
                               </div>

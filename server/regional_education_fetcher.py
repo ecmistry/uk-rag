@@ -3,6 +3,7 @@
 Regional Education Data Fetcher for UK RAG Dashboard
 Fetches regional Attainment 8 scores for data visualization
 """
+from __future__ import annotations
 
 import requests
 import pandas as pd
@@ -12,7 +13,7 @@ from datetime import datetime
 import json
 import sys
 
-def fetch_regional_attainment8():
+def fetch_regional_attainment8() -> list:
     """
     Fetch regional Attainment 8 data from DfE API
     
@@ -101,7 +102,7 @@ def fetch_regional_attainment8():
         traceback.print_exc()
         return []
 
-def main():
+def main() -> None:
     """Main function to fetch regional education data"""
     print("\n" + "="*60)
     print("UK RAG Dashboard - Regional Education Data Fetcher")
