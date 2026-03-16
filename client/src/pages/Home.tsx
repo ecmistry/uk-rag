@@ -114,10 +114,10 @@ export default function Home() {
           const categoryDescriptions: Record<string, string> = {
             'Economy': 'Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment',
             'Employment': 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence',
-            'Education': 'Attainment 8 Score, Teacher Vacancies, NEET Rate (16-24), Persistent Absence, Apprentice Starts',
+            'Education': 'Attainment 8 Score, NEET Rate (16-24), Unauthorised Pupil Absence, Apprenticeship Intensity',
             'Crime': 'Total Recorded Crime, Charge Rate %, Perception of Safety, Crown Court Backlog, Reoffending Rate',
             'Healthcare': 'A&E 4-Hour Wait %, Elective Backlog, Ambulance (Cat 2), GP Appt. Access, Staff Vacancy Rate',
-            'Defence': 'Spend as % of GDP, Trained Strength, Equipment Spend, Deployability %, Force Readiness',
+            'Defence': 'Sea Mass, Land Mass, Air Mass, Defence Industry Vitality, Spend as % of GDP',
             'Population': 'Natural Change (Births vs Deaths), Old-Age Dependency Ratio, Net Migration (Long-term), Healthy Life Expectancy',
           };
           const shouldDefer = index >= 2 && metricsLoading;
@@ -210,9 +210,10 @@ export default function Home() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 grid-auto-rows-[4.25rem]">
                   {expectedSlots.map((slot) => {
                     const metric = metricsByKey[slot.metricKey];
+                    const slotTooltip = category === 'Economy' ? getEconomyTooltip(slot.metricKey) : category === 'Employment' ? getEmploymentTooltip(slot.metricKey) : category === 'Education' ? getEducationTooltip(slot.metricKey) : category === 'Crime' ? getCrimeTooltip(slot.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(slot.metricKey) : category === 'Defence' ? getDefenceTooltip(slot.metricKey) : category === 'Population' ? getPopulationTooltip(slot.metricKey) : undefined;
                     if (!metric) {
                       return (
-                        <Card key={slot.metricKey} className="gap-0 py-0 h-full min-h-[4.25rem] flex flex-col border bg-muted/30 border-muted-foreground/20">
+                        <Card key={slot.metricKey} className="gap-0 py-0 h-full min-h-[4.25rem] flex flex-col border bg-muted/30 border-muted-foreground/20 relative">
                           <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
                             <CardTitle className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full text-muted-foreground whitespace-pre-line" title={slot.name}>
                               {formatCardTitle(slot.name)}
@@ -221,64 +222,84 @@ export default function Home() {
                           <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
                             <div className="text-sm font-medium text-muted-foreground">No data available</div>
                           </CardContent>
-                        </Card>
-                      );
-                    }
-                    const rag = getRAGCardClasses(metric.ragStatus);
-                    const cardTooltip = category === 'Economy' ? getEconomyTooltip(metric.metricKey) : category === 'Employment' ? getEmploymentTooltip(metric.metricKey) : category === 'Education' ? getEducationTooltip(metric.metricKey) : category === 'Crime' ? getCrimeTooltip(metric.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(metric.metricKey) : category === 'Defence' ? getDefenceTooltip(metric.metricKey) : category === 'Population' ? getPopulationTooltip(metric.metricKey) : undefined;
-                    const hasValue = metric.value != null && !Number.isNaN(parseFloat(String(metric.value)));
-                    return (
-                      <Link key={metric.metricKey} href={`/metric/${metric.metricKey}`} className="h-full min-h-[4.25rem]">
-                        <Card
-                          className={cn(
-                            'gap-0 py-0 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[4.25rem] flex flex-col border relative',
-                            rag.card
-                          )}
-                        >
-                          <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
-                            <CardTitle
-                              className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full whitespace-pre-line"
-                              title={metric.name}
-                            >
-                              {formatCardTitle(metric.name ?? slot.name)}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
-                            <div className={cn('text-sm font-bold text-center w-full leading-tight', rag.value)}>
-                              {!hasValue
-                                ? "—"
-                                : metric.metricKey === "attainment8"
-                                  ? parseFloat(metric.value).toFixed(1)
-                                  : metric.metricKey === "apprentice_starts"
-                                    ? parseInt(metric.value, 10).toLocaleString()
-                                    : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
-                                      ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
-                                      : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
-                            </div>
-                            {!hasValue && (
-                              <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>
-                            )}
-                          </CardContent>
-                          {cardTooltip && (
+                          {slotTooltip && (
                             <button
                               type="button"
-                              className="absolute bottom-0.5 left-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
+                              className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground bg-white/80 dark:bg-black/20"
                               aria-label="Why this metric matters"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 setMetricInfoOpen({
-                                  title: formatCardTitle(metric.name ?? slot.name),
-                                  content: cardTooltip,
+                                  title: formatCardTitle(slot.name),
+                                  content: slotTooltip,
                                 });
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
                             >
-                              <Info className="h-3 w-3" />
+                              <Info className="h-4 w-4" />
                             </button>
                           )}
                         </Card>
-                      </Link>
+                      );
+                    }
+                    const rag = getRAGCardClasses(metric.ragStatus);
+                    // Prefer slot tooltip so each tile shows the correct text (e.g. Defence Industry Vitality tile always shows its tooltip)
+                    const cardTooltip = slotTooltip ?? (category === 'Economy' ? getEconomyTooltip(metric.metricKey) : category === 'Employment' ? getEmploymentTooltip(metric.metricKey) : category === 'Education' ? getEducationTooltip(metric.metricKey) : category === 'Crime' ? getCrimeTooltip(metric.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(metric.metricKey) : category === 'Defence' ? getDefenceTooltip(metric.metricKey) : category === 'Population' ? getPopulationTooltip(metric.metricKey) : undefined);
+                    const hasValue = metric.value != null && !Number.isNaN(parseFloat(String(metric.value)));
+                    return (
+                      <div key={metric.metricKey} className="h-full min-h-[4.25rem] relative">
+                        <Link href={`/metric/${metric.metricKey}`} className="block h-full min-h-[4.25rem]">
+                          <Card
+                            className={cn(
+                              'gap-0 py-0 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[4.25rem] flex flex-col border',
+                              rag.card
+                            )}
+                          >
+                            <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
+                              <CardTitle
+                                className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full whitespace-pre-line"
+                                title={metric.name}
+                              >
+                                {formatCardTitle(metric.name ?? slot.name)}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
+                              <div className={cn('text-sm font-bold text-center w-full leading-tight', rag.value)}>
+                                {!hasValue
+                                  ? "—"
+                                  : metric.metricKey === "attainment8"
+                                    ? parseFloat(metric.value).toFixed(1)
+                                    : metric.metricKey === "apprenticeship_intensity"
+                                      ? parseFloat(metric.value) >= 1000
+                                        ? `${parseInt(metric.value, 10).toLocaleString()}${metric.unit ? ` ${metric.unit}` : ""}`
+                                        : `${parseFloat(metric.value).toFixed(1)}${metric.unit ? metric.unit : ""}`
+                                      : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
+                                        ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
+                                        : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                              </div>
+                              {!hasValue && (
+                                <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </Link>
+                        {cardTooltip && (
+                          <button
+                            type="button"
+                            className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground bg-white/80 dark:bg-black/20"
+                            aria-label="Why this metric matters"
+                            onClick={() => {
+                              setMetricInfoOpen({
+                                title: formatCardTitle(metric.name ?? slot.name),
+                                content: cardTooltip,
+                              });
+                            }}
+                          >
+                            <Info className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -309,8 +330,8 @@ export default function Home() {
               {metricInfoOpen?.title}
             </DialogTitle>
           </div>
-          <div className="px-5 py-4 overflow-y-auto flex-1 text-sm text-black whitespace-pre-line">
-            {metricInfoOpen?.content}
+          <div className="px-5 py-4 overflow-y-auto flex-1 min-h-0 text-sm text-black whitespace-pre-line">
+            {metricInfoOpen?.content ?? ''}
           </div>
         </DialogContent>
       </Dialog>
