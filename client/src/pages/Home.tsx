@@ -233,7 +233,7 @@ export default function Home() {
                           {slotTooltip && (
                             <button
                               type="button"
-                              className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground bg-white/80 dark:bg-black/20"
+                              className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground/60"
                               aria-label="Why this metric matters"
                               onClick={(e) => {
                                 e.preventDefault();
@@ -304,7 +304,7 @@ export default function Home() {
                         {cardTooltip && (
                           <button
                             type="button"
-                            className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground bg-white/80 dark:bg-black/20"
+                            className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground/60"
                             aria-label="Why this metric matters"
                             onClick={() => {
                               setMetricInfoOpen({
