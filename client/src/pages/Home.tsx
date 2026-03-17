@@ -240,7 +240,7 @@ export default function Home() {
                           {slotTooltip && (
                             <button
                               type="button"
-                              className="absolute bottom-0.5 left-0.5 z-20 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
+                              className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
                               aria-label="Why this metric matters"
                               onClick={(e) => {
                                 e.preventDefault();
@@ -252,7 +252,7 @@ export default function Home() {
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
                             >
-                              <Info className="h-3 w-3" />
+                              <Info className="h-4 w-4" />
                             </button>
                           )}
                         </Card>
@@ -311,7 +311,7 @@ export default function Home() {
                         {cardTooltip && (
                           <button
                             type="button"
-                            className="absolute bottom-0.5 left-0.5 z-20 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
+                            className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
                             aria-label="Why this metric matters"
                             onClick={() => {
                               setMetricInfoOpen({
@@ -320,7 +320,7 @@ export default function Home() {
                               });
                             }}
                           >
-                            <Info className="h-3 w-3" />
+                            <Info className="h-4 w-4" />
                           </button>
                         )}
                       </div>
