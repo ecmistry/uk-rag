@@ -20,7 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- **Info tooltip button** – Made transparent (removed white background); reduced icon from 4x4 to 3x3 with tighter padding to prevent overlap with metric values.
+- **Info tooltip button** – Made transparent (removed white background); icon restored to 4×4 with standard padding after review.
+- **Sea Mass tooltip** – Replaced short summary with comprehensive breakdown including pillar methodology, real-world impact, and RAG threshold definitions with traffic light symbols (provided by Rory).
+- **Defence spending (`defence_spending_gdp`)** – RAG thresholds updated to reflect UK 2.5% GDP commitment (green >= 2.5%, amber >= 2.0%); rewrote fetcher to compute from ONS series KLYR/YBHA with published NATO/MOD annual fallback (2014–2025); current value corrected to 2.09% (amber).
 - **Header navigation** – Removed duplicate "Data Refresh" button from header nav (refresh remains available on the Data Refresh page).
 - **Defence/Education allow-lists** – Expanded `DEFENCE_ALLOWED_METRIC_KEYS` and `EDUCATION_ALLOWED_METRIC_KEYS` in `db.ts` to include new metric keys (sea_mass, land_mass, air_mass, defence_industry_vitality, pupil_attendance, apprenticeship_intensity).
 - **`compute_sea_mass_score`** – Negative input values now clamped to zero for safety.
@@ -48,6 +50,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Path traversal** – `storage.ts` `normalizeKey` rejects keys containing `..`; sickness absence cron validates publication slugs.
 - **Accessibility** – Added `aria-label` to user menu, error boundary reload button; improved login dialog alt text.
 - **Cache cleanup** – Wrapped `setInterval` cleanup in try/catch to prevent server crashes from cache errors.
+
+### Removed
+
+- **31 redundant files** – Deleted one-off fix logs, completion summaries, the entire `docs/archive/` directory, and obsolete nginx configs (`nginx-automate-workflows.conf`, `nginx-uk-rag-online-temp.conf`).
 
 ## [1.0.3] - 2026-03-16
 
