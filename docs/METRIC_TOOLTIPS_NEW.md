@@ -665,51 +665,181 @@ The thresholds are based on the reoffending rates achieved by the most effective
 
 ### A&E 4-Hour Wait % (`a_e_wait_time`)
 
-The A&E 4-Hour Wait percentage measures the proportion of patients attending Accident & Emergency departments who are admitted, transferred, or discharged within 4 hours of arrival. NHS England calculates this from mandatory returns submitted by all Type 1 (major A&E), Type 2 (specialist), and Type 3 (minor injury units) departments. The operational standard target is 95% of patients within 4 hours. Performance is calculated as: (patients seen within 4 hours ÷ total attendances) × 100. This metric is considered the best single proxy for overall NHS 'flow'—when hospitals are full and cannot discharge patients, A&E backs up. Performance has declined significantly since 2015, with the 95% target not met nationally for years.
+Think of this as the "NHS Front Door" metric. It measures the percentage of patients who arrive at an Accident & Emergency department and are admitted to a ward, transferred, or discharged within 4 hours. If the figure is 75%, it means that one in four patients waited longer than 4 hours—some for 8, 10, or even 12+ hours. This single number is widely regarded as the best overall indicator of how well the entire NHS is functioning, because A&E performance is not just about the emergency department itself. When hospital wards are full, patients cannot be admitted from A&E. When social care is overwhelmed, patients who are medically fit cannot be discharged. The bottleneck backs up through the entire system and manifests as queues in A&E. When this metric is red, it means the NHS is in crisis.
 
-Data Source: NHS England: A&E Attendances
+How it is Calculated
 
-Why it matters to you if it gets worse: If you or a loved one have a medical emergency, you face dangerous delays sitting on a trolley, as there are no beds available.
+NHS England collects mandatory returns from all emergency departments in England—Type 1 (major A&E departments), Type 2 (specialist emergency departments, such as eye hospitals), and Type 3 (minor injury units and urgent treatment centres). Every patient's arrival time and departure time are recorded. The headline figure is: (patients seen within 4 hours ÷ total attendances) × 100. Data is published monthly and broken down by trust, department type, and time band. The operational standard, set in 2004, is that 95% of patients should be seen within 4 hours. This target has not been met nationally since July 2015. NHS England also tracks "12-hour trolley waits"—patients who wait more than 12 hours from the decision to admit to actual admission to a ward—as a marker of extreme system failure.
+
+Real Impact on the Person on the Street
+
+When A&E performance drops, it is not an abstract NHS management problem—it is a direct threat to your health and your family's safety:
+
+1. "Corridor Care" and Patient Safety
+
+In 2025, one in ten patients at major A&E departments waited more than 12 hours, totalling 1.75 million people in a single year. Over 50,000 patients in November 2025 alone experienced 12-hour waits after the decision to admit—the worst November on record. Many of these patients were treated in corridors, store cupboards, and makeshift areas because there were simply no beds. This is not an inconvenience; it is a clinical safety crisis. Over 16,600 patient deaths in a single year were associated with long waits. When you are having a heart attack or a stroke, every minute of delay increases the risk of permanent damage or death.
+
+2. The "Exit Block" Cascade
+
+The root cause of A&E overcrowding is rarely A&E itself. It is "exit block"—the inability to move patients out of A&E into hospital wards because those wards are full of patients who are medically fit for discharge but have nowhere to go (no care home place, no social care package, no family support). On any given day, over 13,000 hospital bed days are lost to delayed discharges. This cascading failure means that even if you arrive at A&E with a genuine emergency, you may wait hours on a trolley because the bed you need is occupied by someone who should have gone home days ago.
+
+3. Ambulance Handover Gridlock
+
+When A&E is full, ambulances cannot hand over their patients. Paramedics are forced to wait outside the hospital—sometimes for hours—acting as de facto corridor staff. This means those ambulances are not available to respond to the next 999 call. It creates a deadly chain reaction: your neighbour's heart attack call goes unanswered because the ambulance that should be racing to them is parked outside a hospital waiting for a bed to become free.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the NHS constitutional standard and the clinical evidence for what constitutes safe emergency care.
+
+🟢 Green (Above 95%): This is the "Safe Emergency Care" zone. The 95% target was set based on clinical evidence that the vast majority of emergency patients should be assessed, treated, and moved within 4 hours to avoid clinical deterioration. The NHS consistently achieved this standard between 2004 and 2013. At this level, corridor care is virtually eliminated and ambulance handovers happen promptly.
+
+🟡 Amber (90% – 95%): This is the "Pressure" zone. Performance in this range indicates the system is under significant strain but still broadly managing. Some patients experience extended waits, particularly during winter pressures, but the most serious cases are prioritised effectively. This was the typical performance range from 2014 to 2019.
+
+🔴 Red (Below 90%): This is the "System Failure" zone. The NHS has been in this territory since early 2020, with current performance around 74–76%. At this level, corridor care is routine, 12-hour waits are commonplace, ambulance handovers are severely delayed, and patient safety is systematically compromised. The gap between current performance and the 95% target is so large that it represents a fundamental breakdown in the capacity of the health and social care system.
 
 ---
 
 ### Elective Backlog (`elective_backlog`)
 
-The Elective Backlog (RTT Waiting List) measures the total number of patients waiting to start consultant-led elective (non-emergency) treatment. NHS England calculates this from mandatory monthly returns from all NHS trusts, counting 'incomplete pathways'—patients referred by their GP who are still waiting for their first definitive treatment. The Referral to Treatment (RTT) standard states 92% of patients should wait no longer than 18 weeks. The backlog is reported as a total number and broken down by waiting time bands (0-18 weeks, 18-52 weeks, 52+ weeks). Post-pandemic, the backlog exceeded 7 million pathways—an unprecedented level representing roughly 1 in 8 of the English population.
+Think of this as the "NHS Queue." It measures the total number of patients in England who have been referred by their GP for consultant-led treatment and are still waiting for that treatment to begin. If the backlog is 7 million, it means roughly 1 in 8 people in England is on a waiting list for a hospital procedure—a hip replacement, a cataract operation, a hernia repair, a diagnostic scan, or one of thousands of other planned treatments. These are not emergencies; they are conditions that cause chronic pain, disability, anxiety, and inability to work. The longer the queue, the longer you suffer.
 
-Data Source: NHS England: RTT Waiting Times
+How it is Calculated
 
-Why it matters to you if it gets worse: Waiting years for necessary operations (like hip replacements or cataracts), leading to prolonged pain, disability, or inability to work.
+NHS England collects mandatory monthly returns from every NHS trust in England using the Referral to Treatment (RTT) dataset. When your GP refers you to a hospital consultant, a "pathway" is opened. It remains "incomplete" (open) until you receive your first definitive treatment—an operation, a procedure, or in some cases a decision that treatment is not needed. The backlog is simply the total count of all incomplete pathways at a given point in time. The NHS constitutional standard, set in 2008, states that 92% of patients should wait no longer than 18 weeks from referral to treatment. NHS England also tracks patients waiting over 52 weeks ("year-long waiters") and over 65 weeks as markers of extreme delay. It is important to note that the figure counts pathways, not unique patients—one patient with two conditions on two separate lists counts as two pathways.
+
+Real Impact on the Person on the Street
+
+The elective backlog is not a bureaucratic number—it represents millions of people living in pain, anxiety, and diminished quality of life:
+
+1. Living in Pain While You Wait
+
+A patient waiting 18 months for a hip replacement is not simply "inconvenienced." They are living with chronic pain that prevents them from sleeping, walking, working, and enjoying life. They become dependent on painkillers—contributing to the prescription opioid problem. They lose fitness and muscle mass, which makes the eventual surgery more complex and recovery slower. For conditions like cataracts, delayed treatment means progressive loss of independence: you cannot drive, you cannot read, you become isolated. The human cost of each month of delay is immense and cumulative.
+
+2. The Economic Drain
+
+People on waiting lists are disproportionately of working age. A construction worker waiting for knee surgery, an office worker waiting for carpal tunnel release, a teacher waiting for a diagnostic scan—these people are either working in pain (reducing their productivity) or off work entirely (costing their employer and the benefits system). The NHS Confederation has estimated that addressing the backlog requires systemic reform, not just additional appointments—the government's target of 2 million extra appointments per year addresses only about 15% of the underlying requirement.
+
+3. The Inequality Amplifier
+
+The backlog falls hardest on those least able to cope. Wealthier patients can pay for private treatment and jump the queue; poorer patients cannot. Deprived areas tend to have longer waits due to lower hospital capacity relative to need. Older patients, who are more likely to need elective procedures, deteriorate faster while waiting, leading to more complex and expensive treatment when they finally reach the front of the queue—or emergency admission if their condition becomes critical.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the NHS's pre-pandemic operating capacity and the level at which the system can deliver timely care without causing unacceptable suffering to patients.
+
+🟢 Green (Below 4 million): This is the "Manageable Queue" zone. Before the pandemic, the waiting list sat at approximately 4.4 million but was broadly stable, with the vast majority of patients treated within 18 weeks. A list below 4 million would indicate the NHS is clearing referrals at a sustainable rate and most patients experience acceptable waiting times.
+
+🟡 Amber (4 – 6 million): This is the "Chronic Backlog" zone. The UK currently sits in this bracket. At this level, a significant minority of patients wait well beyond 18 weeks, year-long waits number in the hundreds of thousands, and the system is treating record numbers but cannot reduce the queue because demand continues to rise. The NHS is functioning but failing to meet its own standards for a substantial proportion of patients.
+
+🔴 Red (Above 6 million): This is the "System Overwhelmed" zone. At its post-pandemic peak, the backlog exceeded 7.6 million pathways. At this level, the queue is so large that even record treatment volumes cannot make a meaningful dent. Patients are routinely waiting over a year, conditions deteriorate while waiting, and emergency admissions rise as planned care is delayed too long. The NHS is in sustained failure against its constitutional commitments.
 
 ---
 
-### Ambulance Response Time - Category 2 (`ambulance_response_time`)
+### Ambulance Response Time (`ambulance_response_time`)
 
-Category 2 Ambulance Response Time measures how quickly ambulances respond to emergency calls classified as 'Category 2'—serious conditions requiring rapid assessment and transport, such as suspected strokes, heart attacks, and severe breathing difficulties. NHS England calculates the mean (average) and 90th percentile response times from 999 call connection to ambulance arrival. The national standard is a mean response of 18 minutes and 90th percentile of 40 minutes. Data comes from Computer Aided Dispatch systems across all 10 English ambulance trusts. Category 2 represents approximately 60% of all emergency ambulance calls. Response times have significantly deteriorated, with means often exceeding 30-40 minutes in winter pressures.
+Think of this as the "999 Lifeline" metric. It measures the average time, in minutes, between a 999 call being connected and an ambulance arriving at the scene. When someone is having a heart attack, a stroke, or a severe allergic reaction, every minute of delay increases the risk of permanent brain damage, heart damage, or death. For a stroke patient, approximately 1.9 million neurons die every minute without treatment. For a cardiac arrest, survival rates drop by roughly 10% for every minute without defibrillation. This metric is, quite literally, the difference between life and death.
 
-Data Source: NHS England: Ambulance Quality
+How it is Calculated
 
-Why it matters to you if it gets worse: Critical, time-sensitive emergencies take too long to respond to, potentially resulting in permanent damage or death.
+NHS England collects data from the Computer Aided Dispatch (CAD) systems operated by all 10 ambulance trusts in England. Every 999 call is triaged and assigned one of four categories: Category 1 (life-threatening, e.g. cardiac arrest—target 7 minutes mean), Category 2 (emergency, e.g. heart attack, stroke—target 18 minutes mean), Category 3 (urgent, e.g. falls, abdominal pain—target 2 hours), and Category 4 (less urgent—target 3 hours). The response time is measured from the moment the call is connected to the 999 system to the moment the first ambulance resource arrives on scene. NHS England publishes monthly data showing the mean and 90th percentile response times for each category, broken down by ambulance trust and Integrated Care Board area. Category 2 calls account for approximately 60% of all emergency ambulance demand and are the most commonly reported headline figure.
+
+Real Impact on the Person on the Street
+
+Ambulance response times are arguably the most immediately consequential healthcare metric—they determine outcomes in your most vulnerable moments:
+
+1. The "Golden Hour" and the "Golden Minutes"
+
+For the most time-critical conditions—heart attack, stroke, major trauma, severe bleeding—clinical outcomes are directly determined by how quickly treatment begins. A heart attack patient who receives treatment within 60 minutes has a significantly better chance of survival and recovery than one who waits two hours. A stroke patient treated within the first hour retains far more brain function than one treated after three hours. When average Category 2 response times reach 47 minutes—as they did in December 2024—patients with suspected heart attacks and strokes are systematically receiving treatment too late, leading to preventable deaths and permanent disability.
+
+2. The Ambulance Handover Trap
+
+Slow response times are rarely caused by ambulances driving slowly. The primary driver is "handover delays"—ambulances arriving at hospital but being unable to transfer their patient to A&E because the department is full. Paramedics are forced to wait outside the hospital for hours, effectively acting as an extension of the A&E queue. While they wait, their ambulance is unavailable for new 999 calls. In some areas during winter 2024–25, ambulances were queuing for over an hour at hospital doors, with the worst-performing region (East Midlands) recording average Category 2 response times of 66 minutes.
+
+3. The Rural and Deprived Penalty
+
+Response times vary enormously by location. Urban areas with ambulance stations nearby may see times close to target, while rural areas—where the nearest ambulance may be 20 or 30 miles away—routinely experience much longer waits. Deprived areas, where 999 call volumes are highest due to worse population health, also tend to experience longer waits because local ambulance capacity is overwhelmed. This geographic lottery means your postcode can be the deciding factor in whether you survive a medical emergency.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the clinical evidence for time-critical emergency conditions and the response times needed to give patients the best chance of survival and full recovery.
+
+🟢 Green (Below 7 minutes): This is the "Rapid Response" zone. A mean response time under 7 minutes meets the Category 1 (life-threatening) standard and indicates that the ambulance service has sufficient capacity to reach the most critical patients in time to make a clinical difference. At this level, cardiac arrest survival rates are maximised and stroke patients receive treatment within the critical early window.
+
+🟡 Amber (7 – 10 minutes): This is the "Acceptable Delay" zone. Response times in this range are longer than ideal but still within a window where clinical outcomes for most emergency conditions remain reasonable. The current UK average sits in this bracket. It indicates that the system is under pressure—likely due to handover delays or demand surges—but is still broadly functioning for the majority of calls.
+
+🔴 Red (Above 10 minutes): This is the "Clinical Risk" zone. At this level, patients with time-critical conditions are systematically waiting too long. Cardiac arrest survival drops sharply, stroke patients lose critical treatment windows, and severe trauma patients face increased mortality. When average response times exceed 10 minutes as a norm (rather than an occasional peak), it signals a systemic failure in ambulance capacity, hospital flow, or both.
 
 ---
 
 ### GP Appointment Access (`gp_appt_access`)
 
-GP Appointment Access measures the percentage of GP appointments that take place within 14 days of booking. NHS Digital calculates this from the General Practice Appointment Data (GPAD) collected from GP practice systems across England, covering approximately 30 million appointments monthly. The metric is calculated as: (appointments occurring within 14 days of booking ÷ total appointments) × 100. Data excludes COVID vaccinations and some specialist clinics. This metric indicates primary care accessibility—the 'front door' of the NHS. Poor GP access has knock-on effects as patients present to A&E for conditions that could have been managed earlier. The government target is for patients to see a GP within 2 weeks.
+Think of this as the "NHS Front Gate" metric. While A&E is the NHS's "front door" for emergencies, your GP surgery is the "front gate" for everything else—the first point of contact for 90% of all NHS interactions. This metric measures the percentage of GP appointments that take place within 14 days of the patient requesting them. If the figure is 65%, it means roughly one in three appointments are booked more than two weeks out. For a patient who has found a lump, developed chest pain, or is struggling with worsening mental health, being told "the next available appointment is in three weeks" is not just frustrating—it can be dangerous. Poor GP access is also the single biggest driver of A&E overcrowding, because patients who cannot see their GP go to A&E instead.
 
-Data Source: NHS Digital: Appointments in GP
+How it is Calculated
 
-Why it matters to you if it gets worse: You can't see your family doctor when you need to, forcing minor issues into already overwhelmed A&E departments.
+NHS England Digital collects General Practice Appointment Data (GPAD) from GP practice clinical systems across England, covering approximately 30 million appointments per month. For each appointment, the system records the date it was booked and the date it took place. The access metric is then: (appointments occurring within 14 days of booking ÷ total appointments) × 100. Data is published monthly and broken down by practice, Integrated Care Board area, appointment type (face-to-face, telephone, online), and healthcare professional type (GP, nurse, pharmacist, physiotherapist). The data captures all appointment types including same-day urgent slots, routine appointments, and advance bookings for long-term condition reviews. It excludes COVID vaccinations and some specialist clinics.
+
+Real Impact on the Person on the Street
+
+GP access is the metric you are most likely to experience personally—everyone needs their GP at some point:
+
+1. The Early Detection Problem
+
+General practice is where cancers are spotted early, where diabetes is caught before it causes damage, and where mental health crises are intercepted before they escalate. When access is poor and patients wait weeks for an appointment, conditions that could have been caught and treated quickly are allowed to progress. A "two-week wait" cancer referral cannot happen if you cannot see your GP in the first place. By the time a delayed patient finally gets seen, their condition may have advanced from treatable to serious—or they may have given up trying and present months later as an emergency.
+
+2. The A&E Pressure Valve
+
+Every patient who cannot get a GP appointment is a potential A&E attendance. Research consistently shows that a significant proportion of A&E visits—estimated at 15–30%—could have been managed in primary care if timely access were available. When GP access falls, A&E departments absorb the overflow: patients with ear infections, back pain, urinary tract infections, and anxiety attacks sit alongside genuine emergencies, clogging the system for everyone. Improving GP access is therefore one of the most effective ways to reduce pressure on hospitals.
+
+3. The 8am Scramble
+
+For millions of patients, the daily reality of GP access is the "8am lottery"—frantically redialling the surgery from the moment the phone lines open, competing with hundreds of other callers for a handful of same-day slots. Those who get through are seen quickly; those who do not are told to try again tomorrow. This system is stressful, excludes people who cannot sit on the phone for 45 minutes (those at work, caring for children, or with hearing difficulties), and creates the false impression of availability. The appointment data may show that 80% of appointments happen within 14 days, but it does not capture the thousands of patients who never got through the phone line at all.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the NHS's stated ambition for primary care access and the level at which GP services can function as an effective gatekeeper, preventing conditions from escalating and reducing pressure on hospitals.
+
+🟢 Green (Above 70%): This is the "Accessible Primary Care" zone. At this level, the vast majority of patients who need to see a GP can do so within two weeks. Urgent cases are seen same-day, routine cases within a week, and advance bookings for long-term conditions are manageable. Primary care is functioning as intended: catching problems early, managing chronic conditions, and keeping patients out of hospital.
+
+🟡 Amber (55% – 70%): This is the "Access Gap" zone. The UK currently sits in this bracket. While the majority of appointments happen within 14 days, a substantial minority of patients—particularly those with non-urgent but important conditions—face unacceptable waits. The "8am scramble" is the daily norm, patient satisfaction is declining, and the overflow into A&E is measurable. The system is coping but not delivering the access that patients expect and need.
+
+🔴 Red (Below 55%): This is the "Primary Care Collapse" zone. At this level, nearly half of appointments are booked more than two weeks out. Patients routinely give up trying to access their GP, conditions deteriorate without oversight, and A&E becomes the de facto primary care provider for a significant proportion of the population. This level would indicate a fundamental breakdown in the GP workforce, capacity, or both.
 
 ---
 
 ### Staff Vacancy Rate (`staff_vacancy_rate`)
 
-The NHS Staff Vacancy Rate measures the percentage of funded full-time equivalent (FTE) positions that are unfilled across NHS trusts. NHS Digital calculates this quarterly using the NHS Vacancy Statistics: (vacant posts ÷ total funded establishment) × 100. Data is broken down by staff group (nurses, doctors, allied health professionals, etc.) and by region/trust. A 'vacancy' is a funded position actively being recruited to. High vacancy rates indicate recruitment and retention problems, often leading to expensive agency staff usage, increased workload on existing staff, and potential service reductions. Nursing vacancies have been persistently high (10%+), with some specialties like mental health nursing exceeding 15%.
+Think of this as the "Workforce Hole" metric. It measures the percentage of funded NHS positions that are currently unfilled—posts that the NHS has the budget to fill but cannot recruit anyone into. If the vacancy rate is 7%, it means that for every 100 positions the NHS needs, 7 are empty. With a workforce of 1.37 million, that translates to approximately 100,000 unfilled posts across England. These are not hypothetical positions; they are real gaps on real wards, in real clinics, and in real ambulance stations. Every vacancy means the remaining staff have to work harder, patients receive less attention, and the risk of errors rises.
 
-Data Source: NHS Digital: Vacancies in NHS
+How it is Calculated
 
-Why it matters to you if it gets worse: Less dedicated care for patients, burned-out staff making more errors, and entire departments struggling to function safely.
+NHS England Digital publishes quarterly NHS Vacancy Statistics using data from every NHS trust in England. Each trust reports its "funded establishment"—the total number of full-time equivalent (FTE) positions it has budget approval for—and the number of those positions that are currently vacant and being actively recruited to. The vacancy rate is then: (vacant FTE posts ÷ total funded establishment) × 100. Data is broken down by staff group (nursing and midwifery, medical, allied health professionals, ambulance, administrative, scientific and technical, etc.), by trust, by region, and by specialty. A "vacancy" specifically means a funded post that the trust is trying to fill; it does not include posts that have been deliberately frozen or removed from the establishment.
+
+Real Impact on the Person on the Street
+
+NHS vacancies are not a human resources problem—they directly determine the quality and safety of the care you receive:
+
+1. The "Doing More With Less" Burnout Spiral
+
+When a ward has 20 funded nursing posts but only 17 are filled, the 17 remaining nurses must cover the work of 20. Shifts become longer, breaks are skipped, patient observations are delayed, and the cumulative exhaustion leads to clinical errors—wrong medication doses, missed deterioration signs, falls that could have been prevented. Research consistently links higher nurse vacancy rates to increased patient mortality, longer hospital stays, and higher rates of hospital-acquired infections. The nurses who remain become burned out, which drives more of them to leave, deepening the vacancy problem in a vicious cycle.
+
+2. The £10 Billion Agency Bill
+
+When permanent staff cannot be recruited, trusts turn to agency and bank (temporary) staff to fill the gaps. Agency nurses and doctors cost significantly more per shift than permanent staff—sometimes two or three times as much—and they are less familiar with local protocols, systems, and patients. The NHS has spent billions on agency staff in recent years. The government has targeted a 40% reduction in agency spending by 2026, but achieving this without filling underlying vacancies would simply mean more unfilled shifts and less care.
+
+3. The Specialty Desert
+
+Vacancy rates are not evenly distributed. Mental health nursing, learning disability services, community nursing, and certain medical specialties (psychiatry, emergency medicine, radiology) have persistently higher vacancies than average. This creates "specialty deserts" where entire services are understaffed, leading to longer waits, reduced opening hours, or services being withdrawn from certain areas altogether. If your local trust cannot recruit a dermatologist or a paediatric consultant, you face a longer journey to a different hospital—or a longer wait for a telephone consultation from an overstretched clinician elsewhere.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the vacancy levels at which the NHS can safely staff its services and the point at which patient care begins to be systematically compromised.
+
+🟢 Green (Below 5%): This is the "Healthy Workforce" zone. A vacancy rate below 5% is considered operationally manageable—trusts can cover short-term gaps through internal bank staff without relying heavily on expensive agencies, and the workload on permanent staff remains sustainable. Pre-2018 vacancy rates were in this range, and the best-staffed comparable healthcare systems (Germany, Scandinavia) maintain rates below 5%.
+
+🟡 Amber (5% – 8%): This is the "Workforce Strain" zone. The NHS currently sits in this bracket at approximately 6.7%, down from 7.4% the previous year. At this level, trusts are managing but relying significantly on temporary staff, staff workload is above sustainable levels, and specific specialties and regions face acute shortages. Patient care is being delivered, but the margin for error is thin and staff wellbeing is under pressure.
+
+🔴 Red (Above 8%): This is the "Staffing Crisis" zone. At this level, the NHS cannot safely staff a significant proportion of its services with permanent employees. Agency dependency soars, costs spiral, and patient safety incidents increase. Entire services may need to be temporarily closed or consolidated. At the peak of the post-pandemic workforce crisis, overall vacancy rates exceeded 9%, with nursing vacancies above 11% and some trusts reporting specialty vacancy rates above 20%.
 
 ---
 
