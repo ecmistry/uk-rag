@@ -116,12 +116,12 @@ def compute_sea_mass_score(
     TARGET_RFA = 12
     TARGET_PATROL_MCM = 24
 
-    actual_carriers = carriers
-    actual_ssbns = ssbns
-    actual_ssns = ssns
-    actual_escorts = escorts
-    actual_rfa = rfa
-    actual_patrol_mcm = patrol_mcm
+    actual_carriers = max(carriers, 0)
+    actual_ssbns = max(ssbns, 0)
+    actual_ssns = max(ssns, 0)
+    actual_escorts = max(escorts, 0)
+    actual_rfa = max(rfa, 0)
+    actual_patrol_mcm = max(patrol_mcm, 0)
 
     # Strategic pillar: average of carrier and SSBN ratios, then apply weight.
     strategic_ratio = (

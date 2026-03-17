@@ -4,6 +4,28 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.4] - 2026-03-17
+
+### Added
+
+- **Dashboard trend indicators** – Each metric tile shows a small directional arrow (up/down/flat) colour-coded by sentiment: green for positive change, red for negative, grey for neutral. Metrics where "down is good" (e.g. crime, absence rates) correctly show green when decreasing. Single-data-point metrics display a grey dot.
+- **`metrics.trends` tRPC procedure** – Server-side endpoint returning the two most recent values per metric via MongoDB aggregation, with 10-minute cached TTL.
+- **`metricDirections.ts`** – Centralised direction rules (higher_better / lower_better / target_band) and `getTrendSentiment()` for all metrics.
+- **Test framework** – Vitest for TypeScript (client + server) with `@testing-library/react` and `jsdom`; Python `unittest` for defence computations. 63 tests total (38 TS + 25 Python).
+
+### Changed
+
+- **Info tooltip button** – Made transparent (removed white background); reduced icon from 4x4 to 3x3 with tighter padding to prevent overlap with metric values.
+- **Header navigation** – Removed duplicate "Data Refresh" button from header nav (refresh remains available on the Data Refresh page).
+- **Defence/Education allow-lists** – Expanded `DEFENCE_ALLOWED_METRIC_KEYS` and `EDUCATION_ALLOWED_METRIC_KEYS` in `db.ts` to include new metric keys (sea_mass, land_mass, air_mass, defence_industry_vitality, pupil_attendance, apprenticeship_intensity).
+- **`compute_sea_mass_score`** – Negative input values now clamped to zero for safety.
+- **vitest.config.ts** – Extended to include client-side `.test.ts` / `.test.tsx` files with jsdom environment matching.
+
+### Fixed
+
+- **Auth role persistence** – `upsertUser` no longer overwrites an admin user's role back to "user" on every request. Explicitly provided roles (e.g. from admin-login) are respected; default "user" only applies on first insertion.
+- **Missing fetcher scripts** – Restored `crime_data_fetcher.py` and `education_data_fetcher.py` which are still referenced by `dataIngestion.ts`.
+
 ## [1.0.3] - 2026-03-16
 
 ### Added
