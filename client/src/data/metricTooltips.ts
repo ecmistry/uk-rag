@@ -415,31 +415,161 @@ export function getEducationTooltip(metricKey: string): string | undefined {
 
 /** Crime section: metricKey -> tooltip text */
 export const CRIME_TOOLTIPS: Record<string, string> = {
-  recorded_crime_rate: `Total Recorded Crime measures the number of offences recorded by the 43 police forces in England and Wales according to the Home Office Counting Rules (HOCR). Police record crimes when reported by the public or discovered through police activity, following strict definitions for each offence type. Data is submitted to the Home Office and published quarterly by the ONS. The total includes violence against the person, sexual offences, robbery, theft, criminal damage, drug offences, and other categories. Importantly, recorded crime reflects both actual crime levels AND reporting/recording practices—increased confidence in police can paradoxically increase recorded crime. The Crime Survey for England and Wales (CSEW) provides a complementary victim-based measure.
+  recorded_crime_rate: `Think of this as the "Safety Barometer" for the country. It measures the total number of criminal offences recorded by the 43 police forces in England and Wales, expressed as a rate per 1,000 people in the population. If the rate is 90, it means that for every 1,000 people in your area, 90 crimes were recorded by police in a year. It covers everything from shoplifting and burglary to violence, sexual offences, and fraud. This is the most comprehensive single number for answering the question: "Is crime getting worse or better where I live?"
 
-Data Source: ONS: Crime in England & Wales
+How it is Calculated
 
-Why it matters to you if it gets worse: You and your neighbours are more likely to become victims of theft, violence, or fraud.`,
-  charge_rate: `The Charge Rate (also called Detection Rate or Outcome Rate) measures the percentage of recorded crimes that result in a suspect being charged or summonsed to court. The Home Office calculates this from police-recorded 'crime outcomes' data: (crimes resulting in charge/summons ÷ total crimes recorded) × 100. Other outcomes include out-of-court disposals (cautions, penalty notices), cases where the suspect is identified but not prosecuted (e.g., victim withdraws), and cases with no suspect identified. The charge rate has declined significantly over the past decade, falling from around 15% to under 6% for many crime types. Theft and burglary charge rates are particularly low (often under 5%), contributing to perceptions of consequence-free offending.
+The 43 police forces in England and Wales record crimes according to the Home Office Counting Rules (HOCR)—a strict, standardised set of definitions that determines what counts as a "crime" and how each offence is categorised. When a crime is reported by the public or discovered through police activity, it is logged on the force's crime recording system. Forces submit this data to the Home Office, and the ONS publishes it quarterly alongside the Crime Survey for England and Wales (CSEW)—a complementary household survey of approximately 35,000 adults that captures crimes people experienced but may not have reported to police. The rate per 1,000 is calculated as: (total recorded offences ÷ mid-year population estimate) × 1,000. It is important to understand that police recorded crime is influenced by two factors: actual crime levels and recording practices. Changes in police recording standards, public willingness to report, and the inclusion of new offence types (such as online fraud) can all shift the headline number without the underlying reality necessarily changing.
 
-Data Source: Gov.uk: Crime Outcomes
+Real Impact on the Person on the Street
 
-Why it matters to you if it gets worse: Criminals feel safe to commit crimes because they know the police are unlikely to catch them, eroding trust in law enforcement.`,
-  perception_of_safety: `Perception of Safety measures public feelings about crime and personal safety, derived from the Crime Survey for England and Wales (CSEW)—a large-scale household survey of approximately 35,000 adults annually. The ONS asks standardised questions including 'How safe do you feel walking alone in your area after dark?' with responses on a scale from 'very safe' to 'very unsafe.' Results are expressed as percentages feeling safe/unsafe and can be broken down by demographics, area type, and victimisation experience. This subjective measure often diverges from objective crime statistics—the 'fear of crime' can exceed actual risk, influenced by media coverage, local environmental factors, and personal vulnerability. Both high crime AND high fear of crime reduce quality of life.
+A rising crime rate is not an abstract statistic—it changes how you live, work, and feel in your community:
 
-Data Source: ONS: Crime Survey (CSEW)
+1. Personal Victimisation Risk
 
-Why it matters to you if it gets worse: You feel less safe walking alone at night, restricting your freedom and reducing community life in your area.`,
-  crown_court_backlog: `The Crown Court Backlog measures the number of outstanding (untried) cases waiting to be heard in Crown Courts, which handle serious criminal matters including murder, rape, robbery, and either-way offences. The Ministry of Justice calculates this from the Common Platform and XHIBIT case management systems, counting cases where a defendant has been sent/committed for trial but the trial has not yet concluded. The backlog is reported as a total caseload and median waiting time (weeks from sending to completion). COVID-19 court closures caused the backlog to exceed 60,000 cases—approximately double pre-pandemic levels. Cases involving custody time limits create particular pressure, as defendants may be released if trials are delayed too long.
+The most direct impact is the increased likelihood that you, your family, or your neighbours will become victims of crime. A rate above 100 per 1,000 means, statistically, roughly 1 in 10 people will experience a recorded crime in a given year. The recent surge in shoplifting—up 20% to a record 530,643 offences in the year to March 2025—pushes up costs for retailers, which are passed on to you in higher prices. Vehicle theft, residential burglary, and fraud all erode your sense of security and can cause lasting financial and emotional harm.
 
-Data Source: MoJ: Criminal Court Stats
+2. The "Broken Windows" Effect
 
-Why it matters to you if it gets worse: Victims wait years for justice, and accused individuals (guilty or innocent) face extreme stress and delays in their lives.`,
-  reoffending_rate: `The Proven Reoffending Rate measures the percentage of offenders who commit a further offence within one year of release from custody or starting a community order, where that offence is subsequently proven by a court conviction or caution. The Ministry of Justice calculates this from the Police National Computer, tracking a cohort of offenders and matching them to subsequent proven offences. The rate is expressed as: (reoffenders ÷ total cohort) × 100, with an additional measure of 'frequency' (average reoffences per reoffender). Short prison sentences have particularly high reoffending rates (over 50%), raising questions about rehabilitation effectiveness. The metric has a significant time lag (approximately 18 months) due to court processing times.
+High crime rates degrade the quality of life in a neighbourhood. When anti-social behaviour, vandalism, and petty crime go unchecked, the visible signs of disorder—graffiti, litter, damaged property—signal to residents that the area is declining. This drives down property values, discourages businesses from investing, and causes those who can afford to leave to do so, deepening the cycle of deprivation for those who remain.
 
-Data Source: MoJ: Proven Reoffending
+3. The Policing Resource Squeeze
 
-Why it matters to you if it gets worse: The same criminals are released and commit more crimes, meaning the prison system is failing to protect the public.`,
+Every recorded crime generates a workload: an investigation, a crime reference number, victim contact, and often court preparation. When the overall rate is high, police forces are stretched thinner across more cases, meaning each individual crime receives less attention. This is one reason charge rates have collapsed—officers simply have too many cases and too little time. The result is that many victims never see justice, which further erodes trust in the system.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on historical crime rate trends and the level at which police forces can realistically investigate and respond to reported crime without being overwhelmed.
+
+🟢 Green (Below 80 per 1,000): This is the "Safe Community" zone. It reflects the lower crime rates achieved in the mid-2010s when overall recorded crime was in sustained decline. At this level, police resources are sufficient to investigate the majority of crimes effectively, and most residents feel their neighbourhood is a safe place to live.
+
+🟡 Amber (80 – 100 per 1,000): This is the "Rising Pressure" zone. The UK currently sits in this bracket. Crime is at a level where police are managing but under strain. Certain categories—shoplifting, fraud, and online crime—are rising faster than resources can keep pace. Residents may notice more visible crime in their daily lives but still broadly feel safe.
+
+🔴 Red (Above 100 per 1,000): This is the "Crisis" zone. At this rate, more than 1 in 10 people are victims of recorded crime annually. Police forces cannot keep up with demand, investigation quality drops sharply, and public confidence in law enforcement collapses. Communities experience visible deterioration and the "broken windows" effect accelerates.`,
+  charge_rate: `Think of this as the "Justice Delivery Rate." It measures the percentage of all recorded crimes that result in a suspect being formally charged or summonsed to court. If the charge rate is 7%, it means that for every 100 crimes reported to police, only 7 end with someone being charged. The remaining 93 cases result in no prosecution—either because no suspect was identified, the victim withdrew, or the case was closed for evidential reasons. This is arguably the single most important metric for understanding whether the criminal justice system is actually working, because a crime that is recorded but never solved delivers no justice to the victim and no deterrent to the offender.
+
+How it is Calculated
+
+The Home Office collects "crime outcomes" data from all 43 police forces in England and Wales. When a recorded crime is concluded, the force assigns it one of several outcome codes: Outcome 1 (charged or summonsed), Outcome 2 (caution), Outcome 3 (community resolution), or various "no further action" codes (suspect not identified, evidential difficulties, victim withdraws, etc.). The charge rate is then: (Outcome 1 cases ÷ total recorded crimes) × 100. Data is published annually in the "Crime Outcomes in England and Wales" statistical bulletin, broken down by offence type, police force area, and outcome category. The charge rate varies dramatically by crime type—homicide has a charge rate above 80%, while theft, criminal damage, and fraud often fall below 5%.
+
+Real Impact on the Person on the Street
+
+A falling charge rate does not just affect statistics; it changes the country you live in:
+
+1. The "Consequence-Free" Culture
+
+When only 7 out of every 100 crimes result in a charge, criminals learn—rationally—that offending carries almost no risk of prosecution. This is the driving force behind the epidemic of brazen shoplifting, with thieves openly filling bags and walking out of shops knowing that police are unlikely to attend, let alone charge anyone. The same logic applies to bike theft, car crime, and low-level assault. For the person on the street, this manifests as a creeping sense that "nobody cares" and "nothing happens" when you report a crime.
+
+2. The Collapse of Public Confidence
+
+In 2015, 62% of the public said their local police were doing a good or excellent job. By 2025, that figure had dropped to 49%. The charge rate is the primary driver of this decline. When victims take the time and emotional energy to report a crime—filling out statements, providing evidence, reliving the experience—and then receive a letter saying "no further action," it destroys trust in the entire system. Many people simply stop reporting crime altogether, which means the true scale of offending becomes invisible.
+
+3. The Investigative Spiral
+
+The charge rate has halved in a decade, from 15.5% in 2015 to 7.3% in 2024/25. The causes are structural: police funding remains 5% below 2009/10 levels in real terms; the shift toward complex, evidence-heavy crimes (domestic abuse, sexual offences, online fraud) demands more investigative time per case; and the explosion of digital evidence—phones, CCTV, social media—has created a forensic bottleneck that most forces lack the specialist staff to clear. The result is a vicious circle: fewer charges mean less deterrence, which means more crime, which means even more cases for the same number of officers.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the charge rates needed to maintain public confidence in policing and provide a meaningful deterrent to offending, calibrated against both historical UK performance and comparable international systems.
+
+🟢 Green (Above 10%): This is the "Effective Deterrence" zone. While still below the 15% achieved a decade ago, a charge rate above 10% indicates that police forces are investigating effectively and the criminal justice system is delivering consequences for a meaningful proportion of offenders. At this level, most victims can expect their case to be properly investigated.
+
+🟡 Amber (7% – 10%): This is the "Eroding Confidence" zone. The UK currently sits near the bottom of this bracket. Police are solving some crimes, particularly violent and sexual offences, but the vast majority of volume crime (theft, criminal damage, fraud) goes uncharged. Public trust is declining and offenders are becoming bolder.
+
+🔴 Red (Below 7%): This is the "Justice Failure" zone. At this level, fewer than 1 in 14 crimes result in a charge. The criminal justice system has effectively ceased to function as a deterrent for most offence types. Victims have no realistic expectation of seeing justice, and the cycle of consequence-free offending becomes self-reinforcing.`,
+  perception_of_safety: `Think of this as the "Freedom After Dark" metric. It measures the percentage of adults who feel "very safe" or "fairly safe" walking alone in their local area after dark. Unlike recorded crime statistics—which tell you what has happened—this metric captures how safe you actually feel. That distinction matters enormously, because fear of crime restricts people's lives just as powerfully as crime itself. A woman who avoids walking home alone after 7pm, a pensioner who will not answer the door after dark, a teenager who takes a longer route to avoid a particular estate—these are all real consequences of low perceived safety, regardless of whether the official crime statistics are going up or down.
+
+How it is Calculated
+
+The Crime Survey for England and Wales (CSEW)—a large-scale household survey run by the ONS—interviews approximately 35,000 adults annually in their homes. Respondents are asked the standardised question: "How safe do you feel walking alone in your area after dark?" with response options ranging from "very safe" to "very unsafe." The headline figure is the percentage who answer "very safe" or "fairly safe." Results are broken down by sex, age, ethnicity, disability status, area deprivation, and whether the respondent has been a victim of crime. This survey-based approach captures the "dark figure" of fear that never shows up in police data. It is important to note that perception and reality often diverge: some of the safest neighbourhoods (by recorded crime) have high fear levels due to media coverage or environmental factors (poor street lighting, derelict buildings), while some high-crime areas have residents who feel relatively safe because they know the local dynamics.
+
+Real Impact on the Person on the Street
+
+When the perception of safety falls, the effects are immediate and deeply personal:
+
+1. The "Curfew Effect"
+
+Low perceived safety imposes an invisible curfew on millions of people—particularly women, older people, and disabled individuals. Research consistently shows that around half of all women feel unsafe walking alone after dark, compared to roughly one in seven men. When 40% of people who feel unsafe after dark actively change their behaviour—avoiding certain streets, not going out alone, taking taxis they cannot afford—it is a direct loss of personal freedom. Evening economies suffer, community events lose attendance, and public spaces become deserted after dark, which paradoxically makes them less safe.
+
+2. The Gender and Inequality Gap
+
+Perception of safety is one of the starkest inequality metrics in the UK. The gap between men (approximately 88% feeling safe) and women (approximately 68%) represents a 20-percentage-point divide in the freedom to move through public space. The gap widens further for women in deprived areas (65% feel safe) compared to affluent areas (88%). Disabled people report significantly lower safety perceptions than non-disabled people. When large segments of the population feel unable to use public space freely, it entrenches social exclusion and limits economic participation.
+
+3. The Property and Investment Signal
+
+Estate agents, businesses, and investors all track perceived safety. Areas with low safety perceptions struggle to attract new shops, restaurants, and employers. House prices stagnate or fall. Young professionals and families leave, replaced by transient populations with less stake in the community. This "fear-driven flight" can hollow out a neighbourhood far more effectively than actual crime, creating the very decline that residents feared.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on CSEW historical data and the levels achieved by the safest comparable European nations, where public space is widely accessible to all demographics after dark.
+
+🟢 Green (Above 70%): This is the "Community Confidence" zone. It indicates that a clear majority of the population—including most women and older people—feel comfortable using their local area after dark. Public spaces are lively, evening economies thrive, and the "invisible curfew" applies to only a small minority. The best-performing areas in the UK and the safest European countries consistently achieve this level.
+
+🟡 Amber (55% – 70%): This is the "Divided Safety" zone. The UK currently sits in this bracket. While the majority still feel safe, a substantial minority—disproportionately women, older people, disabled individuals, and those in deprived areas—do not. This is the zone where behavioural changes become widespread: people avoid certain routes, refuse to go out alone, and restrict their social lives. The evening economy is weakened and community cohesion is under strain.
+
+🔴 Red (Below 55%): This is the "Fear Dominance" zone. When fewer than 55% of people feel safe walking alone after dark, fear of crime has become the dominant experience. Public spaces are effectively abandoned after dark, women and vulnerable groups face severe restrictions on their freedom of movement, and the social and economic life of communities atrophies. This level would represent a fundamental failure of policing, urban design, and community safety.`,
+  crown_court_backlog: `Think of this as the "Justice Queue." It measures the total number of outstanding criminal cases waiting to be heard in the Crown Courts of England and Wales—the courts that handle the most serious offences, including murder, rape, robbery, serious assault, and large-scale fraud. If the backlog is 75,000, it means 75,000 defendants are awaiting trial, and 75,000 victims are waiting for their day in court. Some of those cases are already scheduled for trial dates in 2028 or 2029. For every month a case sits in the queue, witnesses' memories fade, victims' trauma deepens, and the chance of a fair and effective trial diminishes. This is the ultimate stress test of whether the justice system can deliver justice at all.
+
+How it is Calculated
+
+The Ministry of Justice (MoJ) calculates the backlog from the Common Platform and XHIBIT case management systems used by Crown Courts across England and Wales. A case enters the backlog when a defendant is sent or committed to the Crown Court for trial and exits when the case reaches a conclusion (conviction, acquittal, or discontinuation). The headline figure is the total "open caseload"—all cases that have entered the system but not yet concluded. The MoJ also tracks the median age of open cases (how long the average case has been waiting), the median time from charge to completion, and breakdowns by offence type and court location. Data is published quarterly in the "Criminal Court Statistics Quarterly" bulletin. The backlog is a cumulative measure: it rises when more cases enter than exit, and falls only when courts clear more cases than they receive.
+
+Real Impact on the Person on the Street
+
+The Crown Court backlog is not an administrative inconvenience—it causes real suffering to real people:
+
+1. Victims Trapped in Limbo
+
+The Victims' Commissioner's 2025 report described the backlog's impact as "devastating." Victims of serious crimes—sexual assault, domestic violence, grievous bodily harm—are forced to live in a state of suspended trauma for years while awaiting trial. They cannot move on with their lives, their relationships suffer, and their mental health deteriorates. Many victims withdraw from cases entirely because they simply cannot endure the wait, which means their attacker faces no consequences. Nearly two-thirds (62%) of the backlog comprises violent, sexual, and drug offences—the most traumatic crime types for victims to relive.
+
+2. Justice Delayed is Justice Denied
+
+As of September 2025, the median time from charge to completion was 179 days—nearly six months. Over 20,000 cases had been open for more than a year, a record. When witnesses are asked to recall events from two or three years ago, their evidence is inherently weaker. CCTV footage may have been overwritten. Co-operating witnesses may have moved away. The quality of justice itself is degraded by delay, making wrongful acquittals and wrongful convictions both more likely.
+
+3. The Taxpayer Cost
+
+Every day a remand prisoner sits in jail awaiting trial costs the taxpayer approximately £130. With thousands of defendants on remand for months or years, the financial burden is enormous. Meanwhile, judges, court staff, and barristers are paid whether cases proceed or are adjourned. The government has committed a record 110,000 Crown Court sitting days for 2025–26, but even this has not been sufficient to reduce the queue. If defendants exceed their custody time limits due to delays, they must be released—potentially putting dangerous individuals back on the streets.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the Crown Court's pre-pandemic operating capacity and the level at which the system can deliver timely justice without causing unacceptable harm to victims and witnesses.
+
+🟢 Green (Below 40,000 cases): This is the "Functioning Justice" zone. Before the COVID-19 pandemic, the Crown Court backlog sat at approximately 39,000 cases. At this level, most cases are heard within a reasonable timeframe, victims are not subjected to years of waiting, and the quality of evidence remains strong. Courts have sufficient capacity to handle seasonal fluctuations and complex multi-week trials.
+
+🟡 Amber (40,000 – 60,000 cases): This is the "Strained System" zone. At this level, waiting times are noticeably longer, some victims experience delays of over a year, and courts are forced to prioritise the most serious cases at the expense of "lesser" offences. The system is functioning but under significant pressure, and any disruption (such as a barrister strike or further pandemic) could push it into crisis.
+
+🔴 Red (Above 60,000 cases): This is the "Justice Crisis" zone. The UK has been firmly in this territory since 2021, with the backlog reaching a record 79,619 in September 2025. At this level, the system cannot clear cases faster than they arrive. Victims wait years, witnesses forget, and public confidence in the courts collapses. The Victims' Commissioner has described the current situation as an "unacceptable" denial of justice.`,
+  reoffending_rate: `Think of this as the "Revolving Door" metric. It measures the percentage of offenders who commit another crime within one year of being released from prison or starting a community sentence—and where that new offence is subsequently proven by a court conviction or caution. If the rate is 28%, it means that for every 100 offenders who leave prison or begin a community order, 28 of them will be back in the system within a year. It is the most direct measure of whether the criminal justice system is actually rehabilitating people or simply cycling them through a revolving door of offending, punishment, release, and reoffending.
+
+How it is Calculated
+
+The Ministry of Justice (MoJ) tracks a "cohort" of offenders—everyone who was released from custody, received a non-custodial conviction, or received a caution in a given quarter. Each offender is then followed for one year using the Police National Computer (PNC) to see if they commit any further offences. A six-month "waiting period" is added after the one-year follow-up to allow time for court proceedings to conclude, meaning the data has an 18-month lag. The headline rate is: (offenders who committed at least one proven reoffence ÷ total cohort) × 100. The MoJ also publishes a "frequency rate"—the average number of reoffences per reoffender—which captures prolific offending. Data is broken down by sentence type, sentence length, age, sex, and offence category. This allows analysis of which interventions are working and which are failing.
+
+Real Impact on the Person on the Street
+
+High reoffending rates are not just a problem for the justice system—they directly affect your safety and your wallet:
+
+1. The Same Offenders, Again and Again
+
+When reoffending is high, the victims of crime are disproportionately created by a relatively small group of prolific repeat offenders. A shoplifter released on a Friday who is stealing again by Monday, a domestic abuser who assaults a new partner within weeks of release, a burglar who returns to the same neighbourhood—these are not hypothetical scenarios. They are the lived reality of communities where reoffending is entrenched. For every repeat offender who is not rehabilitated, there are new victims who would not otherwise have been harmed.
+
+2. The £18 Billion Bill
+
+Reoffending costs the UK economy an estimated £18 billion per year when you account for the costs of re-arrest, re-prosecution, re-imprisonment, victim services, healthcare, and lost economic output. The most alarming statistic is that offenders sentenced to less than 12 months in prison have a reoffending rate of 66%—two out of three are back in the system within a year. These short sentences are too brief for meaningful rehabilitation programmes but long enough to disrupt employment, housing, and family relationships, making reoffending more likely. It is, in effect, the worst of both worlds: expensive enough to strain the public purse but too short to change behaviour.
+
+3. The Prison Population Spiral
+
+England and Wales hold approximately 87,000 prisoners—one of the highest incarceration rates in Western Europe. High reoffending drives this number relentlessly upward, as the same individuals cycle through the system repeatedly. The prison estate is overcrowded, underfunded, and struggling to deliver rehabilitation programmes. When prisons are so full that inmates spend 23 hours a day in their cells with no access to education, training, or mental health support, the conditions that drive reoffending are reinforced rather than addressed. The government has been forced to implement early release schemes to manage capacity, which itself risks increasing reoffending.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the reoffending rates achieved by the most effective criminal justice systems internationally and the level at which the UK system can be considered to be successfully rehabilitating offenders rather than simply warehousing them.
+
+🟢 Green (Below 25%): This is the "Effective Rehabilitation" zone. It indicates that the criminal justice system is successfully breaking the cycle for three out of four offenders. Countries with strong rehabilitation programmes—such as Norway and the Netherlands—consistently achieve rates in this range. At this level, prison and community sentences are genuinely changing behaviour, and the downstream benefits (fewer victims, lower costs, safer communities) are substantial.
+
+🟡 Amber (25% – 30%): This is the "Persistent Challenge" zone. The UK currently sits in this bracket at approximately 28–29%. While the majority of offenders do not reoffend within a year, a stubborn minority continue to cycle through the system. The most concerning subgroups—short-sentence prisoners, young adult males, and those with substance abuse or mental health issues—reoffend at far higher rates than the headline figure suggests.
+
+🔴 Red (Above 30%): This is the "Systemic Failure" zone. At this level, nearly one in three offenders is back in the system within a year, and prolific reoffenders are generating a disproportionate share of all crime. It signals that rehabilitation programmes are inadequate, prison conditions are counterproductive, and the transition support (housing, employment, mental health) that ex-offenders need to stay out of trouble is failing. The justice system is consuming vast resources simply to process the same people repeatedly, with diminishing returns for public safety.`,
 };
 
 export function getCrimeTooltip(metricKey: string): string | undefined {
