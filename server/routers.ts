@@ -9,6 +9,7 @@ import {
   getMetricByKey,
   getMetricHistory,
   getMetricsDiagnostics,
+  getMetricTrends,
   upsertMetric,
   addMetricHistory,
 } from "./db";
@@ -86,6 +87,10 @@ export const appRouter = router({
      */
     getPopulationBreakdown: publicProcedure.query(async () => {
       return getPopulationBreakdown();
+    }),
+
+    trends: publicProcedure.query(async () => {
+      return getMetricTrends();
     }),
 
     /**

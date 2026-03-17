@@ -105,15 +105,16 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updatedAt: now,
     };
 
-    // Set role if owner or dev user
+    // Set role if owner or dev user (always admin)
     if (user.openId === ENV.ownerOpenId || user.openId === "dev-user-local") {
       updateData.role = "admin";
-    } else if (!updateData.role) {
-      updateData.role = "user";
-    }
-    // If role is explicitly provided in user object, respect it (unless overridden above)
-    if (user.role && user.openId !== ENV.ownerOpenId && user.openId !== "dev-user-local") {
+    } else if (user.role) {
+      // Explicitly provided role (e.g. admin-login) -- respect it
       updateData.role = user.role;
+    } else {
+      // No role specified -- don't overwrite existing DB role on update;
+      // default to "user" only on first insert (via $setOnInsert below)
+      delete updateData.role;
     }
 
     // Set lastSignedIn if not provided
@@ -127,6 +128,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
         $set: updateData,
         $setOnInsert: {
           createdAt: now,
+          ...(!updateData.role ? { role: "user" } : {}),
         },
       },
       { upsert: true }
@@ -278,13 +280,15 @@ function filterEmploymentMetrics(metrics: Metric[], category?: string): Metric[]
   );
 }
 
-/** Education section: only these five cards (and their detail pages). */
+/** Education section: allowed cards (and their detail pages). */
 const EDUCATION_ALLOWED_METRIC_KEYS = new Set([
   "attainment8",
   "teacher_vacancy_rate",
   "neet_rate",
   "persistent_absence",
   "apprentice_starts",
+  "pupil_attendance",
+  "apprenticeship_intensity",
 ]);
 
 function filterEducationMetrics(metrics: Metric[], category?: string): Metric[] {
@@ -326,13 +330,17 @@ function filterHealthcareMetrics(metrics: Metric[], category?: string): Metric[]
   );
 }
 
-/** Defence section: only these five cards (and their detail pages). */
+/** Defence section: allowed cards (and their detail pages). */
 const DEFENCE_ALLOWED_METRIC_KEYS = new Set([
   "defence_spending_gdp",
   "personnel_strength",
   "equipment_spend",
   "deployability",
   "equipment_readiness",
+  "sea_mass",
+  "land_mass",
+  "air_mass",
+  "defence_industry_vitality",
 ]);
 
 function filterDefenceMetrics(metrics: Metric[], category?: string): Metric[] {
@@ -538,4 +546,53 @@ export async function getMetricHistory(metricKey: string, limit: number = 50): P
   }
   
   return normalizedHistory;
+}
+
+export async function getMetricTrends(): Promise<
+  Record<string, { current: string; previous: string | null }>
+> {
+  const { cache } = await import("./cache");
+  const cacheKey = "metricTrends:all";
+  const cached = cache.get<Record<string, { current: string; previous: string | null }>>(cacheKey);
+  if (cached) return cached;
+
+  const collection = await getCollection<MetricHistory>(COLLECTIONS.metricHistory);
+  if (!collection) return {};
+
+  const pipeline = [
+    { $sort: { metricKey: 1 as const, dataDate: -1 as const, recordedAt: -1 as const } },
+    {
+      $group: {
+        _id: "$metricKey",
+        current: { $first: "$value" },
+        entries: { $push: { value: "$value", dataDate: "$dataDate" } },
+      },
+    },
+    {
+      $project: {
+        current: 1,
+        previous: {
+          $cond: {
+            if: { $gte: [{ $size: "$entries" }, 2] },
+            then: { $getField: { field: "value", input: { $arrayElemAt: ["$entries", 1] } } },
+            else: null,
+          },
+        },
+      },
+    },
+  ];
+
+  const results = await collection.aggregate(pipeline).toArray();
+  const trends: Record<string, { current: string; previous: string | null }> = {};
+
+  for (const doc of results) {
+    const key = doc._id as string;
+    trends[key] = {
+      current: doc.current as string,
+      previous: (doc.previous as string) ?? null,
+    };
+  }
+
+  cache.set(cacheKey, trends, 10 * 60 * 1000);
+  return trends;
 }

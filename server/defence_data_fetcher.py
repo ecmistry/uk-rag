@@ -5,6 +5,7 @@ Data Source & Location: see docs/DATA_SOURCES_UK_RAG.md (canonical).
 Spend as % GDP: MOD Finance & Economics | Trained Strength: MOD Service Personnel Stats
 Equipment Spend: MOD Trade & Contracts | Deployability %: MOD Health & Wellbeing | Force Readiness: MOD Annual Reports
 """
+from __future__ import annotations
 
 import os
 import requests

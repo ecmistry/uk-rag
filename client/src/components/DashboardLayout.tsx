@@ -237,10 +237,8 @@ function DashboardLayoutContent({
               <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
             )}
             <nav className="flex items-center gap-1">
-              {menuItems.map((item) => {
-                const isActive = location === item.path || 
-                  (item.path === "/" && location === "/") ||
-                  (item.path !== "/" && location.startsWith(item.path));
+              {baseMenuItems.map((item) => {
+                const isActive = location === item.path;
                 return (
                   <Link
                     key={item.path}

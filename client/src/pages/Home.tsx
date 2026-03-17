@@ -18,6 +18,7 @@ import type { Metric } from '@shared/types';
 import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip, getPopulationTooltip } from "@/data/metricTooltips";
 import { EXPECTED_METRICS } from "@/data/expectedMetrics";
 import PopulationBreakdownChart from "@/components/PopulationBreakdownChart";
+import TrendIndicator from "@/components/TrendIndicator";
 
 export default function Home() {
   const { user } = useAuth();
@@ -37,6 +38,12 @@ export default function Home() {
       refetchOnMount: true, // Refetch when navigating back to dashboard so post-refresh data appears
     }
   );
+
+  const { data: trends } = trpc.metrics.trends.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
 
   // Refresh mutation (used by empty-state "Fetch X Data" buttons)
   const refreshMutation = trpc.metrics.refresh.useMutation({
@@ -225,7 +232,7 @@ export default function Home() {
                           {slotTooltip && (
                             <button
                               type="button"
-                              className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground bg-white/80 dark:bg-black/20"
+                              className="absolute bottom-0.5 left-0.5 z-20 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
                               aria-label="Why this metric matters"
                               onClick={(e) => {
                                 e.preventDefault();
@@ -237,7 +244,7 @@ export default function Home() {
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
                             >
-                              <Info className="h-4 w-4" />
+                              <Info className="h-3 w-3" />
                             </button>
                           )}
                         </Card>
@@ -266,17 +273,26 @@ export default function Home() {
                             </CardHeader>
                             <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
                               <div className={cn('text-sm font-bold text-center w-full leading-tight', rag.value)}>
-                                {!hasValue
-                                  ? "—"
-                                  : metric.metricKey === "attainment8"
-                                    ? parseFloat(metric.value).toFixed(1)
-                                    : metric.metricKey === "apprenticeship_intensity"
-                                      ? parseFloat(metric.value) >= 1000
-                                        ? `${parseInt(metric.value, 10).toLocaleString()}${metric.unit ? ` ${metric.unit}` : ""}`
-                                        : `${parseFloat(metric.value).toFixed(1)}${metric.unit ? metric.unit : ""}`
-                                      : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
-                                        ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
-                                        : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                                <span>
+                                  {!hasValue
+                                    ? "—"
+                                    : metric.metricKey === "attainment8"
+                                      ? parseFloat(metric.value).toFixed(1)
+                                      : metric.metricKey === "apprenticeship_intensity"
+                                        ? parseFloat(metric.value) >= 1000
+                                          ? `${parseInt(metric.value, 10).toLocaleString()}${metric.unit ? ` ${metric.unit}` : ""}`
+                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit ? metric.unit : ""}`
+                                        : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
+                                          ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
+                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                                </span>
+                                {hasValue && trends && (
+                                  <TrendIndicator
+                                    metricKey={metric.metricKey}
+                                    currentValue={parseFloat(metric.value)}
+                                    previousValue={trends[metric.metricKey]?.previous != null ? parseFloat(trends[metric.metricKey].previous!) : null}
+                                  />
+                                )}
                               </div>
                               {!hasValue && (
                                 <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>
@@ -287,7 +303,7 @@ export default function Home() {
                         {cardTooltip && (
                           <button
                             type="button"
-                            className="absolute bottom-0.5 left-0.5 z-20 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground bg-white/80 dark:bg-black/20"
+                            className="absolute bottom-0.5 left-0.5 z-20 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
                             aria-label="Why this metric matters"
                             onClick={() => {
                               setMetricInfoOpen({
@@ -296,7 +312,7 @@ export default function Home() {
                               });
                             }}
                           >
-                            <Info className="h-4 w-4" />
+                            <Info className="h-3 w-3" />
                           </button>
                         )}
                       </div>
