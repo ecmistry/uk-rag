@@ -20,14 +20,61 @@ import { EXPECTED_METRICS } from "@/data/expectedMetrics";
 import PopulationBreakdownChart from "@/components/PopulationBreakdownChart";
 import TrendIndicator from "@/components/TrendIndicator";
 
+function formatCardTitle(name: string) {
+  let out = name;
+  if (out.includes(" (Year on Year)")) out = out.replace(" (Year on Year)", "\n(Year on Year)");
+  if (out.includes(" (16-64)")) out = out.replace(" (16-64)", "\n(16-64)");
+  if (out.includes(" (16-24)")) out = out.replace(" (16-24)", "\n(16-24)");
+  if (out.includes(" (% of GDP)")) out = out.replace(" (% of GDP)", "\n(% of GDP)");
+  if (out.includes(" (Cat 2)")) out = out.replace(" (Cat 2)", "\n(Cat 2)");
+  if (out.includes(" (Births vs Deaths)")) out = out.replace(" (Births vs Deaths)", "\n(Births vs Deaths)");
+  if (out.includes(" (Long-term)")) out = out.replace(" (Long-term)", "\n(Long-term)");
+  return out;
+}
+
+function getRAGCardClasses(status: string) {
+  switch (status) {
+    case 'green':
+      return {
+        card: 'bg-green-100 border-green-400 dark:bg-green-950/60 dark:border-green-700',
+        value: 'text-green-800 dark:text-green-300 font-semibold',
+      };
+    case 'amber':
+      return {
+        card: 'bg-amber-100 border-amber-400 dark:bg-amber-950/60 dark:border-amber-700',
+        value: 'text-amber-800 dark:text-amber-300 font-semibold',
+      };
+    case 'red':
+      return {
+        card: 'bg-red-100 border-red-400 dark:bg-red-950/60 dark:border-red-700',
+        value: 'text-red-800 dark:text-red-300 font-semibold',
+      };
+    default:
+      return {
+        card: 'bg-muted/30 border-border',
+        value: 'text-foreground font-semibold',
+      };
+  }
+}
+
+function getTooltipForMetric(category: string, metricKey: string): string | undefined {
+  switch (category) {
+    case "Economy": return getEconomyTooltip(metricKey);
+    case "Employment": return getEmploymentTooltip(metricKey);
+    case "Education": return getEducationTooltip(metricKey);
+    case "Crime": return getCrimeTooltip(metricKey);
+    case "Healthcare": return getHealthcareTooltip(metricKey);
+    case "Defence": return getDefenceTooltip(metricKey);
+    case "Population": return getPopulationTooltip(metricKey);
+    default: return undefined;
+  }
+}
+
 export default function Home() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [metricInfoOpen, setMetricInfoOpen] = useState<{ title: string; content: string } | null>(null);
 
-  // Fetch all metrics (no category filter to get all categories)
-  // Cache for 5 minutes - data is relatively static
-  // Use placeholderData for instant initial render
   const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = trpc.metrics.list.useQuery(
     undefined,
     {
@@ -70,45 +117,6 @@ export default function Home() {
     }
     return { metricsByCategory: byCategory, metricsByKeyByCategory: byKeyByCategory };
   }, [metrics]);
-
-  /** Format metric/slot name with line breaks for card title (e.g. "Natural Change\n(Births vs Deaths)"). */
-  const formatCardTitle = (name: string) => {
-    let out = name;
-    if (out.includes(" (Year on Year)")) out = out.replace(" (Year on Year)", "\n(Year on Year)");
-    if (out.includes(" (16-64)")) out = out.replace(" (16-64)", "\n(16-64)");
-    if (out.includes(" (16-24)")) out = out.replace(" (16-24)", "\n(16-24)");
-    if (out.includes(" (% of GDP)")) out = out.replace(" (% of GDP)", "\n(% of GDP)");
-    if (out.includes(" (Cat 2)")) out = out.replace(" (Cat 2)", "\n(Cat 2)");
-    if (out.includes(" (Births vs Deaths)")) out = out.replace(" (Births vs Deaths)", "\n(Births vs Deaths)");
-    if (out.includes(" (Long-term)")) out = out.replace(" (Long-term)", "\n(Long-term)");
-    return out;
-  };
-
-  /** RAG card styling per UNIFORM_SCORECARD_PATTERN: bolder bg/border + value colour */
-  const getRAGCardClasses = (status: string) => {
-    switch (status) {
-      case 'green':
-        return {
-          card: 'bg-green-100 border-green-400 dark:bg-green-950/60 dark:border-green-700',
-          value: 'text-green-800 dark:text-green-300 font-semibold',
-        };
-      case 'amber':
-        return {
-          card: 'bg-amber-100 border-amber-400 dark:bg-amber-950/60 dark:border-amber-700',
-          value: 'text-amber-800 dark:text-amber-300 font-semibold',
-        };
-      case 'red':
-        return {
-          card: 'bg-red-100 border-red-400 dark:bg-red-950/60 dark:border-red-700',
-          value: 'text-red-800 dark:text-red-300 font-semibold',
-        };
-      default:
-        return {
-          card: 'bg-muted/50 border-border',
-          value: 'text-foreground',
-        };
-    }
-  };
 
   return (
     <div className="w-full">
@@ -217,7 +225,7 @@ export default function Home() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 grid-auto-rows-[4.25rem]">
                   {expectedSlots.map((slot) => {
                     const metric = metricsByKey[slot.metricKey];
-                    const slotTooltip = category === 'Economy' ? getEconomyTooltip(slot.metricKey) : category === 'Employment' ? getEmploymentTooltip(slot.metricKey) : category === 'Education' ? getEducationTooltip(slot.metricKey) : category === 'Crime' ? getCrimeTooltip(slot.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(slot.metricKey) : category === 'Defence' ? getDefenceTooltip(slot.metricKey) : category === 'Population' ? getPopulationTooltip(slot.metricKey) : undefined;
+                    const slotTooltip = getTooltipForMetric(category, slot.metricKey);
                     if (!metric) {
                       return (
                         <Card key={slot.metricKey} className="gap-0 py-0 h-full min-h-[4.25rem] flex flex-col border bg-muted/30 border-muted-foreground/20 relative">
@@ -252,7 +260,7 @@ export default function Home() {
                     }
                     const rag = getRAGCardClasses(metric.ragStatus);
                     // Prefer slot tooltip so each tile shows the correct text (e.g. Defence Industry Vitality tile always shows its tooltip)
-                    const cardTooltip = slotTooltip ?? (category === 'Economy' ? getEconomyTooltip(metric.metricKey) : category === 'Employment' ? getEmploymentTooltip(metric.metricKey) : category === 'Education' ? getEducationTooltip(metric.metricKey) : category === 'Crime' ? getCrimeTooltip(metric.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(metric.metricKey) : category === 'Defence' ? getDefenceTooltip(metric.metricKey) : category === 'Population' ? getPopulationTooltip(metric.metricKey) : undefined);
+                    const cardTooltip = slotTooltip ?? getTooltipForMetric(category, metric.metricKey);
                     const hasValue = metric.value != null && !Number.isNaN(parseFloat(String(metric.value)));
                     return (
                       <div key={metric.metricKey} className="h-full min-h-[4.25rem] relative">
@@ -290,7 +298,7 @@ export default function Home() {
                                   <TrendIndicator
                                     metricKey={metric.metricKey}
                                     currentValue={parseFloat(metric.value)}
-                                    previousValue={trends[metric.metricKey]?.previous != null ? parseFloat(trends[metric.metricKey].previous!) : null}
+                                    previousValue={trends[metric.metricKey]?.previous != null ? parseFloat(trends[metric.metricKey].previous as string) : null}
                                   />
                                 )}
                               </div>

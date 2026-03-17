@@ -91,6 +91,20 @@ describe("cache invalidation patterns", () => {
     expect(cache.get("metricHistory:gdp:100")).toEqual([]);
   });
 
+  it("deleteByPrefix removes all matching keys", () => {
+    cache.set("metricHistory:gdp:50", [1]);
+    cache.set("metricHistory:gdp:100", [2]);
+    cache.set("metricHistory:gdp:500", [3]);
+    cache.set("metricHistory:cpi:50", [4]);
+    cache.set("metrics:list:all", "keep");
+    cache.deleteByPrefix("metricHistory:gdp:");
+    expect(cache.get("metricHistory:gdp:50")).toBeNull();
+    expect(cache.get("metricHistory:gdp:100")).toBeNull();
+    expect(cache.get("metricHistory:gdp:500")).toBeNull();
+    expect(cache.get("metricHistory:cpi:50")).toEqual([4]);
+    expect(cache.get("metrics:list:all")).toBe("keep");
+  });
+
   it("clear() wipes all metric caches at once", () => {
     cache.set("metric:a", "x");
     cache.set("metricHistory:a:50", []);

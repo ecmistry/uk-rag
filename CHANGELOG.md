@@ -11,7 +11,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Dashboard trend indicators** – Each metric tile shows a small directional arrow (up/down/flat) colour-coded by sentiment: green for positive change, red for negative, grey for neutral. Metrics where "down is good" (e.g. crime, absence rates) correctly show green when decreasing. Single-data-point metrics display a grey dot.
 - **`metrics.trends` tRPC procedure** – Server-side endpoint returning the two most recent values per metric via MongoDB aggregation, with 10-minute cached TTL.
 - **`metricDirections.ts`** – Centralised direction rules (higher_better / lower_better / target_band) and `getTrendSentiment()` for all metrics.
-- **Test framework** – Vitest for TypeScript (client + server) with `@testing-library/react` and `jsdom`; Python `unittest` for defence computations. 63 tests total (38 TS + 25 Python).
+- **Test framework** – Vitest for TypeScript (client + server) with `@testing-library/react` and `jsdom`; Python `unittest` for defence computations. 137 tests total (85 TS + 52 Python).
+- **Gzip compression** – Express `compression` middleware for all responses.
+- **`.env.example`** – Reference file documenting all required and optional environment variables.
+- **`cache.deleteByPrefix()`** – Efficient prefix-based cache invalidation.
+- **`getExistingHistoryPeriods()`** – Batch history existence check eliminates N+1 queries during metrics refresh.
+- **Startup env validation** – Production mode validates required `DATABASE_URL` and `JWT_SECRET` on boot.
 
 ### Changed
 
@@ -20,11 +25,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Defence/Education allow-lists** – Expanded `DEFENCE_ALLOWED_METRIC_KEYS` and `EDUCATION_ALLOWED_METRIC_KEYS` in `db.ts` to include new metric keys (sea_mass, land_mass, air_mass, defence_industry_vitality, pupil_attendance, apprenticeship_intensity).
 - **`compute_sea_mass_score`** – Negative input values now clamped to zero for safety.
 - **vitest.config.ts** – Extended to include client-side `.test.ts` / `.test.tsx` files with jsdom environment matching.
+- **Metrics refresh** – Category fetches now run in parallel via `Promise.allSettled`; history deduplication uses batch query instead of per-metric lookups.
+- **Server-side caching** – `metrics.list` (2 min TTL), `getPopulationBreakdown` (15 min TTL), `getRegionalEducationData` (15 min TTL) responses cached in memory.
+- **`getMetrics()` filter chain** – Consolidated 10-pass filter chain into a single-pass loop with Set-based deduplication.
+- **Home.tsx** – Extracted `formatCardTitle`, `getRAGCardClasses`, and `getTooltipForMetric` outside component to avoid re-creation on each render.
+- **`useAuth`** – Moved localStorage side-effect out of `useMemo` into `useEffect` to prevent unexpected side-effects during render.
+- **`updateInactivityRag.ts` / `updateUnderemploymentRag.ts`** – Replaced N+1 `updateOne` loops with `bulkWrite`.
+- **Python fetchers** – Added error logging to 15+ silent `except` blocks; added type hints to 25+ functions; replaced deprecated `datetime.utcnow()` with `datetime.now(timezone.utc)`; replaced `ExcelFile.parse()` with `pd.read_excel()` in `ons_emp16.py`.
+- **Atomic cache writes** – `defence_industry_vitality_cron.py`, `sickness_absence_fetcher.py`, and `economy_data_fetcher.py` now write to temp file then rename to prevent corrupt reads.
+- **Defence industry vitality** – Sub-pillar values clamped to [0, 1] to prevent negative scores.
+- **Package.json** – Removed broken script references; added `update:underemployment-rag` and `update:inactivity-rag` scripts. Version bumped to 1.0.4.
 
 ### Fixed
 
 - **Auth role persistence** – `upsertUser` no longer overwrites an admin user's role back to "user" on every request. Explicitly provided roles (e.g. from admin-login) are respected; default "user" only applies on first insertion.
 - **Missing fetcher scripts** – Restored `crime_data_fetcher.py` and `education_data_fetcher.py` which are still referenced by `dataIngestion.ts`.
+- **Map script loader** – `loadMapScript` now rejects promise on `onerror` instead of silently hanging.
+- **Logout promise rejection** – Dashboard logout button now catches rejected promises to prevent unhandled rejection.
+- **Sidebar NaN guard** – `parseInt` on corrupted localStorage value now falls back to default width.
+- **Null safety** – `#root` element checked before `createRoot`; Map fallback URL removed (requires env var).
+- **SSRF protection** – Voice transcription URL blocked for private IPs, localhost, and metadata endpoints.
+- **Path traversal** – `storage.ts` `normalizeKey` rejects keys containing `..`; sickness absence cron validates publication slugs.
+- **Accessibility** – Added `aria-label` to user menu, error boundary reload button; improved login dialog alt text.
+- **Cache cleanup** – Wrapped `setInterval` cleanup in try/catch to prevent server crashes from cache errors.
 
 ## [1.0.3] - 2026-03-16
 

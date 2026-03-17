@@ -5,6 +5,7 @@
 
 import { MongoClient, Db, Collection } from "mongodb";
 import { ENV } from "./_core/env";
+import { cache } from "./cache";
 import type {
   User,
   InsertUser,
@@ -158,8 +159,6 @@ export async function getUserByOpenId(openId: string): Promise<User | undefined>
  * Upsert a metric (insert or update if exists)
  */
 export async function upsertMetric(metric: InsertMetric): Promise<void> {
-  // Import cache dynamically to avoid circular dependencies
-  const { cache } = await import("./cache");
   const collection = await getCollection<Metric>(COLLECTIONS.metrics);
   if (!collection) throw new Error("Database not available");
 
@@ -182,8 +181,8 @@ export async function upsertMetric(metric: InsertMetric): Promise<void> {
 
   // Invalidate cache for this metric and all metrics lists
   cache.delete(`metric:${metric.metricKey}`);
-  cache.delete(`metrics:all`);
-  cache.delete(`metrics:${metric.category}`);
+  cache.delete(`metricTrends:all`);
+  cache.deleteByPrefix("metrics:list:");
 }
 
 /**
@@ -379,17 +378,39 @@ export async function getMetrics(category?: string): Promise<Metric[]> {
     },
   }).toArray();
 
-  // Dedupe by metricKey so duplicate cards never appear
-  const merged = dedupeByMetricKey(metrics);
+  const ALLOWED_BY_CATEGORY: Record<string, Set<string>> = {
+    Employment: EMPLOYMENT_ALLOWED_METRIC_KEYS,
+    Education: EDUCATION_ALLOWED_METRIC_KEYS,
+    Crime: CRIME_ALLOWED_METRIC_KEYS,
+    Healthcare: HEALTHCARE_ALLOWED_METRIC_KEYS,
+    Defence: DEFENCE_ALLOWED_METRIC_KEYS,
+  };
 
-  // Economy: exclude only productivity; include Output per Hour
-  const filtered = filterEconomyMetrics(merged, category);
+  const seenKey = new Set<string>();
+  const seenCategoryName = new Set<string>();
+  const result: Metric[] = [];
 
-  const withOverrides = filtered.map(applyDisplayNameOverrides);
-  const result = dedupeByCategoryAndName(
-    dropLegacyGdpGrowthLabel(filterEmploymentMetrics(filterEducationMetrics(filterCrimeMetrics(filterHealthcareMetrics(filterDefenceMetrics(withOverrides, category), category), category), category), category))
-  );
-  console.log(`[Metrics] list category=${category ?? "all"} source=db rawCount=${metrics.length} finalCount=${result.length}`);
+  for (const raw of metrics) {
+    if (raw.metricKey === "productivity") continue;
+    if ((raw.name ?? "").startsWith("GDP Growth (Year on")) continue;
+
+    const allowed = ALLOWED_BY_CATEGORY[raw.category];
+    if (allowed && !allowed.has(raw.metricKey)) continue;
+
+    if (seenKey.has(raw.metricKey)) continue;
+    seenKey.add(raw.metricKey);
+
+    const m = normalizeOutputPerHourUnit(applyDisplayNameOverrides(raw));
+
+    const cnKey = `${m.category}\0${m.name ?? ""}`;
+    if (seenCategoryName.has(cnKey)) continue;
+    seenCategoryName.add(cnKey);
+
+    result.push(m);
+  }
+  if (process.env.DEBUG) {
+    console.debug(`[Metrics] list category=${category ?? "all"} source=db rawCount=${metrics.length} finalCount=${result.length}`);
+  }
   return result;
 }
 
@@ -398,8 +419,6 @@ export async function getMetrics(category?: string): Promise<Metric[]> {
  * Uses caching to improve performance
  */
 export async function getMetricByKey(metricKey: string): Promise<Metric | undefined> {
-  // Import cache dynamically to avoid circular dependencies
-  const { cache } = await import("./cache");
   
   // Check cache first
   const cacheKey = `metric:${metricKey}`;
@@ -468,8 +487,6 @@ function normaliseDataDate(dataDate: string): string {
 }
 
 export async function addMetricHistory(history: InsertMetricHistory): Promise<void> {
-  // Import cache dynamically to avoid circular dependencies
-  const { cache } = await import("./cache");
   const collection = await getCollection<MetricHistory>(COLLECTIONS.metricHistory);
   if (!collection) throw new Error("Database not available");
 
@@ -490,15 +507,31 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
     { upsert: true }
   );
 
-  // Invalidate cache for this metric's history
-  // Clear all history caches for this metric (different limits)
-  // Clear common limit values
-  for (let i = 10; i <= 100; i += 10) {
-    cache.delete(`metricHistory:${history.metricKey}:${i}`);
+  cache.deleteByPrefix(`metricHistory:${history.metricKey}:`);
+  cache.delete(`metricTrends:all`);
+}
+
+/**
+ * Batch-check which metricKey+dataDate pairs already exist in history.
+ * Returns a Set of "metricKey|dataDate" strings for existing entries.
+ */
+export async function getExistingHistoryPeriods(
+  pairs: Array<{ metricKey: string; dataDate: string }>
+): Promise<Set<string>> {
+  if (pairs.length === 0) return new Set();
+  const collection = await getCollection<MetricHistory>(COLLECTIONS.metricHistory);
+  if (!collection) return new Set();
+
+  const metricKeys = Array.from(new Set(pairs.map(p => p.metricKey)));
+  const docs = await collection
+    .find({ metricKey: { $in: metricKeys } }, { projection: { metricKey: 1, dataDate: 1 } })
+    .toArray();
+
+  const existing = new Set<string>();
+  for (const d of docs) {
+    existing.add(`${d.metricKey}|${d.dataDate}`);
   }
-  cache.delete(`metricHistory:${history.metricKey}:50`); // Default limit
-  cache.delete(`metricHistory:${history.metricKey}:100`); // Common limit
-  cache.delete(`metricHistory:${history.metricKey}:500`); // Max limit
+  return existing;
 }
 
 /**
@@ -510,8 +543,6 @@ const METRIC_HISTORY_MAX_LIMIT = 500;
 export async function getMetricHistory(metricKey: string, limit: number = 50): Promise<MetricHistory[]> {
   const cappedLimit = Math.min(Math.max(1, Math.floor(limit)), METRIC_HISTORY_MAX_LIMIT);
 
-  // Import cache dynamically to avoid circular dependencies
-  const { cache } = await import("./cache");
   
   // Check cache first
   const cacheKey = `metricHistory:${metricKey}:${cappedLimit}`;
@@ -551,7 +582,6 @@ export async function getMetricHistory(metricKey: string, limit: number = 50): P
 export async function getMetricTrends(): Promise<
   Record<string, { current: string; previous: string | null }>
 > {
-  const { cache } = await import("./cache");
   const cacheKey = "metricTrends:all";
   const cached = cache.get<Record<string, { current: string; previous: string | null }>>(cacheKey);
   if (cached) return cached;

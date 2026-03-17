@@ -14,6 +14,7 @@ Usage (manual):
 Designed to run via crontab, e.g. daily at 07:30 UTC:
     30 7 * * * cd /home/ec2-user/uk-rag-portal && /usr/bin/python3 server/apprenticeship_intensity_cron.py >> /home/ec2-user/uk-rag-portal/logs/apprenticeship_intensity_cron.log 2>&1
 """
+from __future__ import annotations
 
 import io
 import json
@@ -21,6 +22,7 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
+from typing import Any, Dict, Tuple
 
 import pandas as pd
 import requests
@@ -39,7 +41,8 @@ DFE_CSV_URL = (
     "https://explore-education-statistics.service.gov.uk/data-catalogue/"
     "data-set/693cfe5f-bd05-4fc0-af9c-d62ac61d00be/csv"
 )
-POPULATION_API_URL = "http://localhost:3000/api/trpc/metrics.getPopulationBreakdown"
+_API_BASE = os.environ.get("API_BASE_URL", "http://localhost:3000")
+POPULATION_API_URL = f"{_API_BASE}/api/trpc/metrics.getPopulationBreakdown"
 MONGO_URI = os.environ.get("MONGODB_URI") or os.environ.get("DATABASE_URL") or "mongodb://localhost:27017/uk_rag_portal"
 SOURCE_URL = "https://explore-education-statistics.service.gov.uk/find-statistics/apprenticeships"
 
@@ -59,12 +62,12 @@ MONTH_TO_QUARTER = {
 }
 
 
-def log(msg):
+def log(msg: str) -> None:
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     print(f"{ts} {LOG_PREFIX} {msg}", flush=True)
 
 
-def rag_status(value):
+def rag_status(value: float) -> str:
     if value >= GREEN_MIN:
         return "green"
     if value >= AMBER_MIN:
@@ -76,7 +79,7 @@ def rag_status(value):
 # Data fetching
 # ---------------------------------------------------------------------------
 
-def get_quarterly_starts():
+def get_quarterly_starts() -> Dict[str, int]:
     """
     Fetch DfE apprenticeship CSV and aggregate into calendar quarters.
     Filters to age_summary=Total rows, sums monthly starts per quarter.
@@ -124,7 +127,7 @@ def get_quarterly_starts():
     return result
 
 
-def compute_rolling_4q(quarterly_starts):
+def compute_rolling_4q(quarterly_starts: Dict[str, int]) -> Dict[str, int]:
     """
     Given dict of {'YYYY QN': starts}, compute rolling 4-quarter (12-month) sums.
     Returns dict of {'YYYY QN': rolling_sum} for quarters with 4 preceding available.
@@ -138,7 +141,7 @@ def compute_rolling_4q(quarterly_starts):
     return rolling
 
 
-def get_workforce_by_quarter():
+def get_workforce_by_quarter() -> Dict[str, float]:
     """
     Fetch workforce data (working + underemployed) per quarter from the local API.
     Returns dict of {'YYYY QN': workforce_total}.
@@ -155,7 +158,13 @@ def get_workforce_by_quarter():
 
         wf = {}
         for p in periods:
-            wf[p["period"]] = p["working"] + p["underemployed"]
+            if not isinstance(p, dict):
+                continue
+            period = p.get("period")
+            working = p.get("working", 0)
+            underemployed = p.get("underemployed", 0)
+            if period is not None:
+                wf[period] = working + underemployed
         log(f"Got workforce data for {len(wf)} quarters")
         return wf
     except Exception as e:
@@ -167,7 +176,7 @@ def get_workforce_by_quarter():
 # MongoDB helpers
 # ---------------------------------------------------------------------------
 
-def get_db():
+def get_db() -> Tuple[Any, Any]:
     uri = MONGO_URI
     client = MongoClient(uri)
     db_match = re.search(r"//[^/]+/([^?]+)", uri)
@@ -175,13 +184,13 @@ def get_db():
     return client, client[db_name]
 
 
-def get_existing_quarters(db):
+def get_existing_quarters(db: Any) -> set[str]:
     coll = db["metricHistory"]
     docs = coll.find({"metricKey": "apprenticeship_intensity"}, {"dataDate": 1})
     return {doc["dataDate"] for doc in docs}
 
 
-def insert_history(db, quarter, intensity, rag):
+def insert_history(db: Any, quarter: str, intensity: float, rag: str) -> None:
     db["metricHistory"].insert_one({
         "metricKey": "apprenticeship_intensity",
         "value": str(intensity),
@@ -192,7 +201,7 @@ def insert_history(db, quarter, intensity, rag):
     })
 
 
-def upsert_metric(db, quarter, raw_starts, intensity, rag):
+def upsert_metric(db: Any, quarter: str, raw_starts: int, intensity: float, rag: str) -> None:
     now = datetime.now(timezone.utc)
     db["metrics"].update_one(
         {"metricKey": "apprenticeship_intensity"},
@@ -217,7 +226,7 @@ def upsert_metric(db, quarter, raw_starts, intensity, rag):
 # Main cron logic
 # ---------------------------------------------------------------------------
 
-def run():
+def run() -> None:
     log("Starting daily apprenticeship intensity check...")
 
     quarterly_starts = get_quarterly_starts()
@@ -252,7 +261,7 @@ def run():
 
             rolling = rolling_starts[quarter]
             wf = workforce.get(quarter)
-            if not wf:
+            if not wf or wf < 1.0:
                 log(f"  Skipping {quarter}: no workforce data available")
                 continue
 

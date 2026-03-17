@@ -10,11 +10,18 @@ import {
   getMetricHistory,
   getMetricsDiagnostics,
   getMetricTrends,
+  getExistingHistoryPeriods,
   upsertMetric,
   addMetricHistory,
 } from "./db";
 import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchPopulationMetrics, fetchRegionalEducationData, getPopulationBreakdown, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
+import { cache } from "./cache";
+
+function csvEscape(field: unknown): string {
+  const s = String(field ?? "");
+  return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+}
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -52,26 +59,26 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const category = input?.category;
         const categoryForDb = category === 'All' ? undefined : category;
+        const cacheKey = `metrics:list:${categoryForDb ?? "all"}`;
+        const cached = cache.get<Awaited<ReturnType<typeof getMetrics>>>(cacheKey);
+        if (cached) return cached;
         const metrics = await getMetrics(categoryForDb);
-        // Sort by category and name for consistent ordering
-        return metrics.sort((a, b) => {
+        const sorted = metrics.sort((a, b) => {
           if (a.category !== b.category) {
             return a.category.localeCompare(b.category);
           }
           return a.name.localeCompare(b.name);
         });
+        cache.set(cacheKey, sorted, 2 * 60 * 1000);
+        return sorted;
       }),
 
     /**
      * Clear metrics cache (admin only). Call after seeding or when tiles don't update.
      */
     clearCache: adminProcedure.mutation(async () => {
-      const { cache } = await import("./cache");
-      const categories = ["all", "Economy", "Employment", "Education", "Crime", "Healthcare", "Defence", "Population"];
-      for (const c of categories) {
-        cache.delete(`metrics:${c}`);
-      }
-      console.log("[Metrics] Cache cleared for all categories");
+      cache.clear();
+      console.log("[Metrics] All caches cleared");
       return { ok: true };
     }),
 
@@ -86,7 +93,12 @@ export const appRouter = router({
      * Population breakdown for stacked bar (Total, Working, Inactive, Unemployed, Under 16 & Over 64).
      */
     getPopulationBreakdown: publicProcedure.query(async () => {
-      return getPopulationBreakdown();
+      const cacheKey = "populationBreakdown";
+      const cached = cache.get<Awaited<ReturnType<typeof getPopulationBreakdown>>>(cacheKey);
+      if (cached) return cached;
+      const result = await getPopulationBreakdown();
+      cache.set(cacheKey, result, 15 * 60 * 1000);
+      return result;
     }),
 
     trends: publicProcedure.query(async () => {
@@ -126,73 +138,35 @@ export const appRouter = router({
         const results: MetricData[] = [];
         const errors: string[] = [];
 
-        // Fetch Economy metrics if requested (5 metrics: Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment)
-        if (input.category === 'Economy' || input.category === 'All') {
-          const economyResult = await fetchEconomyMetrics(true);
-          if (economyResult.success && economyResult.data) {
-            results.push(...economyResult.data);
-          } else {
-            errors.push(`Economy: ${economyResult.error || 'Unknown error'}`);
-          }
-        }
+        type FetchResult = { success: boolean; data?: MetricData[]; error?: string };
+        const fetchers: Array<{ category: string; fn: () => Promise<FetchResult> }> = [];
 
-        // Fetch Employment metrics if requested (Employment Rate 16+, Employment Rate 16-64)
-        if (input.category === 'Employment' || input.category === 'All') {
-          const employmentResult = await fetchEmploymentMetrics(true);
-          if (employmentResult.success && employmentResult.data) {
-            results.push(...employmentResult.data);
-          } else {
-            errors.push(`Employment: ${employmentResult.error || 'Unknown error'}`);
-          }
-        }
+        if (input.category === 'Economy' || input.category === 'All')
+          fetchers.push({ category: 'Economy', fn: () => fetchEconomyMetrics(true) });
+        if (input.category === 'Employment' || input.category === 'All')
+          fetchers.push({ category: 'Employment', fn: () => fetchEmploymentMetrics(true) });
+        if (input.category === 'Education' || input.category === 'All')
+          fetchers.push({ category: 'Education', fn: () => fetchEducationMetrics() });
+        if (input.category === 'Crime' || input.category === 'All')
+          fetchers.push({ category: 'Crime', fn: () => fetchCrimeMetrics() });
+        if (input.category === 'Healthcare' || input.category === 'All')
+          fetchers.push({ category: 'Healthcare', fn: () => fetchHealthcareMetrics(true) });
+        if (input.category === 'Defence' || input.category === 'All')
+          fetchers.push({ category: 'Defence', fn: () => fetchDefenceMetrics() });
+        if (input.category === 'Population' || input.category === 'All')
+          fetchers.push({ category: 'Population', fn: () => fetchPopulationMetrics() });
 
-        // Fetch Education metrics if requested
-        if (input.category === 'Education' || input.category === 'All') {
-          const educationResult = await fetchEducationMetrics();
-          if (educationResult.success && educationResult.data) {
-            results.push(...educationResult.data);
-          } else {
-            errors.push(`Education: ${educationResult.error || 'Unknown error'}`);
-          }
-        }
+        const fetchResults = await Promise.allSettled(fetchers.map(f => f.fn()));
 
-        // Fetch Crime metrics if requested
-        if (input.category === 'Crime' || input.category === 'All') {
-          const crimeResult = await fetchCrimeMetrics();
-          if (crimeResult.success && crimeResult.data) {
-            results.push(...crimeResult.data);
+        for (let i = 0; i < fetchResults.length; i++) {
+          const r = fetchResults[i];
+          if (r.status === 'fulfilled' && r.value.success && r.value.data) {
+            results.push(...r.value.data);
           } else {
-            errors.push(`Crime: ${crimeResult.error || 'Unknown error'}`);
-          }
-        }
-
-        // Fetch Healthcare metrics if requested (with historical data for A&E)
-        if (input.category === 'Healthcare' || input.category === 'All') {
-          const healthcareResult = await fetchHealthcareMetrics(true); // Historical mode
-          if (healthcareResult.success && healthcareResult.data) {
-            results.push(...healthcareResult.data);
-          } else {
-            errors.push(`Healthcare: ${healthcareResult.error || 'Unknown error'}`);
-          }
-        }
-
-        // Fetch Defence metrics if requested
-        if (input.category === 'Defence' || input.category === 'All') {
-          const defenceResult = await fetchDefenceMetrics();
-          if (defenceResult.success && defenceResult.data) {
-            results.push(...defenceResult.data);
-          } else {
-            errors.push(`Defence: ${defenceResult.error || 'Unknown error'}`);
-          }
-        }
-
-        // Fetch Population metrics if requested (Phase 4)
-        if (input.category === 'Population' || input.category === 'All') {
-          const populationResult = await fetchPopulationMetrics();
-          if (populationResult.success && populationResult.data) {
-            results.push(...populationResult.data);
-          } else {
-            errors.push(`Population: ${populationResult.error || 'Unknown error'}`);
+            const errMsg = r.status === 'rejected'
+              ? String(r.reason)
+              : (r.value.error || 'Unknown error');
+            errors.push(`${fetchers[i].category}: ${errMsg}`);
           }
         }
 
@@ -203,9 +177,12 @@ export const appRouter = router({
           });
         }
 
-        // Update metrics in database
+        // Batch-check which history periods already exist (avoids N+1 queries)
+        const existingPeriods = await getExistingHistoryPeriods(
+          results.map(m => ({ metricKey: m.metric_key, dataDate: m.time_period }))
+        );
+
         for (const metricData of results) {
-          // Recompute RAG for metrics that use server-side thresholds
           const ragStatus =
             metricData.metric_key === 'inactivity_rate'
               ? calculateRAGStatus('inactivity_rate', Number(metricData.value))
@@ -217,7 +194,6 @@ export const appRouter = router({
                     ? calculateRAGStatus('underemployment', Number(metricData.value))
                     : metricData.rag_status;
 
-          // Determine unit based on metric key
           const unit = metricData.unit || (
             metricData.metric_key === 'cpi_inflation' || metricData.metric_key === 'real_gdp_growth' || metricData.metric_key.includes('rate') || metricData.metric_key.includes('vacancy') || metricData.metric_key === 'defence_spending_gdp' || metricData.metric_key === 'public_sector_net_debt' || metricData.metric_key === 'business_investment' || metricData.metric_key === 'persistent_absence' ? '%' :
             metricData.metric_key === 'output_per_hour' ? '%' :
@@ -239,12 +215,7 @@ export const appRouter = router({
             sourceUrl: metricData.source_url,
           });
 
-          // Add to history (only if this time period doesn't already exist)
-          // Check if history entry already exists for this time period (limit 500 matches getMetricHistory cap)
-          const existingHistory = await getMetricHistory(metricData.metric_key, 500);
-          const periodExists = existingHistory.some(h => h.dataDate === metricData.time_period);
-          
-          if (!periodExists) {
+          if (!existingPeriods.has(`${metricData.metric_key}|${metricData.time_period}`)) {
             await addMetricHistory({
               metricKey: metricData.metric_key,
               value: metricData.value.toString(),
@@ -275,11 +246,11 @@ export const appRouter = router({
      */
     exportCsv: publicProcedure
       .input(z.object({
-        category: z.string().optional(),
+        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population', 'All']).optional(),
         metricKey: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_]+$/).optional(),
       }).optional())
       .query(async ({ input }) => {
-        let metrics: any[];
+        let metrics: Awaited<ReturnType<typeof getMetrics>>;
         
         if (input?.metricKey) {
           const metric = await getMetricByKey(input.metricKey);
@@ -380,15 +351,17 @@ export const appRouter = router({
      */
     getRegionalEducationData: publicProcedure
       .query(async () => {
+        const cacheKey = "regionalEducationData";
+        const cached = cache.get<Awaited<ReturnType<typeof fetchRegionalEducationData>>["data"]>(cacheKey);
+        if (cached) return cached;
         const result = await fetchRegionalEducationData();
-        
         if (!result.success || !result.data) {
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
             message: result.error || 'Failed to fetch regional education data',
           });
         }
-        
+        cache.set(cacheKey, result.data, 15 * 60 * 1000);
         return result.data;
       }),
   }),

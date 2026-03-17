@@ -247,16 +247,19 @@ def load_cache() -> Optional[dict]:
         if time.time() - data.get("timestamp", 0) > CACHE_TTL_SECONDS:
             return None
         return data
-    except Exception:
+    except Exception as e:
+        print(f"[SicknessAbsence] Failed to load cache: {e}", file=sys.stderr)
         return None
 
 
 def save_cache(months: Dict[str, float]) -> None:
     try:
-        with open(CACHE_FILE, "w") as f:
+        tmp_path = CACHE_FILE + ".tmp"
+        with open(tmp_path, "w") as f:
             json.dump({"timestamp": time.time(), "months": months}, f)
-    except Exception:
-        pass
+        os.rename(tmp_path, CACHE_FILE)
+    except Exception as e:
+        print(f"[SicknessAbsence] Failed to save cache: {e}", file=sys.stderr)
 
 
 def fetch_all_months() -> Dict[Tuple[int, int], float]:

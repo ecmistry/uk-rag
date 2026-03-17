@@ -175,10 +175,8 @@ def compute_all_quarters(
         vehicles_m = rolling_vehicles[i]
         sum_m = weapons_m + vehicles_m
 
-        # Sub-Pillar 1.1: Weapons & Ammunition (4Q avg) vs £1,000m
-        sub_1_1 = min(1.0, weapons_m / TARGET_WEAPONS_MILLION)
-        # Sub-Pillar 1.2: Military Fighting Vehicles (4Q avg) vs £975m
-        sub_1_2 = min(1.0, vehicles_m / TARGET_VEHICLES_MILLION)
+        sub_1_1 = min(1.0, max(0.0, weapons_m / TARGET_WEAPONS_MILLION))
+        sub_1_2 = min(1.0, max(0.0, vehicles_m / TARGET_VEHICLES_MILLION))
         pillar1 = 0.5 * sub_1_1 + 0.5 * sub_1_2
 
         # Pillar 2: YoY momentum of 4Q rolling sum (vs same quarter previous year)
@@ -328,8 +326,10 @@ def write_cache(
         "yoy_growth_pct": yoy_pct,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
-    with open(cache_path, "w") as f:
+    tmp_path = cache_path + ".tmp"
+    with open(tmp_path, "w") as f:
         json.dump(payload, f, indent=2)
+    os.rename(tmp_path, cache_path)
     log(f"Wrote cache to {cache_path}")
 
 

@@ -44,6 +44,7 @@ MONGO_URI = os.environ.get("MONGODB_URI") or os.environ.get("DATABASE_URL") or "
 
 GREEN_MAX = 3.0
 AMBER_MAX = 4.5
+CIPD_ADJUSTMENT = 0.0
 
 MONTH_MAP = {
     "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
@@ -155,12 +156,16 @@ def get_monthly_publication_slugs(session: requests.Session) -> List[str]:
 
 
 def fetch_csv_url_from_pub_page(session: requests.Session, slug: str) -> Optional[str]:
+    if ".." in slug or "/" in slug:
+        log(f"Rejecting suspicious slug: {slug}")
+        return None
     url = f"{BASE_URL}/data-and-information/publications/statistical/nhs-sickness-absence-rates/{slug}"
     try:
         r = session.get(url, timeout=15)
         if r.status_code != 200:
             return None
-    except Exception:
+    except Exception as e:
+        log(f"Failed to fetch publication page for {slug}: {e}")
         return None
 
     csv_links = re.findall(r'href="(https://files\.digital\.nhs\.uk/[^"]*\.csv)"', r.text)

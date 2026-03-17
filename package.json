@@ -1,6 +1,6 @@
 {
   "name": "uk-rag-portal",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -12,9 +12,8 @@
     "test": "vitest run",
     "db:index": "tsx server/setupIndexes.ts",
     "db:drop-unused": "tsx server/dropUnusedCollections.ts",
-    "backfill:historical": "tsx server/backfillHistoricalData.ts",
-    "load:metrics": "tsx server/loadMetricsData.ts",
-    "pull:scheduled": "tsx server/scheduledDataPull.ts"
+    "update:underemployment-rag": "tsx server/updateUnderemploymentRag.ts",
+    "update:inactivity-rag": "tsx server/updateInactivityRag.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
@@ -50,10 +49,12 @@
     "@trpc/client": "^11.8.0",
     "@trpc/react-query": "^11.8.0",
     "@trpc/server": "^11.8.0",
+    "@types/compression": "^1.8.1",
     "axios": "^1.13.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "compression": "^1.8.1",
     "cookie": "^1.0.2",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.2",

@@ -7,10 +7,12 @@ Equipment Spend: MOD Trade & Contracts | Deployability %: MOD Health & Wellbeing
 """
 from __future__ import annotations
 
+from typing import Any, Dict, Optional
+
 import os
 import requests
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import sys
 import io
@@ -69,7 +71,7 @@ RAG_THRESHOLDS = {
     },
 }
 
-def calculate_rag_status(metric_key, value):
+def calculate_rag_status(metric_key: str, value: float) -> str:
     """Calculate RAG status based on thresholds (returns lowercase)"""
     if metric_key not in RAG_THRESHOLDS:
         return "amber"
@@ -86,13 +88,13 @@ def calculate_rag_status(metric_key, value):
 
 
 def compute_sea_mass_score(
-    carriers=2,
-    ssbns=4,
-    ssns=6,
-    escorts=17,
-    rfa=9,
-    patrol_mcm=14,
-):
+    carriers: int = 2,
+    ssbns: int = 4,
+    ssns: int = 6,
+    escorts: int = 17,
+    rfa: int = 9,
+    patrol_mcm: int = 14,
+) -> float:
     """
     Compute the Sea Mass score as a weighted composite of five naval pillars.
 
@@ -116,12 +118,12 @@ def compute_sea_mass_score(
     TARGET_RFA = 12
     TARGET_PATROL_MCM = 24
 
-    actual_carriers = max(carriers, 0)
-    actual_ssbns = max(ssbns, 0)
-    actual_ssns = max(ssns, 0)
-    actual_escorts = max(escorts, 0)
-    actual_rfa = max(rfa, 0)
-    actual_patrol_mcm = max(patrol_mcm, 0)
+    actual_carriers = max(0, carriers)
+    actual_ssbns = max(0, ssbns)
+    actual_ssns = max(0, ssns)
+    actual_escorts = max(0, escorts)
+    actual_rfa = max(0, rfa)
+    actual_patrol_mcm = max(0, patrol_mcm)
 
     # Strategic pillar: average of carrier and SSBN ratios, then apply weight.
     strategic_ratio = (
@@ -614,36 +616,36 @@ def compute_combined_sustainability_score():
 
     return round(score, 1)
 
-def fetch_defence_spending():
+def fetch_defence_spending() -> Optional[Dict[str, Any]]:
     """
     Fetch UK defence spending as % of GDP from MOD ODS spreadsheet
     NATO target is 2% of GDP
     """
     try:
-        print("\n" + "="*60)
-        print("Fetching Defence Spending Data")
-        print("="*60)
+        print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+        print("[Defence] Fetching Defence Spending Data", file=sys.stderr, flush=True)
+        print("[Defence] " + "="*60, file=sys.stderr, flush=True)
         
         # MOD publishes annual ODS spreadsheet with spending data
         # Latest: Defence departmental resources 2024
         ods_url = "https://assets.publishing.service.gov.uk/media/6745abccbdeffdc82cffe11c/Tables_relating_to_departmental_resources_2024.ods"
         
-        print(f"Downloading from: {ods_url}")
+        print(f"[Defence] Downloading from: {ods_url}", file=sys.stderr, flush=True)
         
         response = requests.get(ods_url, timeout=60)
         response.raise_for_status()
         
-        print(f"Downloaded {len(response.content)} bytes")
+        print(f"[Defence] Downloaded {len(response.content)} bytes", file=sys.stderr, flush=True)
         
         # Read ODS file (OpenDocument Spreadsheet)
         # pandas can read ODS with openpyxl or odfpy
         try:
             df = pd.read_excel(io.BytesIO(response.content), engine='odf')
-        except:
+        except Exception:
             # Try with openpyxl if odfpy not available
             # ODS files need odfpy library: pip install odfpy
             # For now, we'll parse manually or use a workaround
-            print("Note: ODS parsing requires odfpy library. Using alternative method.")
+            print("[Defence] Note: ODS parsing requires odfpy library. Using alternative method.", file=sys.stderr, flush=True)
             
             # Alternative: Get GDP from ONS and MOD spending from published figures
             # MOD spending 2023-24: £53.9 billion (from published statistics)
@@ -675,7 +677,7 @@ def fetch_defence_spending():
                                 if gdp_value > 1000:  # GDP should be in billions
                                     latest_gdp = gdp_value
                                     break
-                            except:
+                            except Exception:
                                 continue
                 
                 # MOD spending 2023-24: £53.9 billion (published figure)
@@ -711,26 +713,26 @@ def fetch_defence_spending():
             "last_updated": datetime.now().isoformat()
         }
         
-        print(f"  Defence Spending: {defence_spending_pct:.2f}% of GDP ({metric['rag_status'].upper()})")
+        print(f"[Defence]   Defence Spending: {defence_spending_pct:.2f}% of GDP ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
         return metric
         
     except Exception as e:
-        print(f"Error fetching defence spending: {e}")
+        print(f"[Defence] Error fetching defence spending: {e}", file=sys.stderr, flush=True)
         import traceback
         traceback.print_exc()
         return None
 
 
-def fetch_equipment_spend():
+def fetch_equipment_spend() -> Optional[Dict[str, Any]]:
     """
     Fetch equipment spend from MOD: Trade & Contracts.
     Source: https://www.gov.uk/government/collections/defence-trade-and-industry-index
     Returns spend as % of defence budget (equipment/enabling as share of MOD spend).
     """
     try:
-        print("\n" + "="*60)
-        print("Fetching Equipment Spend Data (MOD: Trade & Contracts)")
-        print("="*60)
+        print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+        print("[Defence] Fetching Equipment Spend Data (MOD: Trade & Contracts)", file=sys.stderr, flush=True)
+        print("[Defence] " + "="*60, file=sys.stderr, flush=True)
         # MOD Trade, Industry and Contracts: 2024/25 £40.6bn paid to UK/foreign orgs; equipment share ~40%
         # Use published share of defence budget spent on equipment/enabling
         value_pct = 40.0  # Placeholder: typical equipment share from MOD Trade & Contracts
@@ -747,22 +749,22 @@ def fetch_equipment_spend():
             "source_url": "https://www.gov.uk/government/collections/defence-trade-and-industry-index",
             "last_updated": datetime.now().isoformat(),
         }
-        print(f"  Equipment Spend: {value_pct}% of defence budget ({metric['rag_status'].upper()})")
+        print(f"[Defence]   Equipment Spend: {value_pct}% of defence budget ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
         return metric
     except Exception as e:
         print(f"Error fetching equipment spend: {e}", file=sys.stderr)
         return None
 
 
-def fetch_deployability():
+def fetch_deployability() -> Optional[Dict[str, Any]]:
     """
     Fetch deployability % from MOD: Health & Wellbeing.
     Source: MOD health/medical statistics; % of force fit for deployment.
     """
     try:
-        print("\n" + "="*60)
-        print("Fetching Deployability Data (MOD: Health & Wellbeing)")
-        print("="*60)
+        print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+        print("[Defence] Fetching Deployability Data (MOD: Health & Wellbeing)", file=sys.stderr, flush=True)
+        print("[Defence] " + "="*60, file=sys.stderr, flush=True)
         # MOD does not publish a single "deployability %" series; derived from medical fitness/health stats
         value_pct = 78.0  # Placeholder: typical reported range from MOD health stats
         time_period = datetime.now().strftime("%Y")
@@ -778,31 +780,31 @@ def fetch_deployability():
             "source_url": "https://www.gov.uk/government/collections/defence-mental-health-statistics-index",
             "last_updated": datetime.now().isoformat(),
         }
-        print(f"  Deployability %: {value_pct}% ({metric['rag_status'].upper()})")
+        print(f"[Defence]   Deployability %: {value_pct}% ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
         return metric
     except Exception as e:
         print(f"Error fetching deployability: {e}", file=sys.stderr)
         return None
 
 
-def fetch_equipment_readiness():
+def fetch_equipment_readiness() -> Optional[Dict[str, Any]]:
     """
     Fetch equipment readiness percentage
     Note: This data is not publicly available in structured format
     MOD publishes annual reports but not monthly readiness statistics
     """
     try:
-        print("\n" + "="*60)
-        print("Fetching Equipment Readiness Data")
-        print("="*60)
+        print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+        print("[Defence] Fetching Equipment Readiness Data", file=sys.stderr, flush=True)
+        print("[Defence] " + "="*60, file=sys.stderr, flush=True)
         
         # Equipment readiness data is not available in public CSV/Excel format
         # MOD publishes this in annual reports and parliamentary answers
         # For now, we'll note that this requires manual data entry or API access
         
-        print("Note: Equipment readiness data is not available in public CSV format")
-        print("This metric requires MOD internal data or manual updates")
-        print("Using published MOD readiness figures where available")
+        print("[Defence] Note: Equipment readiness data is not available in public CSV format", file=sys.stderr, flush=True)
+        print("[Defence] This metric requires MOD internal data or manual updates", file=sys.stderr, flush=True)
+        print("[Defence] Using published MOD readiness figures where available", file=sys.stderr, flush=True)
         
         # MOD typically reports equipment readiness in annual reports
         # Typical range: 75-85% depending on equipment type
@@ -825,22 +827,22 @@ def fetch_equipment_readiness():
             "last_updated": datetime.now().isoformat()
         }
         
-        print(f"  Equipment Readiness: {readiness_pct}% ({metric['rag_status'].upper()})")
-        print(f"  Note: This data is not available in automated CSV format")
+        print(f"[Defence]   Equipment Readiness: {readiness_pct}% ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
+        print("[Defence]   Note: This data is not available in automated CSV format", file=sys.stderr, flush=True)
         return metric
         
     except Exception as e:
-        print(f"Error fetching equipment readiness: {e}")
+        print(f"[Defence] Error fetching equipment readiness: {e}", file=sys.stderr, flush=True)
         return None
 
-def fetch_personnel_strength():
+def fetch_personnel_strength() -> Optional[Dict[str, Any]]:
     """
     Fetch personnel strength as % of target from MOD quarterly Excel files
     """
     try:
-        print("\n" + "="*60)
-        print("Fetching Personnel Strength Data")
-        print("="*60)
+        print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+        print("[Defence] Fetching Personnel Strength Data", file=sys.stderr, flush=True)
+        print("[Defence] " + "="*60, file=sys.stderr, flush=True)
         
         # MOD publishes quarterly personnel statistics in Excel format
         # Latest: https://www.gov.uk/government/statistics/quarterly-service-personnel-statistics-2024
@@ -881,18 +883,18 @@ def fetch_personnel_strength():
                     excel_url = None
             else:
                 excel_url = None
-        except:
+        except Exception:
             excel_url = None
         
         # If we found Excel URL, parse it
         if excel_url:
-            print(f"Downloading from: {excel_url}")
+            print(f"[Defence] Downloading from: {excel_url}", file=sys.stderr, flush=True)
             response = requests.get(excel_url, timeout=60)
             response.raise_for_status()
             
             # Read Excel file
             excel_file = pd.ExcelFile(io.BytesIO(response.content))
-            print(f"Available sheets: {excel_file.sheet_names[:5]}")
+            print(f"[Defence] Available sheets: {excel_file.sheet_names[:5]}", file=sys.stderr, flush=True)
             
             # Look for sheet with strength vs. target data
             # Typical sheet names: "Strength", "Personnel", "Summary", etc.
@@ -905,11 +907,11 @@ def fetch_personnel_strength():
             if not target_sheet:
                 target_sheet = excel_file.sheet_names[0]  # Use first sheet
             
-            print(f"Using sheet: {target_sheet}")
+            print(f"[Defence] Using sheet: {target_sheet}", file=sys.stderr, flush=True)
             df = pd.read_excel(excel_file, sheet_name=target_sheet)
             
-            print(f"Sheet dimensions: {df.shape}")
-            print(f"Columns: {df.columns.tolist()}")
+            print(f"[Defence] Sheet dimensions: {df.shape}", file=sys.stderr, flush=True)
+            print(f"[Defence] Columns: {df.columns.tolist()}", file=sys.stderr, flush=True)
             
             # Find strength vs. target percentage
             # Look for columns with "target", "strength", "%" or similar
@@ -968,9 +970,9 @@ def fetch_personnel_strength():
             # Typical target is around 190,000-195,000
             # This gives approximately 92-95% of target
             strength_pct = 92.0
-            print("  Note: Using estimated value - Excel structure may have changed")
+            print("[Defence]   Note: Using estimated value - Excel structure may have changed", file=sys.stderr, flush=True)
         else:
-            print(f"  Parsed from Excel: {strength_pct:.1f}%")
+            print(f"[Defence]   Parsed from Excel: {strength_pct:.1f}%", file=sys.stderr, flush=True)
         
         time_period = datetime.now().strftime("%Y")
         
@@ -986,17 +988,17 @@ def fetch_personnel_strength():
             "last_updated": datetime.now().isoformat()
         }
         
-        print(f"  Personnel Strength: {strength_pct:.1f}% of target ({metric['rag_status'].upper()})")
+        print(f"[Defence]   Personnel Strength: {strength_pct:.1f}% of target ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
         return metric
         
     except Exception as e:
-        print(f"Error fetching personnel strength: {e}")
+        print(f"[Defence] Error fetching personnel strength: {e}", file=sys.stderr, flush=True)
         import traceback
         traceback.print_exc()
         return None
 
 
-def fetch_sea_mass():
+def fetch_sea_mass() -> Optional[Dict[str, Any]]:
     """
     Compute and return the Sea Mass composite metric.
 
@@ -1009,9 +1011,9 @@ def fetch_sea_mass():
     The metric is expressed as a percentage score from 0–100.
     """
     try:
-        print("\n" + "="*60)
-        print("Computing Sea Mass Composite Score")
-        print("="*60)
+        print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+        print("[Defence] Computing Sea Mass Composite Score", file=sys.stderr, flush=True)
+        print("[Defence] " + "="*60, file=sys.stderr, flush=True)
 
         # Current UK counts (surface fleet + submarines), as of March 2026.
         carriers = 2          # HMS Queen Elizabeth, HMS Prince of Wales
@@ -1033,7 +1035,7 @@ def fetch_sea_mass():
 
         # Label Sea Mass snapshots by calendar quarter (e.g. "2026 Q1").
         # This ensures we only ever store and visualise quarterly data points.
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         quarter = (now.month - 1) // 3 + 1
         time_period = f"{now.year} Q{quarter}"
 
@@ -1079,7 +1081,7 @@ def fetch_sea_mass():
             "information": information,
         }
 
-        print(f"  Sea Mass score: {score_pct:.1f}% ({rag.upper()})")
+        print(f"[Defence]   Sea Mass score: {score_pct:.1f}% ({rag.upper()})", file=sys.stderr, flush=True)
         return metric
 
     except Exception as e:
@@ -1087,7 +1089,7 @@ def fetch_sea_mass():
         return None
 
 
-def fetch_land_mass():
+def fetch_land_mass() -> Optional[Dict[str, Any]]:
     """
     Compute and return the Land Mass composite metric.
 
@@ -1096,9 +1098,9 @@ def fetch_land_mass():
     (YYYY Q1–Q4), in line with Sea Mass.
     """
     try:
-        print("\n" + "="*60)
-        print("Computing Land Mass Composite Score")
-        print("="*60)
+        print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+        print("[Defence] Computing Land Mass Composite Score", file=sys.stderr, flush=True)
+        print("[Defence] " + "="*60, file=sys.stderr, flush=True)
 
         # Current UK counts (from compute_land_mass_score)
         mbts = 288
@@ -1112,7 +1114,7 @@ def fetch_land_mass():
         score_pct = compute_land_mass_score()
         rag = calculate_rag_status("land_mass", score_pct)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         quarter = (now.month - 1) // 3 + 1
         time_period = f"{now.year} Q{quarter}"
 
@@ -1155,11 +1157,11 @@ def fetch_land_mass():
                 "MOD equipment and personnel statistics"
             ),
             "source_url": "https://www.janes.com/",
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
             "information": information,
         }
 
-        print(f"  Land Mass score: {score_pct:.1f}% ({rag.upper()})")
+        print(f"[Defence]   Land Mass score: {score_pct:.1f}% ({rag.upper()})", file=sys.stderr, flush=True)
         return metric
 
     except Exception as e:
@@ -1183,7 +1185,7 @@ def get_air_mass_information(
     )
 
 
-def fetch_air_mass():
+def fetch_air_mass() -> Optional[Dict[str, Any]]:
     """
     Compute and return the Air Mass composite metric.
 
@@ -1192,9 +1194,9 @@ def fetch_air_mass():
     (YYYY Q1–Q4), in line with Sea Mass and Land Mass.
     """
     try:
-        print("\n" + "="*60)
-        print("Computing Air Mass Composite Score")
-        print("="*60)
+        print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+        print("[Defence] Computing Air Mass Composite Score", file=sys.stderr, flush=True)
+        print("[Defence] " + "="*60, file=sys.stderr, flush=True)
 
         fighters = 120
         force_multipliers = 17  # 14 tankers + 3 AEW
@@ -1204,7 +1206,7 @@ def fetch_air_mass():
         score_pct = compute_air_mass_score()
         rag = calculate_rag_status("air_mass", score_pct)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         quarter = (now.month - 1) // 3 + 1
         time_period = f"{now.year} Q{quarter}"
 
@@ -1237,11 +1239,11 @@ def fetch_air_mass():
                 "IISS Military Balance, RUSI air power analysis"
             ),
             "source_url": "https://www.flightglobal.com/defence/2026-world-air-forces-directory/165267.article",
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
             "information": information,
         }
 
-        print(f"  Air Mass score: {score_pct:.1f}% ({rag.upper()})")
+        print(f"[Defence]   Air Mass score: {score_pct:.1f}% ({rag.upper()})", file=sys.stderr, flush=True)
         return metric
 
     except Exception as e:
@@ -1249,7 +1251,7 @@ def fetch_air_mass():
         return None
 
 
-def fetch_defence_industry_vitality():
+def fetch_defence_industry_vitality() -> Optional[Dict[str, Any]]:
     """
     Return the Defence Industry Vitality metric from the cron cache. The cron fetches
     ONS Weapons & Ammunition (P39H) and Military Fighting Vehicles (P3AJ) series,
@@ -1263,12 +1265,13 @@ def fetch_defence_industry_vitality():
     try:
         with open(cache_path) as f:
             data = json.load(f)
-    except Exception:
+    except Exception as e:
+        print(f"[Defence] Error reading DIV cache: {e}", file=sys.stderr)
         return None
 
     value_pct = data.get("value")
     rag_str = data.get("rag_status", "amber")
-    time_period = data.get("time_period") or f"{datetime.utcnow().year} Q{(datetime.utcnow().month - 1) // 3 + 1}"
+    time_period = data.get("time_period") or f"{datetime.now(timezone.utc).year} Q{(datetime.now(timezone.utc).month - 1) // 3 + 1}"
 
     if value_pct is None:
         return None
@@ -1282,16 +1285,16 @@ def fetch_defence_industry_vitality():
         "time_period": time_period,
         "data_source": "",
         "source_url": "",
-        "last_updated": data.get("updated_at") or datetime.utcnow().isoformat(),
+        "last_updated": data.get("updated_at") or datetime.now(timezone.utc).isoformat(),
     }
-    print(f"  Defence Industry Vitality: {value_pct}% ({rag_str.upper()}) [from cache]")
+    print(f"[Defence]   Defence Industry Vitality: {value_pct}% ({rag_str.upper()}) [from cache]", file=sys.stderr, flush=True)
     return metric
 
-def main():
+def main() -> list:
     """Main function to fetch all Defence metrics"""
-    print("\n" + "="*60)
-    print("UK RAG Dashboard - Defence Data Fetcher")
-    print("="*60)
+    print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+    print("[Defence] UK RAG Dashboard - Defence Data Fetcher", file=sys.stderr, flush=True)
+    print("[Defence] " + "="*60, file=sys.stderr, flush=True)
     
     metrics = []
     
@@ -1341,21 +1344,21 @@ def main():
         metrics.append(defence_industry_vitality_metric)
     
     # Print summary
-    print("\n" + "="*60)
-    print("Summary of Defence Metrics")
-    print("="*60)
+    print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+    print("[Defence] Summary of Defence Metrics", file=sys.stderr, flush=True)
+    print("[Defence] " + "="*60, file=sys.stderr, flush=True)
     
     for metric in metrics:
-        print(f"\n{metric['metric_name']}:")
-        print(f"  Value: {metric['value']}")
-        print(f"  RAG Status: {metric['rag_status'].upper()}")
-        print(f"  Time Period: {metric['time_period']}")
-        print(f"  Source: {metric['data_source']}")
+        print(f"\n[Defence] {metric['metric_name']}:", file=sys.stderr, flush=True)
+        print(f"[Defence]   Value: {metric['value']}", file=sys.stderr, flush=True)
+        print(f"[Defence]   RAG Status: {metric['rag_status'].upper()}", file=sys.stderr, flush=True)
+        print(f"[Defence]   Time Period: {metric['time_period']}", file=sys.stderr, flush=True)
+        print(f"[Defence]   Source: {metric['data_source']}", file=sys.stderr, flush=True)
     
     # Output JSON for Node.js integration
-    print("\n" + "="*60)
-    print("JSON Output")
-    print("="*60)
+    print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
+    print("[Defence] JSON Output", file=sys.stderr, flush=True)
+    print("[Defence] " + "="*60, file=sys.stderr, flush=True)
     print(json.dumps(metrics, indent=2))
     
     return metrics
