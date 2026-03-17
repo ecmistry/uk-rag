@@ -273,36 +273,140 @@ export function getEmploymentTooltip(metricKey: string): string | undefined {
 
 /** Education section: metricKey -> tooltip text */
 export const EDUCATION_TOOLTIPS: Record<string, string> = {
-  attainment8: `Attainment 8 measures the average achievement of pupils across 8 qualifications at Key Stage 4 (GCSEs, typically age 16). The Department for Education calculates this by summing points for each pupil's 8 qualifying subjects: English (double-weighted), Maths (double-weighted), 3 English Baccalaureate subjects (sciences, languages, humanities), and 3 further approved qualifications. Grade 9 = 9 points, Grade 1 = 1 point, U = 0. The maximum score is 90 (9×8 + double weighting). National and school-level averages are published annually. Attainment 8 replaced the previous '5 A*-C including English and Maths' measure to provide a broader picture of achievement across the ability range and reduce focus on the C/D borderline.
+  attainment8: `Think of this as the "School Report Card" for the entire country. Attainment 8 measures the average achievement of pupils across 8 GCSE-level qualifications at Key Stage 4 (age 16). Rather than the old system that only asked "Did you get 5 good GCSEs?", this score captures how well a pupil performed across a broad range of subjects. A score of 50 means the average pupil achieved roughly a Grade 5 (a "strong pass") across all 8 subjects. It is the single most important measure of whether the education system is giving the next generation the foundation they need to succeed.
 
-Data Source: DfE: KS4 Performance
+How it is Calculated
 
-Why it matters to you if it gets worse: Future generations lack the basic skills needed for higher education or skilled jobs, limiting their career prospects and national productivity.`,
+The Department for Education calculates this by summing point scores across 8 qualifying subjects, divided into four "buckets": English (double-weighted, counting in two slots), Maths (double-weighted, counting in two slots), three English Baccalaureate subjects (sciences, computing, history, geography, or languages), and three further approved qualifications from an "open bucket." Each grade earns points: Grade 9 = 9 points, Grade 1 = 1 point, U (ungraded) = 0. The maximum possible score is 90. A pupil's total is divided by 10 (the number of slots, including the double-weighted English and Maths) to produce their Attainment 8 score. The national figure is simply the average of all pupils' individual scores. Data is published annually by the DfE and broken down by school, region, gender, ethnicity, and crucially, disadvantage status (pupils eligible for Free School Meals).
+
+Real Impact on the Person on the Street
+
+Attainment 8 might sound like a number that only matters to teachers and politicians, but it directly shapes the country you live in:
+
+1. Your Children's Life Chances
+
+A pupil's Attainment 8 score is the strongest single predictor of whether they will go on to further education, secure a skilled apprenticeship, or enter a well-paid career. The gap between disadvantaged pupils and their peers remains stubbornly wide—typically 13-14 points—meaning a child born into poverty is statistically likely to leave school with significantly weaker qualifications, locking in inequality for a generation.
+
+2. Local Economic Health
+
+Areas with consistently low Attainment 8 scores tend to have weaker local economies. If young people leave school without strong foundational skills, local employers struggle to fill skilled roles, businesses are less likely to invest in the area, and the cycle of deprivation deepens. High-performing areas attract investment; low-performing areas lose it.
+
+3. The National Skills Pipeline
+
+At a national level, Attainment 8 is the "intake valve" for the entire skills system. If the average score is falling, it means fewer young people are entering the workforce with the literacy, numeracy, and scientific understanding needed for a modern economy. This feeds directly into the UK's chronic productivity problem and its ability to compete globally in technology, engineering, and advanced manufacturing.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on DfE national averages and the level of attainment considered necessary for a young person to access meaningful post-16 pathways (sixth form, college, or quality apprenticeships).
+
+🟢 Green (Above 48): This is the "Strong Foundation" zone. A national average above 48 indicates that the typical pupil is achieving solid Grade 5s across all subjects—the level universities and employers consider a "strong pass." At this level, the education system is broadly delivering for the majority of young people.
+
+🟡 Amber (44 – 48): This is the "Underperformance" zone. The national average hovers here in recent years (around 46). It means the average pupil is achieving between Grade 4 and Grade 5—a "standard pass" but not a strong one. While functional, it signals that a significant proportion of pupils are leaving school without the depth of knowledge needed for higher-level study or competitive apprenticeships.
+
+🔴 Red (Below 44): This is the "Skills Crisis" zone. An average below 44 would indicate that the typical pupil is not achieving a solid standard pass across their core subjects. At this level, the country is systematically failing to equip the next generation with basic competencies, with severe long-term consequences for economic productivity, social mobility, and public service quality.`,
   teacher_vacancy_rate: `Teacher Vacancies measures the number and rate of unfilled teaching positions across state-funded schools in England. The Department for Education calculates this from the annual School Workforce Census, conducted each November, where schools report posts that are vacant or temporarily filled. The vacancy rate is: (vacancies ÷ total posts) × 100. Data is broken down by phase (primary/secondary), subject, and region. Certain subjects face acute shortages: physics, computing, modern foreign languages, and design technology regularly recruit below target. High vacancy rates correlate with increased class sizes, subject non-availability, and reliance on non-specialist or supply teachers. Retention is equally problematic, with significant proportions leaving within 5 years.
 
 Data Source: DfE: School Workforce
 
 Why it matters to you if it gets worse: Class sizes increase, subjects are dropped, and your child's education suffers due to relying on non-specialist or temporary staff.`,
-  neet_rate: `The NEET Rate measures the percentage of young people aged 16-24 who are Not in Education, Employment, or Training. The ONS calculates this from the Labour Force Survey, identifying individuals in this age group who are neither: (a) in any form of education or training (full-time, part-time, formal, or informal), nor (b) in employment (including self-employment). The rate is expressed as: (NEET young people ÷ total 16-24 population) × 100. NEET status is a major social indicator, strongly associated with poor long-term outcomes including lower lifetime earnings, worse health, and higher welfare dependency. The measure is broken down by age bands (16-17, 18-24) since compulsory education/training applies to 16-17 year-olds.
+  neet_rate: `Think of this as the "Lost Generation" metric. It measures the percentage of young people aged 16–24 who are Not in Education, Employment, or Training—they are not at school, not at college, not in a job, and not doing an apprenticeship. They have effectively dropped off every ladder that society offers. An unemployed graduate searching for work is not NEET (they are "unemployed but active"). A NEET is someone who has stopped engaging with the system entirely. When this number is high, it means the country is wasting the potential of its youngest citizens at the exact moment when their habits, skills, and confidence are being formed for life.
 
-Data Source: ONS: Young People NEET
+How it is Calculated
 
-Why it matters to you if it gets worse: A wasted generation who are not contributing to the economy and are at higher risk of long-term poverty, social exclusion, and crime.`,
+The Office for National Statistics (ONS) calculates this from the Labour Force Survey—a quarterly household survey of approximately 80,000 individuals. They identify everyone aged 16–24 and classify them into three groups: (a) in education or training, (b) in employment, or (c) neither. The NEET rate is: (those in group C ÷ total 16–24 population) × 100. The data is broken down by age band (16–17 and 18–24), sex, region, and reason for inactivity. It is important to note that the majority of NEETs (around 59%) are not "unemployed" in the traditional sense—they are economically inactive, meaning they are not even looking for work, often due to long-term health conditions (27%), caring responsibilities (13%), or discouragement. Current estimates place approximately 957,000 young people in NEET status across the UK—nearly one million.
+
+Real Impact on the Person on the Street
+
+The NEET rate might seem like someone else's problem, but its effects ripple through every community:
+
+1. The "Scarring Effect"
+
+Research consistently shows that a period of NEET status in your late teens or early twenties leaves a permanent mark on your earnings and career. Nearly half (48%) of young people who become NEET remain NEET a year later, and 58% of NEET young people have never had a paid job. This isn't a temporary blip—it is the start of a lifetime of lower wages, worse health, and greater reliance on the welfare system, all of which are funded by your taxes.
+
+2. Community Decline and Anti-Social Behaviour
+
+High NEET concentrations in a local area correlate with higher rates of anti-social behaviour, substance abuse, and mental health crises. When young people have no structure, no income, and no purpose, the social fabric of a neighbourhood deteriorates. You see it in boarded-up high streets, rising local crime, and overstretched community services.
+
+3. The Fiscal Black Hole
+
+Every NEET young person represents a double cost to the taxpayer: they are not contributing to the economy through work and taxes, and they are drawing on public services (benefits, healthcare, housing, and eventually the criminal justice system). The estimated lifetime cost to the public purse of a single young person who remains long-term NEET is over £100,000. Multiply that by nearly a million and the scale of the fiscal challenge becomes clear.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are calibrated against the performance of the best-performing advanced economies and the UK's own pre-2008 track record, when youth engagement was significantly higher.
+
+🟢 Green (Below 3.0%): This is the "Full Engagement" zone. It matches the performance of countries like the Netherlands, Germany, and the Nordic nations, where virtually every young person is either studying, training, or working. At this level, NEET status is limited to short transitional periods (e.g. between finishing a course and starting a job), not a chronic condition.
+
+🟡 Amber (3.0% – 5.0%): This is the "Structural Gap" zone. The UK currently sits in this bracket. It indicates that while the majority of young people are engaged, a persistent minority—often concentrated in deprived areas or among those with health conditions—are falling through the cracks. The system is functioning but not reaching everyone.
+
+🔴 Red (Above 5.0%): This is the "Systemic Failure" zone. At this level, more than 1 in 20 young people have disengaged entirely. It signals fundamental problems with the education-to-employment pipeline—whether that is inadequate careers guidance, a lack of entry-level jobs, unaffordable further education, or a youth mental health crisis that the system cannot contain.`,
   persistent_absence: `Persistent Absence measures the percentage of pupils who miss 10% or more of their possible school sessions (typically 38+ sessions per year, where one session = half a day). The Department for Education calculates this from termly school census returns, which record authorised absences (illness, appointments, religious observance) and unauthorised absences (truancy, holidays in term time). A pupil crossing the 10% threshold is classified as 'persistently absent.' Chronic absence severely impacts educational outcomes—missing 10% equates to approximately 19 school days or nearly 4 weeks. Post-pandemic persistent absence rates roughly doubled, with particular increases among disadvantaged pupils and those with special educational needs.
 
 Data Source: DfE: Pupil Absence
 
 Why it matters to you if it gets worse: Students fall behind, increasing social inequality, and leading to anti-social behaviour issues in the community.`,
-  pupil_attendance: `Unauthorised Pupil Absence measures the percentage of school sessions missed due to unauthorised reasons (truancy, holidays in term time, etc.), as opposed to authorised absences (illness, appointments). The Department for Education calculates this from termly school census returns. A lower percentage indicates better attendance. High unauthorised absence correlates with poorer educational outcomes and is a key indicator of engagement.
+  pupil_attendance: `Think of this as the "School Truancy Alarm." It measures the percentage of school sessions missed for unauthorised reasons—truancy, term-time holidays, unexplained absences, and other unexcused non-attendance. Unlike authorised absence (illness, medical appointments), unauthorised absence signals active disengagement: families or pupils choosing not to attend school without a valid reason. Each "session" is half a school day, so if this rate is 2%, it means 2 out of every 100 half-day sessions across all schools are being missed without permission. It is one of the most direct indicators of whether the education system is holding the attention and engagement of its pupils.
 
-Data Source: DfE: Pupil Absence
+How it is Calculated
 
-Why it matters to you if it gets worse: More pupils missing school without good reason leads to lower attainment and increased risk of disengagement.`,
-  apprenticeship_intensity: `Apprenticeship Intensity measures the number of apprenticeship starts per 1,000 people in the working-age population, providing a comparable rate of apprenticeship uptake. The Department for Education calculates this from Individualised Learner Records and ONS workforce data. Higher intensity indicates stronger employer investment in skills development.
+The Department for Education (DfE) calculates this from mandatory termly school census returns. Every state-funded school in England must record, for every pupil, every session (morning and afternoon) and mark it as either present, authorised absent, or unauthorised absent. The national unauthorised absence rate is then: (total unauthorised absence sessions ÷ total possible sessions) × 100. Data is published termly and broken down by school phase (primary/secondary), region, local authority, and pupil characteristics (Free School Meals eligibility, special educational needs, ethnicity). The DfE distinguishes between types of unauthorised absence: truancy, holidays not agreed by the school, arriving late after registration closes, and "other unauthorised" (no explanation provided). Approximately 80% of unauthorised absence spells last a single day, but long-duration absences (two weeks or more) account for 15–22% of total unauthorised absence.
 
-Data Source: DfE: Apprenticeships & Training
+Real Impact on the Person on the Street
 
-Why it matters to you if it gets worse: Fewer apprenticeships mean a shortage of skilled tradespeople and technicians, making it harder and more expensive to hire for technical roles.`,
+Rising unauthorised absence is not just a headteacher's problem—it has consequences you can see in your community:
+
+1. The Attainment Collapse
+
+Every day of unauthorised absence directly damages a pupil's chances of academic success. Research shows that pupils with high levels of unauthorised absence are significantly less likely to achieve Grade 4 or above in English and Maths. The post-pandemic surge—unauthorised absence in secondary schools has nearly doubled compared to pre-2020 levels—means an entire cohort of young people is accumulating gaps in their education that will be extremely difficult to fill later.
+
+2. Safeguarding and Vulnerability
+
+Children who are not in school are invisible to the systems designed to protect them. Persistent unauthorised absence is a key warning sign for safeguarding concerns—including exploitation, neglect, and mental health crises. When absence rates climb, schools and local authorities lose sight of the children who may need help the most.
+
+3. The Anti-Social Behaviour Connection
+
+Young people not in school during school hours are disproportionately involved in anti-social behaviour, petty crime, and gang recruitment. Communities with high unauthorised absence rates often see the effects directly: groups of school-age children in town centres during the day, increased shoplifting, and a general erosion of public order that affects local businesses and residents.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on pre-pandemic DfE benchmarks, when unauthorised absence was at manageable levels, and reflect the point at which absence begins to cause systemic damage to pupil outcomes and community safety.
+
+🟢 Green (Below 1.0%): This is the "Strong Engagement" zone. Before 2020, primary schools consistently achieved unauthorised absence rates below 1.0%, and the best-performing secondary schools were close to this level. At this rate, absence is limited to isolated incidents and the vast majority of pupils attend school as expected.
+
+🟡 Amber (1.0% – 1.5%): This is the "Emerging Problem" zone. Unauthorised absence at this level signals that a growing minority of families or pupils are disengaging from school. It is manageable with targeted intervention (attendance officers, family support) but indicates the system is under strain.
+
+🔴 Red (Above 1.5%): This is the "Systemic Disengagement" zone. The UK has been firmly in this territory since 2021, with secondary school unauthorised absence nearly doubling from pre-pandemic levels. At this rate, schools are losing control of attendance for a significant proportion of their pupils, with cascading effects on attainment, safeguarding, and community cohesion.`,
+  apprenticeship_intensity: `Think of this as the "Skills Pipeline Pressure Gauge." It measures the number of apprenticeship starts per 1,000 people in the working-age population, providing a population-adjusted rate of how actively the country is training its next generation of skilled workers. Raw apprenticeship start numbers can be misleading—a country with a bigger population naturally has more starts. By expressing it as a rate per 1,000 workers, we get a true measure of "training intensity." When this number is high, it means employers are investing in people and the country is actively building the skills it needs. When it is low, it means the skills pipeline is drying up, and the country will pay the price in shortages, higher costs, and lost competitiveness.
+
+How it is Calculated
+
+The Department for Education (DfE) publishes apprenticeship starts data from Individualised Learner Records (ILR)—the administrative system that tracks every learner in further education and apprenticeships in England. This gives the total number of people who began an apprenticeship in a given academic year, broken down by level (Intermediate, Advanced, Higher), age group, sector, and region. To calculate the "intensity" rate, this total is divided by the ONS working-age population estimate (people aged 16–64) and multiplied by 1,000. Data is published quarterly by the DfE and covers all apprenticeship types funded through the Apprenticeship Levy (paid by large employers) and government co-investment for smaller employers.
+
+Real Impact on the Person on the Street
+
+Apprenticeship intensity might sound like a policy metric, but it directly affects the services you use and the opportunities available in your community:
+
+1. The Skilled Worker Shortage
+
+When apprenticeship intensity is low, the country is not producing enough electricians, plumbers, nurses, engineers, and IT technicians to replace those who retire. You experience this as longer waits for tradespeople, higher quotes for home repairs, and an NHS that cannot fill specialist nursing and allied health roles. The construction industry alone estimates it needs 225,000 new workers by 2027—and apprenticeships are the primary route to filling that gap.
+
+2. Youth Opportunity and Social Mobility
+
+For young people who are not suited to or cannot afford university, apprenticeships are the most powerful route into a well-paid career. High intensity means more doors are open: more local employers offering positions, more sectors available, and more pathways from entry-level to advanced qualifications. Low intensity means young people in non-university areas face a barren landscape of low-skilled, low-paid work with no progression route—fuelling the NEET problem and regional inequality.
+
+3. Employer Competitiveness
+
+The Apprenticeship Levy requires large employers to invest in training, but its effectiveness depends on the volume and quality of starts it generates. When intensity is high, it signals that businesses are actively developing their workforce, which drives innovation, productivity, and the ability to compete internationally. When it is low, it suggests employers are either hoarding levy funds, converting them to non-apprenticeship training, or simply not investing in skills—a warning sign for long-term economic stagnation.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the apprenticeship uptake rates needed to sustain the UK's skilled workforce pipeline, benchmarked against countries with strong vocational training systems (Germany, Switzerland, Austria) and adjusted for the UK's population and economic structure.
+
+🟢 Green (Above 15 per 1,000): This is the "Skills Investment" zone. At this rate, the country is producing enough apprentices to sustain and grow its skilled workforce. It indicates a healthy training culture where employers see apprenticeships as a core business investment, not just a levy obligation.
+
+🟡 Amber (10 – 15 per 1,000): This is the "Skills Maintenance" zone. The UK currently sits in this bracket. It means apprenticeship starts are sufficient to replace some of the retiring skilled workforce, but not enough to close existing gaps or expand into new sectors. The system is ticking over but not delivering the step-change in skills that the economy needs.
+
+🔴 Red (Below 10 per 1,000): This is the "Skills Erosion" zone. At this rate, the country is not training enough people to replace those leaving the workforce. Trade shortages become acute, wage inflation in skilled sectors drives up costs for everyone, and the UK falls further behind competitor nations that have invested heavily in vocational education.`,
 };
 
 export function getEducationTooltip(metricKey: string): string | undefined {
