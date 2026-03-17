@@ -80,4 +80,25 @@ describe("EXPECTED_METRICS", () => {
       expect(slots.length, `${category} should have >= 3 metrics`).toBeGreaterThanOrEqual(3);
     }
   });
+
+  it("every metric has a non-empty tooltip string", () => {
+    const missing: string[] = [];
+    for (const [category, slots] of Object.entries(EXPECTED_METRICS)) {
+      const fn = tooltipFns[category];
+      if (!fn) continue;
+      for (const slot of slots) {
+        const tip = fn(slot.metricKey);
+        if (!tip || tip.trim().length === 0) {
+          missing.push(`${category}/${slot.metricKey}`);
+        }
+      }
+    }
+    expect(missing, "These metrics are missing tooltip content").toEqual([]);
+  });
+
+  it("tooltip functions return undefined for unknown keys", () => {
+    for (const fn of Object.values(tooltipFns)) {
+      expect(fn("totally_unknown_key_xyz")).toBeUndefined();
+    }
+  });
 });
