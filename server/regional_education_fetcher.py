@@ -3,7 +3,6 @@
 Regional Education Data Fetcher for UK RAG Dashboard
 Fetches regional Attainment 8 scores for data visualization
 """
-from __future__ import annotations
 
 import requests
 import pandas as pd
@@ -13,7 +12,7 @@ from datetime import datetime
 import json
 import sys
 
-def fetch_regional_attainment8() -> list:
+def fetch_regional_attainment8():
     """
     Fetch regional Attainment 8 data from DfE API
     
@@ -40,16 +39,14 @@ def fetch_regional_attainment8() -> list:
         try:
             content = gzip.decompress(response.content)
             df = pd.read_csv(io.BytesIO(content))
-        except Exception:
+        except:
             # If not gzipped, read directly
             df = pd.read_csv(io.BytesIO(response.content))
         
         print(f"Total rows: {len(df)}")
         print(f"Columns: {list(df.columns)}")
         
-        if df.empty or 'time_period' not in df.columns:
-            return []
-
+        # Filter for latest time period
         latest_period = df['time_period'].max()
         print(f"\nLatest time period: {latest_period}")
         
@@ -104,7 +101,7 @@ def fetch_regional_attainment8() -> list:
         traceback.print_exc()
         return []
 
-def main() -> None:
+def main():
     """Main function to fetch regional education data"""
     print("\n" + "="*60)
     print("UK RAG Dashboard - Regional Education Data Fetcher")

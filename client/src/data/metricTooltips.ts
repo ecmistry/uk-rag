@@ -267,16 +267,11 @@ Why it matters to you if it gets worse: A wasted generation who are not contribu
 Data Source: DfE: Pupil Absence
 
 Why it matters to you if it gets worse: Students fall behind, increasing social inequality, and leading to anti-social behaviour issues in the community.`,
-  pupil_attendance: `Unauthorised Pupil Absence measures the percentage of school sessions missed due to unauthorised reasons (truancy, holidays in term time, etc.), as opposed to authorised absences (illness, appointments). The Department for Education calculates this from termly school census returns. A lower percentage indicates better attendance. High unauthorised absence correlates with poorer educational outcomes and is a key indicator of engagement.
-
-Data Source: DfE: Pupil Absence
-
-Why it matters to you if it gets worse: More pupils missing school without good reason leads to lower attainment and increased risk of disengagement.`,
-  apprenticeship_intensity: `Apprenticeship Intensity measures the number of apprenticeship starts per 1,000 people in the working-age population, providing a comparable rate of apprenticeship uptake. The Department for Education calculates this from Individualised Learner Records and ONS workforce data. Higher intensity indicates stronger employer investment in skills development.
+  apprentice_starts: `Apprenticeship Starts measures the number of people beginning an apprenticeship programme in England during the academic year. The Department for Education calculates this from Individualised Learner Records submitted by training providers, counting new starts on approved apprenticeship frameworks or standards. Data is broken down by level (Intermediate/Level 2, Advanced/Level 3, Higher/Level 4-5, Degree/Level 6-7), sector, age, and employer size. The Apprenticeship Levy (0.5% of payroll for employers with £3m+ wage bills) funds the system. Starts declined significantly following levy introduction in 2017, with particular drops in lower-level and SME apprenticeships, while higher-level (often management) apprenticeships grew—raising concerns about whether the system serves its original purpose.
 
 Data Source: DfE: Apprenticeships & Training
 
-Why it matters to you if it gets worse: Fewer apprenticeships mean a shortage of skilled tradespeople and technicians, making it harder and more expensive to hire for technical roles.`,
+Why it matters to you if it gets worse: A shortage of plumbers, electricians, builders, and mechanics, making it harder and more expensive to hire a skilled tradesperson.`,
 };
 
 export function getEducationTooltip(metricKey: string): string | undefined {
@@ -376,60 +371,6 @@ Why it matters to you if it gets worse: The UK has fewer available personnel to 
 Data Source: MOD: Annual Reports
 
 Why it matters to you if it gets worse: Critical assets needed for immediate response (like fighter jets or aircraft carriers) are stuck in maintenance or unserviceable when a crisis hits.`,
-  sea_mass: `Sea Mass measures the UK's naval force structure as a weighted composite of five pillars: Strategic (carriers, ballistic submarines), Undersea (attack submarines), Escort (frigates and destroyers), Support (RFA vessels), and Constabulary (patrol and mine warfare). Each pillar is scored against Tier 1 benchmarks. Green: 90%+, Amber: 70–89%, Red: <70%.
-
-Data Source: UK Defence Journal, Navy Lookout, RUSI, IISS
-
-Why it matters to you if it gets worse: The UK loses ability to protect sea lanes, deter adversaries, and project power globally.`,
-  land_mass: `Land Mass measures the UK's land force structure as a weighted composite of four pillars: Armoured Strike (MBTs, AFVs), Personnel Mass (regulars), Indirect Fires (artillery, air defence), and Depth (reserves, recallable veterans, logistics). Each pillar is scored against Tier 1 benchmarks. Green: 90%+, Amber: 70–89%, Red: <70%.
-
-Data Source: Janes, RUSI, IISS Military Balance, MOD statistics
-
-Why it matters to you if it gets worse: The Army cannot sustain prolonged operations or regenerate after conflict.`,
-  air_mass: `Air Mass measures the UK's air power as a weighted composite of four pillars: Combat Strike (multi-role fighters), Force Multipliers (tankers, AEW), Strategic Lift (transports), and Autonomous Mass (loyal wingman-type platforms). Each pillar is scored against Tier 1 benchmarks. Green: 90%+, Amber: 70–89%, Red: <70%.
-
-Data Source: FlightGlobal, RUSI, IISS Military Balance
-
-Why it matters to you if it gets worse: The UK loses air superiority, strike capability, and strategic mobility.`,
-  defence_industry_vitality: `Defence Industry Vitality is a measure of a nation's "Sovereign Industrial Stamina." In the defense world, "Sustainability" measures—which attempt to calculate exactly how many days a country can sustain a high-intensity war against a peer adversary—are often impossible to track because stockpile data is strictly confidential and open-source estimates are highly unreliable. Consequently, we use Industry Vitality as a high-confidence proxy. Instead of guessing what is currently in a warehouse, we measure the health of the "Machine that builds the Machine."
-
-To ensure the data is not skewed by one-off large contracts or seasonal fluctuations, this metric is calculated using a four-quarter rolling average. By looking at the average performance over the last twelve months, we gain a true reflection of the industrial base's consistent "muscle." If the factories are large, active, and growing on a rolling basis, the nation has the stamina to create supplies faster than they are consumed. High vitality means the country can replace combat losses independently; low vitality means the country is a "Security Consumer" that would likely run out of equipment in days without foreign intervention.
-
-How is it Calculated?
-The index is calculated by balancing the physical size of the industry with its growth speed, both measured as a four-quarter rolling average. The targets are based on a "Proportional Tier 1 Standard," using benchmarks from US institutions like the Heritage Foundation and CSIS to determine the industrial output required for a leading economy to maintain "Freedom of Action" relative to its population size.
-
-Pillar 1: Export Scale (50% Weighting): This measures the "Mass" of the industrial base. Because total production data can be obscured, we use Export Output as a proxy for "Warm Production Lines." This pillar is divided into two equally weighted sub-pillars, both calculated on a four-quarter rolling average:
-
-Sub-Pillar 1.1: Weapons & Ammunition (50% of Pillar 1): The target is a rolling average of £1,000 million per quarter in exports. This ensures the industrial base is consistently large enough to produce the "consumables" of war (shells and missiles).
-
-Sub-Pillar 1.2: Military Fighting Vehicles (50% of Pillar 1): The target is a rolling average of £975 million per quarter in exports. This represents the sustained capacity to build and modernize heavy armor.
-
-Source: These targets are derived by taking the US-Standard "Sovereign Floor" (approx. 1.75% of GDP) and adjusting for a standard 40% export-to-domestic production ratio.
-
-Pillar 2: Year-on-Year Momentum (50% Weighting): This measures the "Speed" of the industrial engine. It compares the current four-quarter rolling average of export turnover to the four-quarter rolling average from the same period in the previous year. The target is 5.0% annual growth.
-
-Source: This benchmark is derived from Janes Defence Industry Intelligence, which defines 5% as the "Mobilisation Threshold" required for a mature economy to transition from peacetime idling to active readiness.
-
-Real-World Impact: Why should you care?
-For the person on the street, Defence Industry Vitality is the ultimate insurance policy for National Resilience:
-
-Economic Security: A high score indicates a thriving high-tech sector, providing thousands of stable, high-wage engineering and manufacturing jobs.
-
-Conflict Prevention: Factories are a form of deterrence. An adversary is far less likely to challenge a nation if they see its "industrial engine" is already warmed up and capable of out-producing them.
-
-Budgetary Protection: Strong domestic vitality means the government does not have to "panic-buy" equipment from abroad at premium prices during a crisis, which protects the national treasury.
-
-RAG Threshold Logic
-The RAG thresholds are determined by comparing the nation's combined Scale and Momentum (calculated via four-quarter rolling averages) against the Gold Standard of a mature, advanced Tier 1 economy (such as the USA or leading Western European industrial powers).
-
-🟢 Green: The Sovereign Arsenal (>90% of Standard)
-The nation possesses a massive industrial base that is actively and consistently expanding. It has the physical factory space and workforce to replace heavy combat losses and sustain a high-intensity conflict independently for an extended period.
-
-🟡 Amber: Maintenance Mode (70% - 90% of Standard)
-The industry is in "Just-in-Time" mode. While stable over the year, it lacks "Surge Depth." The nation can support peacetime training, but would likely exhaust manufactured supplies quickly in a major war and struggle to restart "cold" production lines.
-
-🔴 Red: Industrial Atrophy (<70% of Standard)
-The defense sector is either critically undersized or is actively shrinking on a rolling basis. This represents a loss of sovereign capability; the nation has lost the technical skills to build its own safety and is entirely dependent on foreign powers for its survival.`,
 };
 
 export function getDefenceTooltip(metricKey: string): string | undefined {

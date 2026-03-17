@@ -7,7 +7,6 @@ edition page and parsing the "Latest version" link, so automation does not rely 
 """
 
 import re
-import sys
 from typing import Dict, List, Optional, Tuple
 from io import BytesIO
 
@@ -33,8 +32,7 @@ def get_latest_emp16_xls_url(session: Optional[requests.Session] = None) -> Opti
         r = session.get(EMP16_CURRENT_EDITION_PAGE, timeout=30)
         r.raise_for_status()
         text = r.text
-    except Exception as e:
-        print(f"[OnsEmp16] Error fetching EMP16 page: {e}", file=sys.stderr)
+    except Exception:
         return None
 
     # Find links that point to the current XLS (not previous versions).
@@ -97,10 +95,9 @@ def fetch_emp16_underemployment_level_by_quarter(
     try:
         r = sess.get(url, timeout=60)
         r.raise_for_status()
-        content = BytesIO(r.content)
-        df = pd.read_excel(content, sheet_name="Levels", header=None)
-    except Exception as e:
-        print(f"[OnsEmp16] Error loading EMP16 Excel: {e}", file=sys.stderr)
+        excel_file = pd.ExcelFile(BytesIO(r.content))
+        df = excel_file.parse("Levels", header=None)
+    except Exception:
         return {}
 
     out: Dict[Tuple[int, int], float] = {}
@@ -141,22 +138,19 @@ def fetch_emp16_underemployment_rate_by_quarter(
     try:
         r = sess.get(url, timeout=60)
         r.raise_for_status()
-        content = BytesIO(r.content)
-        excel_file = pd.ExcelFile(content)
-    except Exception as e:
-        print(f"[OnsEmp16] Error loading EMP16 Excel for inactivity: {e}", file=sys.stderr)
+        excel_file = pd.ExcelFile(BytesIO(r.content))
+    except Exception:
         return []
 
+    # Prefer a sheet whose name suggests rates; otherwise try in order
     cand_sheets = [n for n in excel_file.sheet_names if n and "rate" in n.lower()]
     if not cand_sheets:
         cand_sheets = list(excel_file.sheet_names) if excel_file.sheet_names else []
 
     for sheet_name in cand_sheets:
         try:
-            df = pd.read_excel(content, sheet_name=sheet_name, header=None)
-            content.seek(0)
-        except Exception as e:
-            print(f"[OnsEmp16] Error parsing sheet {sheet_name}: {e}", file=sys.stderr)
+            df = excel_file.parse(sheet_name, header=None)
+        except Exception:
             continue
         rows_out: List[Dict] = []
         for _, row in df.iterrows():

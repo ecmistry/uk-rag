@@ -36,12 +36,9 @@ export default function DataRefreshPanel() {
   const [autoRefresh, setAutoRefresh] = useState<AutoRefreshInterval>(getStoredInterval);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const utils = trpc.useUtils();
   const refreshMutation = trpc.metrics.refresh.useMutation({
     onSuccess: () => {
       toast.success("Data refreshed successfully");
-      void utils.metrics.list.invalidate();
-      void utils.metrics.trends.invalidate();
     },
     onError: (err) => {
       toast.error(`Refresh failed: ${err.message}`);

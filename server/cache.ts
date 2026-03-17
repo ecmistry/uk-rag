@@ -65,17 +65,6 @@ class SimpleCache {
   }
 
   /**
-   * Delete all entries whose key starts with the given prefix
-   */
-  deleteByPrefix(prefix: string): void {
-    for (const key of Array.from(this.cache.keys())) {
-      if (key.startsWith(prefix)) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
-  /**
    * Clear all cache entries
    */
   clear(): void {
@@ -111,10 +100,6 @@ export const cache = new SimpleCache(200, 5 * 60 * 1000); // 200 entries, 5 minu
 // Cleanup expired entries every minute
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
-    try {
-      cache.cleanup();
-    } catch (e) {
-      console.error("[Cache] cleanup error:", e);
-    }
+    cache.cleanup();
   }, 60 * 1000);
 }

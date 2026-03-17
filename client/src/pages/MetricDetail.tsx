@@ -56,7 +56,6 @@ type HistoryRow = {
   dataDate: string;
   ragStatus: string;
   recordedAt: Date | string;
-  information?: string;
 };
 
 export default function MetricDetail() {
@@ -117,15 +116,8 @@ export default function MetricDetail() {
     date: row.dataDate,
     value: parseFloat(String(row.value)),
   }));
-  const validIndices: number[] = [];
-  const validValues: number[] = [];
-  chartDataWithValue.forEach((d, i) => {
-    if (!Number.isNaN(d.value)) {
-      validIndices.push(i);
-      validValues.push(d.value);
-    }
-  });
-  const { slope, intercept } = linearRegression(validValues);
+  const values = chartDataWithValue.map((d) => d.value).filter((v) => !Number.isNaN(v));
+  const { slope, intercept } = linearRegression(values);
   const showMovingAvg12m = metricKey === "real_wage_growth";
   const WINDOW = 4;
   const movingAvg12m = showMovingAvg12m
@@ -139,7 +131,7 @@ export default function MetricDetail() {
   const chartData = chartDataWithValue.map((d, i) => ({
     ...d,
     value: Number.isNaN(d.value) ? undefined : d.value,
-    trendValue: validValues.length > 0 ? intercept + slope * i : undefined,
+    trendValue: values.length > 0 ? intercept + slope * i : undefined,
     ...(showMovingAvg12m && { movingAvg12m: movingAvg12m[i] }),
   }));
   const trendPerPeriod = slope;
@@ -291,7 +283,6 @@ export default function MetricDetail() {
                   <TableRow>
                     <TableHead>Period</TableHead>
                     <TableHead className="text-right">Value</TableHead>
-                    <TableHead className="min-w-[280px] max-w-md">Information</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
                 </TableHeader>
@@ -301,9 +292,6 @@ export default function MetricDetail() {
                       <TableCell className="font-medium">{row.dataDate}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {row.value} {metric.unit}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm align-top whitespace-pre-line">
-                        {row.information ?? "—"}
                       </TableCell>
                       <TableCell>
                         <span

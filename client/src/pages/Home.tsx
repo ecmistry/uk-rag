@@ -18,63 +18,15 @@ import type { Metric } from '@shared/types';
 import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip, getPopulationTooltip } from "@/data/metricTooltips";
 import { EXPECTED_METRICS } from "@/data/expectedMetrics";
 import PopulationBreakdownChart from "@/components/PopulationBreakdownChart";
-import TrendIndicator from "@/components/TrendIndicator";
-
-function formatCardTitle(name: string) {
-  let out = name;
-  if (out.includes(" (Year on Year)")) out = out.replace(" (Year on Year)", "\n(Year on Year)");
-  if (out.includes(" (16-64)")) out = out.replace(" (16-64)", "\n(16-64)");
-  if (out.includes(" (16-24)")) out = out.replace(" (16-24)", "\n(16-24)");
-  if (out.includes(" (% of GDP)")) out = out.replace(" (% of GDP)", "\n(% of GDP)");
-  if (out.includes(" (Cat 2)")) out = out.replace(" (Cat 2)", "\n(Cat 2)");
-  if (out.includes(" (Births vs Deaths)")) out = out.replace(" (Births vs Deaths)", "\n(Births vs Deaths)");
-  if (out.includes(" (Long-term)")) out = out.replace(" (Long-term)", "\n(Long-term)");
-  return out;
-}
-
-function getRAGCardClasses(status: string) {
-  switch (status) {
-    case 'green':
-      return {
-        card: 'bg-green-100 border-green-400 dark:bg-green-950/60 dark:border-green-700',
-        value: 'text-green-800 dark:text-green-300 font-semibold',
-      };
-    case 'amber':
-      return {
-        card: 'bg-amber-100 border-amber-400 dark:bg-amber-950/60 dark:border-amber-700',
-        value: 'text-amber-800 dark:text-amber-300 font-semibold',
-      };
-    case 'red':
-      return {
-        card: 'bg-red-100 border-red-400 dark:bg-red-950/60 dark:border-red-700',
-        value: 'text-red-800 dark:text-red-300 font-semibold',
-      };
-    default:
-      return {
-        card: 'bg-muted/30 border-border',
-        value: 'text-foreground font-semibold',
-      };
-  }
-}
-
-function getTooltipForMetric(category: string, metricKey: string): string | undefined {
-  switch (category) {
-    case "Economy": return getEconomyTooltip(metricKey);
-    case "Employment": return getEmploymentTooltip(metricKey);
-    case "Education": return getEducationTooltip(metricKey);
-    case "Crime": return getCrimeTooltip(metricKey);
-    case "Healthcare": return getHealthcareTooltip(metricKey);
-    case "Defence": return getDefenceTooltip(metricKey);
-    case "Population": return getPopulationTooltip(metricKey);
-    default: return undefined;
-  }
-}
 
 export default function Home() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [metricInfoOpen, setMetricInfoOpen] = useState<{ title: string; content: string } | null>(null);
 
+  // Fetch all metrics (no category filter to get all categories)
+  // Cache for 5 minutes - data is relatively static
+  // Use placeholderData for instant initial render
   const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = trpc.metrics.list.useQuery(
     undefined,
     {
@@ -85,13 +37,6 @@ export default function Home() {
       refetchOnMount: true, // Refetch when navigating back to dashboard so post-refresh data appears
     }
   );
-
-  // Fetch trend data (previous values for each metric)
-  const { data: trends } = trpc.metrics.trends.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    placeholderData: (previousData) => previousData,
-  });
 
   // Refresh mutation (used by empty-state "Fetch X Data" buttons)
   const refreshMutation = trpc.metrics.refresh.useMutation({
@@ -119,6 +64,45 @@ export default function Home() {
     return { metricsByCategory: byCategory, metricsByKeyByCategory: byKeyByCategory };
   }, [metrics]);
 
+  /** Format metric/slot name with line breaks for card title (e.g. "Natural Change\n(Births vs Deaths)"). */
+  const formatCardTitle = (name: string) => {
+    let out = name;
+    if (out.includes(" (Year on Year)")) out = out.replace(" (Year on Year)", "\n(Year on Year)");
+    if (out.includes(" (16-64)")) out = out.replace(" (16-64)", "\n(16-64)");
+    if (out.includes(" (16-24)")) out = out.replace(" (16-24)", "\n(16-24)");
+    if (out.includes(" (% of GDP)")) out = out.replace(" (% of GDP)", "\n(% of GDP)");
+    if (out.includes(" (Cat 2)")) out = out.replace(" (Cat 2)", "\n(Cat 2)");
+    if (out.includes(" (Births vs Deaths)")) out = out.replace(" (Births vs Deaths)", "\n(Births vs Deaths)");
+    if (out.includes(" (Long-term)")) out = out.replace(" (Long-term)", "\n(Long-term)");
+    return out;
+  };
+
+  /** RAG card styling per UNIFORM_SCORECARD_PATTERN: bolder bg/border + value colour */
+  const getRAGCardClasses = (status: string) => {
+    switch (status) {
+      case 'green':
+        return {
+          card: 'bg-green-100 border-green-400 dark:bg-green-950/60 dark:border-green-700',
+          value: 'text-green-800 dark:text-green-300 font-semibold',
+        };
+      case 'amber':
+        return {
+          card: 'bg-amber-100 border-amber-400 dark:bg-amber-950/60 dark:border-amber-700',
+          value: 'text-amber-800 dark:text-amber-300 font-semibold',
+        };
+      case 'red':
+        return {
+          card: 'bg-red-100 border-red-400 dark:bg-red-950/60 dark:border-red-700',
+          value: 'text-red-800 dark:text-red-300 font-semibold',
+        };
+      default:
+        return {
+          card: 'bg-muted/50 border-border',
+          value: 'text-foreground',
+        };
+    }
+  };
+
   return (
     <div className="w-full">
       <div>
@@ -130,10 +114,10 @@ export default function Home() {
           const categoryDescriptions: Record<string, string> = {
             'Economy': 'Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment',
             'Employment': 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence',
-            'Education': 'Attainment 8 Score, NEET Rate (16-24), Unauthorised Pupil Absence, Apprenticeship Intensity',
+            'Education': 'Attainment 8 Score, Teacher Vacancies, NEET Rate (16-24), Persistent Absence, Apprentice Starts',
             'Crime': 'Total Recorded Crime, Charge Rate %, Perception of Safety, Crown Court Backlog, Reoffending Rate',
             'Healthcare': 'A&E 4-Hour Wait %, Elective Backlog, Ambulance (Cat 2), GP Appt. Access, Staff Vacancy Rate',
-            'Defence': 'Sea Mass, Land Mass, Air Mass, Defence Industry Vitality, Spend as % of GDP',
+            'Defence': 'Spend as % of GDP, Trained Strength, Equipment Spend, Deployability %, Force Readiness',
             'Population': 'Natural Change (Births vs Deaths), Old-Age Dependency Ratio, Net Migration (Long-term), Healthy Life Expectancy',
           };
           const shouldDefer = index >= 2 && metricsLoading;
@@ -226,10 +210,9 @@ export default function Home() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 grid-auto-rows-[4.25rem]">
                   {expectedSlots.map((slot) => {
                     const metric = metricsByKey[slot.metricKey];
-                    const slotTooltip = getTooltipForMetric(category, slot.metricKey);
                     if (!metric) {
                       return (
-                        <Card key={slot.metricKey} className="gap-0 py-0 h-full min-h-[4.25rem] flex flex-col border bg-muted/30 border-muted-foreground/20 relative">
+                        <Card key={slot.metricKey} className="gap-0 py-0 h-full min-h-[4.25rem] flex flex-col border bg-muted/30 border-muted-foreground/20">
                           <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
                             <CardTitle className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full text-muted-foreground whitespace-pre-line" title={slot.name}>
                               {formatCardTitle(slot.name)}
@@ -238,17 +221,55 @@ export default function Home() {
                           <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
                             <div className="text-sm font-medium text-muted-foreground">No data available</div>
                           </CardContent>
-                          {slotTooltip && (
+                        </Card>
+                      );
+                    }
+                    const rag = getRAGCardClasses(metric.ragStatus);
+                    const cardTooltip = category === 'Economy' ? getEconomyTooltip(metric.metricKey) : category === 'Employment' ? getEmploymentTooltip(metric.metricKey) : category === 'Education' ? getEducationTooltip(metric.metricKey) : category === 'Crime' ? getCrimeTooltip(metric.metricKey) : category === 'Healthcare' ? getHealthcareTooltip(metric.metricKey) : category === 'Defence' ? getDefenceTooltip(metric.metricKey) : category === 'Population' ? getPopulationTooltip(metric.metricKey) : undefined;
+                    const hasValue = metric.value != null && !Number.isNaN(parseFloat(String(metric.value)));
+                    return (
+                      <Link key={metric.metricKey} href={`/metric/${metric.metricKey}`} className="h-full min-h-[4.25rem]">
+                        <Card
+                          className={cn(
+                            'gap-0 py-0 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[4.25rem] flex flex-col border relative',
+                            rag.card
+                          )}
+                        >
+                          <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
+                            <CardTitle
+                              className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full whitespace-pre-line"
+                              title={metric.name}
+                            >
+                              {formatCardTitle(metric.name ?? slot.name)}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
+                            <div className={cn('text-sm font-bold text-center w-full leading-tight', rag.value)}>
+                              {!hasValue
+                                ? "—"
+                                : metric.metricKey === "attainment8"
+                                  ? parseFloat(metric.value).toFixed(1)
+                                  : metric.metricKey === "apprentice_starts"
+                                    ? parseInt(metric.value, 10).toLocaleString()
+                                    : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
+                                      ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
+                                      : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                            </div>
+                            {!hasValue && (
+                              <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>
+                            )}
+                          </CardContent>
+                          {cardTooltip && (
                             <button
                               type="button"
-                              className="absolute bottom-0.5 left-0.5 z-20 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground/60"
+                              className="absolute bottom-0.5 left-0.5 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground"
                               aria-label="Why this metric matters"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 setMetricInfoOpen({
-                                  title: formatCardTitle(slot.name),
-                                  content: slotTooltip,
+                                  title: formatCardTitle(metric.name ?? slot.name),
+                                  content: cardTooltip,
                                 });
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
@@ -257,76 +278,7 @@ export default function Home() {
                             </button>
                           )}
                         </Card>
-                      );
-                    }
-                    const rag = getRAGCardClasses(metric.ragStatus);
-                    // Prefer slot tooltip so each tile shows the correct text (e.g. Defence Industry Vitality tile always shows its tooltip)
-                    const cardTooltip = slotTooltip ?? getTooltipForMetric(category, metric.metricKey);
-                    const hasValue = metric.value != null && !Number.isNaN(parseFloat(String(metric.value)));
-                    return (
-                      <div key={metric.metricKey} className="h-full min-h-[4.25rem] relative">
-                        <Link href={`/metric/${metric.metricKey}`} className="block h-full min-h-[4.25rem]">
-                          <Card
-                            className={cn(
-                              'gap-0 py-0 hover:shadow-md transition-shadow cursor-pointer h-full min-h-[4.25rem] flex flex-col border',
-                              rag.card
-                            )}
-                          >
-                            <CardHeader className="py-0.5 px-1.5 text-center min-h-[1.75rem] flex flex-col justify-center items-center">
-                              <CardTitle
-                                className="text-[11px] font-medium text-center line-clamp-2 leading-tight w-full whitespace-pre-line"
-                                title={metric.name}
-                              >
-                                {formatCardTitle(metric.name ?? slot.name)}
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="py-0.5 px-1.5 pt-0 text-center flex-1 flex flex-col justify-center items-center min-h-[2rem]">
-                              <div className={cn('text-sm font-bold text-center w-full leading-tight flex items-center justify-center gap-0.5', rag.value)}>
-                                <span>
-                                  {!hasValue
-                                    ? "—"
-                                    : metric.metricKey === "attainment8"
-                                      ? parseFloat(metric.value).toFixed(1)
-                                      : metric.metricKey === "apprenticeship_intensity"
-                                        ? parseFloat(metric.value) >= 1000
-                                          ? `${parseInt(metric.value, 10).toLocaleString()}${metric.unit ? ` ${metric.unit}` : ""}`
-                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit ? metric.unit : ""}`
-                                        : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
-                                          ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
-                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit ?? ""}`}
-                                </span>
-                                {hasValue && trends && (
-                                  <TrendIndicator
-                                    metricKey={metric.metricKey}
-                                    currentValue={parseFloat(metric.value)}
-                                    previousValue={trends[metric.metricKey]?.previous != null ? parseFloat(trends[metric.metricKey].previous) : null}
-                                  />
-                                )}
-                              </div>
-                              {!hasValue && (
-                                <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">No data</div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </Link>
-                        {cardTooltip && (
-                          <button
-                            type="button"
-                            className="absolute bottom-0.5 left-0.5 z-20 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground/60"
-                            aria-label="Why this metric matters"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setMetricInfoOpen({
-                                title: formatCardTitle(metric.name ?? slot.name),
-                                content: cardTooltip,
-                              });
-                            }}
-                            onMouseDown={(e) => e.stopPropagation()}
-                          >
-                            <Info className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
@@ -357,8 +309,8 @@ export default function Home() {
               {metricInfoOpen?.title}
             </DialogTitle>
           </div>
-          <div className="px-5 py-4 overflow-y-auto flex-1 min-h-0 text-sm text-black whitespace-pre-line">
-            {metricInfoOpen?.content ?? ''}
+          <div className="px-5 py-4 overflow-y-auto flex-1 text-sm text-black whitespace-pre-line">
+            {metricInfoOpen?.content}
           </div>
         </DialogContent>
       </Dialog>

@@ -62,10 +62,7 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-const rootEl = document.getElementById("root");
-if (!rootEl) throw new Error("Missing #root element in document");
-
-createRoot(rootEl).render(
+createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <App />

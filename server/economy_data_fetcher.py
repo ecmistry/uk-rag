@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import Dict, Optional, List
 import logging
 import json
-import os
 from os import path
 
 logging.basicConfig(
@@ -391,10 +390,8 @@ def main():
                 }
             )
     output_file = path.join(path.dirname(__file__), "economy_metrics.json")
-    tmp_file = output_file + ".tmp"
-    with open(tmp_file, "w") as f:
+    with open(output_file, "w") as f:
         json.dump(rag_results, f, indent=2)
-    os.rename(tmp_file, output_file)
     logger.info("Results saved to %s", output_file)
     return rag_results
 

@@ -6,13 +6,10 @@ A&E: NHS England A&E Attendances | Elective Backlog: NHS England RTT Waiting Tim
 Ambulance: NHS England Ambulance Quality | GP Appt: NHS Digital Appointments in GP
 Staff Vacancy: NHS Digital Vacancies in NHS
 """
-from __future__ import annotations
-
-from typing import Any, Dict, Optional
 
 import requests
 import pandas as pd
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import json
 import sys
 import io
@@ -47,7 +44,7 @@ RAG_THRESHOLDS = {
     },
 }
 
-def calculate_rag_status(metric_key: str, value: float) -> str:
+def calculate_rag_status(metric_key, value):
     """Calculate RAG status based on thresholds (returns lowercase)"""
     if metric_key not in RAG_THRESHOLDS:
         return "amber"
@@ -66,15 +63,40 @@ def calculate_rag_status(metric_key: str, value: float) -> str:
         return "amber"
     return "red"
 
-def fetch_a_e_wait_time() -> Optional[Dict[str, Any]]:
+def get_latest_month_url(base_url, months_back=0):
+    """Get URL for latest available month, going back months_back months"""
+    today = datetime.now()
+    target_month = today - timedelta(days=30 * months_back)
+    
+    # Try to find the latest month's CSV/Excel file
+    # Format: Monthly-AE-{Month}-{Year}.csv or similar
+    month_names = ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December']
+    
+    for i in range(6):  # Try up to 6 months back
+        check_month = target_month - timedelta(days=30 * i)
+        month_name = month_names[check_month.month - 1]
+        year = check_month.year
+        
+        # Try different URL patterns
+        patterns = [
+            f"{month_name}-{year}",
+            f"{month_name.lower()}-{year}",
+            f"{check_month.strftime('%B')}-{year}",
+        ]
+        
+        # We'll use the base URL and let the fetcher try to find the file
+        return None  # Will be handled by direct URL construction
+
+def fetch_a_e_wait_time():
     """
     Fetch A&E wait times from NHS England CSV downloads
     Returns average wait time in hours (percentage seen within 4 hours converted to average wait)
     """
     try:
-        print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-        print("[Healthcare] Fetching A&E Wait Time Data", file=sys.stderr, flush=True)
-        print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+        print("\n" + "="*60)
+        print("Fetching A&E Wait Time Data")
+        print("="*60)
         
         # NHS England publishes monthly CSV files
         # Latest format: Monthly-AE-{Month}-{Year}.csv
@@ -106,9 +128,9 @@ def fetch_a_e_wait_time() -> Optional[Dict[str, Any]]:
                     response = requests.get(test_url, timeout=30, allow_redirects=True)
                     if response.status_code == 200 and len(response.content) > 1000:
                         csv_url = test_url
-                        print(f"[Healthcare] Found CSV at: {test_url}", file=sys.stderr, flush=True)
+                        print(f"Found CSV at: {test_url}")
                         break
-                except Exception:
+                except:
                     continue
             
             if csv_url:
@@ -133,15 +155,15 @@ def fetch_a_e_wait_time() -> Optional[Dict[str, Any]]:
         if not csv_url:
             raise Exception("Could not find recent A&E data file")
         
-        print(f"[Healthcare] Downloading from: {csv_url}", file=sys.stderr, flush=True)
+        print(f"Downloading from: {csv_url}")
         response = requests.get(csv_url, timeout=60)
         response.raise_for_status()
         
         # Read CSV
         df = pd.read_csv(io.StringIO(response.text))
         
-        print(f"[Healthcare] Downloaded {len(df)} rows", file=sys.stderr, flush=True)
-        print(f"[Healthcare] Columns: {df.columns.tolist()}", file=sys.stderr, flush=True)
+        print(f"Downloaded {len(df)} rows")
+        print(f"Columns: {df.columns.tolist()}")
         
         # Calculate percentage from actual data
         # We have: Total attendances and Attendances over 4hrs
@@ -206,11 +228,11 @@ def fetch_a_e_wait_time() -> Optional[Dict[str, Any]]:
             "unit": "%"
         }
         
-        print(f"[Healthcare]   A&E 4-Hour Wait %: {pct_within_4hr:.1f}% ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
+        print(f"  A&E 4-Hour Wait %: {pct_within_4hr:.1f}% ({metric['rag_status'].upper()})")
         return metric
         
     except Exception as e:
-        print(f"[Healthcare] Error fetching A&E wait time: {e}", file=sys.stderr, flush=True)
+        print(f"Error fetching A&E wait time: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -221,9 +243,9 @@ def fetch_cancer_wait_time():
     Returns average wait time in days (62-day target)
     """
     try:
-        print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-        print("[Healthcare] Fetching Cancer Wait Time Data", file=sys.stderr, flush=True)
-        print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+        print("\n" + "="*60)
+        print("Fetching Cancer Wait Time Data")
+        print("="*60)
         
         # NHS England publishes monthly cancer waiting times with CSV files
         # Latest format: "7.-62-Day-Combined-All-Cancers-Provider-Data.csv"
@@ -259,9 +281,9 @@ def fetch_cancer_wait_time():
                     response = requests.get(test_url, timeout=30, allow_redirects=True)
                     if response.status_code == 200 and len(response.content) > 100:
                         csv_url = test_url
-                        print(f"[Healthcare] Found CSV at: {test_url}", file=sys.stderr, flush=True)
+                        print(f"Found CSV at: {test_url}")
                         break
-                except Exception:
+                except:
                     continue
             
             if csv_url:
@@ -271,15 +293,15 @@ def fetch_cancer_wait_time():
         if not csv_url:
             csv_url = "https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/2025/05/7.-62-Day-Combined-All-Cancers-Provider-Data.csv"
         
-        print(f"[Healthcare] Downloading from: {csv_url}", file=sys.stderr, flush=True)
+        print(f"Downloading from: {csv_url}")
         response = requests.get(csv_url, timeout=60)
         response.raise_for_status()
         
         # Read CSV
         df = pd.read_csv(io.StringIO(response.text))
         
-        print(f"[Healthcare] Downloaded {len(df)} rows", file=sys.stderr, flush=True)
-        print(f"[Healthcare] Columns: {df.columns.tolist()}", file=sys.stderr, flush=True)
+        print(f"Downloaded {len(df)} rows")
+        print(f"Columns: {df.columns.tolist()}")
         
         # Find England total row
         # Look for row with "England" or sum all provider rows
@@ -350,9 +372,9 @@ def fetch_cancer_wait_time():
         if avg_wait_time is None or avg_wait_time <= 0:
             # Use typical NHS performance: 65-75% within 62 days = ~50-60 day average
             avg_wait_time = 68.0
-            print("[Healthcare]   Note: Using estimated value - CSV structure may have changed", file=sys.stderr, flush=True)
+            print("  Note: Using estimated value - CSV structure may have changed")
         else:
-            print(f"[Healthcare]   Parsed from CSV: {avg_wait_time:.1f} days", file=sys.stderr, flush=True)
+            print(f"  Parsed from CSV: {avg_wait_time:.1f} days")
         
         time_period = f"{today.year} Q{((today.month - 1) // 3) + 1}"
         
@@ -368,11 +390,11 @@ def fetch_cancer_wait_time():
             "last_updated": datetime.now().isoformat()
         }
         
-        print(f"[Healthcare]   Cancer Wait Time: {avg_wait_time:.1f} days ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
+        print(f"  Cancer Wait Time: {avg_wait_time:.1f} days ({metric['rag_status'].upper()})")
         return metric
         
     except Exception as e:
-        print(f"[Healthcare] Error fetching cancer wait time: {e}", file=sys.stderr, flush=True)
+        print(f"Error fetching cancer wait time: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -383,9 +405,9 @@ def fetch_ambulance_response_time():
     Returns average response time in minutes (Category 1 target is 7 minutes)
     """
     try:
-        print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-        print("[Healthcare] Fetching Ambulance Response Time Data", file=sys.stderr, flush=True)
-        print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+        print("\n" + "="*60)
+        print("Fetching Ambulance Response Time Data")
+        print("="*60)
         
         # NHS England publishes monthly ambulance quality indicators
         # Time series CSV is available on the landing page
@@ -425,9 +447,9 @@ def fetch_ambulance_response_time():
                     response = requests.get(test_url, timeout=30, allow_redirects=True)
                     if response.status_code == 200 and len(response.content) > 1000:
                         excel_url = test_url
-                        print(f"[Healthcare] Found Excel at: {test_url}", file=sys.stderr, flush=True)
+                        print(f"Found Excel at: {test_url}")
                         break
-                except Exception:
+                except:
                     continue
             
             if excel_url:
@@ -438,19 +460,19 @@ def fetch_ambulance_response_time():
         if not excel_url:
             # Try to get time series CSV from landing page
             # For now, use a fallback approach
-            print("[Healthcare] Note: Individual month Excel not found, using time series data", file=sys.stderr, flush=True)
+            print("Note: Individual month Excel not found, using time series data")
             # The time series CSV would have Category 1 response times
             # For now, we'll parse from a known structure
         
         # If we have Excel URL, parse it
         if excel_url:
-            print(f"[Healthcare] Downloading from: {excel_url}", file=sys.stderr, flush=True)
+            print(f"Downloading from: {excel_url}")
             response = requests.get(excel_url, timeout=60)
             response.raise_for_status()
             
             # Read Excel file
             excel_file = pd.ExcelFile(io.BytesIO(response.content))
-            print(f"[Healthcare] Available sheets: {excel_file.sheet_names[:5]}", file=sys.stderr, flush=True)
+            print(f"Available sheets: {excel_file.sheet_names[:5]}")
             
             # Look for sheet with Category 1 response times
             # Typical sheet names: "Category 1", "C1", "Response Times", etc.
@@ -466,11 +488,11 @@ def fetch_ambulance_response_time():
             if not target_sheet:
                 target_sheet = excel_file.sheet_names[0]  # Use first sheet
             
-            print(f"[Healthcare] Using sheet: {target_sheet}", file=sys.stderr, flush=True)
+            print(f"Using sheet: {target_sheet}")
             df = pd.read_excel(excel_file, sheet_name=target_sheet)
             
-            print(f"[Healthcare] Sheet dimensions: {df.shape}", file=sys.stderr, flush=True)
-            print(f"[Healthcare] Columns: {df.columns.tolist()}", file=sys.stderr, flush=True)
+            print(f"Sheet dimensions: {df.shape}")
+            print(f"Columns: {df.columns.tolist()}")
             
             # Find England total or average Category 1 response time
             # Look for column with "Category 1" or "C1" and "Mean" or "Average"
@@ -523,9 +545,9 @@ def fetch_ambulance_response_time():
         if avg_response_time is None or avg_response_time <= 0:
             # Typical NHS Category 1 performance: 7-9 minutes
             avg_response_time = 8.5
-            print("[Healthcare]   Note: Using estimated value - Excel structure may have changed", file=sys.stderr, flush=True)
+            print("  Note: Using estimated value - Excel structure may have changed")
         else:
-            print(f"[Healthcare]   Parsed from Excel: {avg_response_time:.1f} minutes", file=sys.stderr, flush=True)
+            print(f"  Parsed from Excel: {avg_response_time:.1f} minutes")
         
         time_period = f"{today.year} Q{((today.month - 1) // 3) + 1}"
         
@@ -541,11 +563,11 @@ def fetch_ambulance_response_time():
             "last_updated": datetime.now().isoformat()
         }
         
-        print(f"[Healthcare]   Ambulance Response Time: {avg_response_time:.1f} minutes ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
+        print(f"  Ambulance Response Time: {avg_response_time:.1f} minutes ({metric['rag_status'].upper()})")
         return metric
         
     except Exception as e:
-        print(f"[Healthcare] Error fetching ambulance response time: {e}", file=sys.stderr, flush=True)
+        print(f"Error fetching ambulance response time: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -557,9 +579,9 @@ def fetch_elective_backlog():
     Incomplete pathways = patients still waiting to start treatment.
     """
     try:
-        print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-        print("[Healthcare] Fetching Elective Backlog Data (NHS England: RTT Waiting Times)", file=sys.stderr, flush=True)
-        print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+        print("\n" + "="*60)
+        print("Fetching Elective Backlog Data (NHS England: RTT Waiting Times)")
+        print("="*60)
         # RTT Overview Timeseries has England-level incomplete pathway totals
         overview_url = "https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/2026/01/RTT-Overview-Timeseries-Including-Estimates-for-Missing-Trusts-Nov25-XLS-115K-1Xmjkk.xlsx"
         response = requests.get(overview_url, timeout=60)
@@ -567,7 +589,7 @@ def fetch_elective_backlog():
             # Fallback: use known headline (Nov 2025 ~6.5m incomplete pathways)
             backlog = 6500000
             time_period = "Nov 2025"
-            print("[Healthcare]   Using published headline: ~6.5m incomplete pathways", file=sys.stderr, flush=True)
+            print("  Using published headline: ~6.5m incomplete pathways")
         else:
             df = pd.read_excel(io.BytesIO(response.content), sheet_name=0, header=None)
             backlog = None
@@ -583,7 +605,7 @@ def fetch_elective_backlog():
                                     backlog = int(v)
                                     break
                             except Exception:
-                                continue
+                                pass
                     if backlog is not None:
                         break
             if backlog is None:
@@ -596,12 +618,12 @@ def fetch_elective_backlog():
                                     backlog = int(v)
                                     break
                             except Exception:
-                                continue
+                                pass
                         if backlog is not None:
                             break
             if backlog is None:
                 backlog = 6500000
-                print("[Healthcare]   Could not parse Overview; using headline ~6.5m", file=sys.stderr, flush=True)
+                print("  Could not parse Overview; using headline ~6.5m")
         rag_status = calculate_rag_status("elective_backlog", backlog)
         metric = {
             "metric_name": "Elective Backlog",
@@ -614,7 +636,7 @@ def fetch_elective_backlog():
             "source_url": "https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/",
             "last_updated": datetime.now().isoformat(),
         }
-        print(f"[Healthcare]   Elective Backlog: {backlog:,} ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
+        print(f"  Elective Backlog: {backlog:,} ({metric['rag_status'].upper()})")
         return metric
     except Exception as e:
         print(f"Error fetching elective backlog: {e}", file=sys.stderr)
@@ -627,9 +649,9 @@ def fetch_gp_appt_access():
     Source: https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice
     """
     try:
-        print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-        print("[Healthcare] Fetching GP Appt. Access Data (NHS Digital: Appointments in GP)", file=sys.stderr, flush=True)
-        print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+        print("\n" + "="*60)
+        print("Fetching GP Appt. Access Data (NHS Digital: Appointments in GP)")
+        print("="*60)
         # NHS Digital publishes monthly; no direct CSV in standard format. Use headline until API/CSV available.
         # Latest typically: % appointments within 2 weeks or similar. Placeholder from published summary.
         value_pct = 65.0  # Placeholder: typical "within 2 weeks" share from reports
@@ -646,7 +668,7 @@ def fetch_gp_appt_access():
             "source_url": "https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice",
             "last_updated": datetime.now().isoformat(),
         }
-        print(f"[Healthcare]   GP Appt. Access: {value_pct}% ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
+        print(f"  GP Appt. Access: {value_pct}% ({metric['rag_status'].upper()})")
         return metric
     except Exception as e:
         print(f"Error fetching GP appt access: {e}", file=sys.stderr)
@@ -659,9 +681,9 @@ def fetch_staff_vacancy_rate():
     Source: https://digital.nhs.uk/data-and-information/publications/statistical/nhs-vacancies-survey
     """
     try:
-        print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-        print("[Healthcare] Fetching Staff Vacancy Rate Data (NHS Digital: Vacancies in NHS)", file=sys.stderr, flush=True)
-        print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+        print("\n" + "="*60)
+        print("Fetching Staff Vacancy Rate Data (NHS Digital: Vacancies in NHS)")
+        print("="*60)
         # NHS Vacancy Statistics: Q2 2025/26 total vacancy rate 6.7%
         value_pct = 6.7
         time_period = "Q2 2025/26"
@@ -677,7 +699,7 @@ def fetch_staff_vacancy_rate():
             "source_url": "https://digital.nhs.uk/data-and-information/publications/statistical/nhs-vacancies-survey",
             "last_updated": datetime.now().isoformat(),
         }
-        print(f"[Healthcare]   Staff Vacancy Rate: {value_pct}% ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
+        print(f"  Staff Vacancy Rate: {value_pct}% ({metric['rag_status'].upper()})")
         return metric
     except Exception as e:
         print(f"Error fetching staff vacancy rate: {e}", file=sys.stderr)
@@ -692,7 +714,7 @@ def fetch_a_e_wait_time_historical(months: int = 12):
                    'July', 'August', 'September', 'October', 'November', 'December']
     base_url = "https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/"
     
-    print(f"[Healthcare] Fetching historical A&E data for last {months} months...", file=sys.stderr, flush=True)
+    print(f"Fetching historical A&E data for last {months} months...")
     
     for i in range(months):
         check_date = today - timedelta(days=30 * i)
@@ -714,7 +736,7 @@ def fetch_a_e_wait_time_historical(months: int = 12):
                 response = requests.get(pattern, timeout=30, allow_redirects=True)
                 if response.status_code == 200 and len(response.content) > 1000:
                     csv_url = pattern
-                    print(f"[Healthcare]   Found CSV: {month_name} {year}", file=sys.stderr, flush=True)
+                    print(f"  Found CSV: {month_name} {year}")
                     break
             except Exception as e:
                 continue
@@ -789,32 +811,34 @@ def fetch_a_e_wait_time_historical(months: int = 12):
                     "last_updated": datetime.now().isoformat(),
                     "unit": "%"
                 })
-                print(f"[Healthcare]   ✓ {month_name} {year}: {pct_within_4hr:.1f}%", file=sys.stderr, flush=True)
+                print(f"  ✓ {month_name} {year}: {pct_within_4hr:.1f}%")
         except Exception as e:
-            print(f"[Healthcare]   ✗ {month_name} {year}: Failed ({str(e)[:50]})", file=sys.stderr, flush=True)
+            print(f"  ✗ {month_name} {year}: Failed ({str(e)[:50]})")
             continue  # Skip months where data isn't available
     
-    print(f"[Healthcare]\nFetched {len(historical)} months of A&E historical data", file=sys.stderr, flush=True)
+    print(f"\nFetched {len(historical)} months of A&E historical data")
     return historical
 
 def main():
     """Main function to fetch all Healthcare metrics"""
+    import sys
+    
     # Check if historical mode is requested
     historical = '--historical' in sys.argv or '-h' in sys.argv
     
-    print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-    print("[Healthcare] UK RAG Dashboard - Healthcare Data Fetcher", file=sys.stderr, flush=True)
+    print("\n" + "="*60)
+    print("UK RAG Dashboard - Healthcare Data Fetcher")
     if historical:
-        print("[Healthcare] MODE: Historical Data (last 12 months)", file=sys.stderr, flush=True)
+        print("MODE: Historical Data (last 12 months)")
     else:
-        print("[Healthcare] MODE: Latest Data Only", file=sys.stderr, flush=True)
-    print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+        print("MODE: Latest Data Only")
+    print("="*60)
     
     metrics = []
     
     if historical:
         # Fetch historical data for A&E (most reliable source)
-        print("[Healthcare]\nFetching historical A&E data...", file=sys.stderr, flush=True)
+        print("\nFetching historical A&E data...")
         a_e_historical = fetch_a_e_wait_time_historical(12)
         metrics.extend(a_e_historical)
         
@@ -865,21 +889,21 @@ def main():
             metrics.append(vacancy_metric)
     
     # Print summary
-    print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-    print("[Healthcare] Summary of Healthcare Metrics", file=sys.stderr, flush=True)
-    print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+    print("\n" + "="*60)
+    print("Summary of Healthcare Metrics")
+    print("="*60)
     
     for metric in metrics:
-        print(f"\n[Healthcare] {metric['metric_name']}:", file=sys.stderr, flush=True)
-        print(f"[Healthcare]   Value: {metric['value']}", file=sys.stderr, flush=True)
-        print(f"[Healthcare]   RAG Status: {metric['rag_status'].upper()}", file=sys.stderr, flush=True)
-        print(f"[Healthcare]   Time Period: {metric['time_period']}", file=sys.stderr, flush=True)
-        print(f"[Healthcare]   Source: {metric['data_source']}", file=sys.stderr, flush=True)
+        print(f"\n{metric['metric_name']}:")
+        print(f"  Value: {metric['value']}")
+        print(f"  RAG Status: {metric['rag_status'].upper()}")
+        print(f"  Time Period: {metric['time_period']}")
+        print(f"  Source: {metric['data_source']}")
     
     # Output JSON for Node.js integration
-    print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-    print("[Healthcare] JSON Output", file=sys.stderr, flush=True)
-    print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
+    print("\n" + "="*60)
+    print("JSON Output")
+    print("="*60)
     print(json.dumps(metrics, indent=2))
     
     return metrics

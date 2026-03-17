@@ -22,9 +22,10 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
   ],
   Education: [
     { metricKey: "attainment8", name: "Attainment 8 Score" },
+    { metricKey: "teacher_vacancy_rate", name: "Teacher Vacancies" },
     { metricKey: "neet_rate", name: "NEET Rate (16-24)" },
-    { metricKey: "pupil_attendance", name: "Unauthorised Pupil Absence" },
-    { metricKey: "apprenticeship_intensity", name: "Apprenticeship Intensity" },
+    { metricKey: "persistent_absence", name: "Persistent Absence" },
+    { metricKey: "apprentice_starts", name: "Apprentice Starts" },
   ],
   Crime: [
     { metricKey: "recorded_crime_rate", name: "Total Recorded Crime" },
@@ -41,11 +42,11 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
     { metricKey: "staff_vacancy_rate", name: "Staff Vacancy Rate" },
   ],
   Defence: [
-    { metricKey: "sea_mass", name: "Sea Mass" },
-    { metricKey: "land_mass", name: "Land Mass" },
-    { metricKey: "air_mass", name: "Air Mass" },
-    { metricKey: "defence_industry_vitality", name: "Defence Industry Vitality" },
     { metricKey: "defence_spending_gdp", name: "Spend as % of GDP" },
+    { metricKey: "personnel_strength", name: "Trained Strength" },
+    { metricKey: "equipment_spend", name: "Equipment Spend" },
+    { metricKey: "deployability", name: "Deployability %" },
+    { metricKey: "equipment_readiness", name: "Force Readiness" },
   ],
   Population: [
     { metricKey: "natural_change", name: "Natural Change (Births vs Deaths)" },

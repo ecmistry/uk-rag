@@ -37,25 +37,22 @@ async function main() {
     console.log(`No metric found for ${METRIC_KEY}, skipping metrics update.`);
   }
 
+  // Update all history documents for this metric
   const history = await historyCol.find({ metricKey: METRIC_KEY }).toArray();
-  const ops = history
-    .map((h) => {
-      const value = Number(h.value);
-      if (Number.isNaN(value)) return null;
-      const rag = calculateRAGStatus(METRIC_KEY, value);
-      if (rag === h.ragStatus) return null;
-      return {
-        updateOne: {
-          filter: { metricKey: METRIC_KEY, dataDate: h.dataDate },
-          update: { $set: { ragStatus: rag } },
-        },
-      };
-    })
-    .filter(Boolean);
-  if (ops.length > 0) {
-    await historyCol.bulkWrite(ops as any[]);
+  let updated = 0;
+  for (const h of history) {
+    const value = Number(h.value);
+    if (Number.isNaN(value)) continue;
+    const rag = calculateRAGStatus(METRIC_KEY, value);
+    if (rag !== h.ragStatus) {
+      await historyCol.updateOne(
+        { metricKey: METRIC_KEY, dataDate: h.dataDate },
+        { $set: { ragStatus: rag } }
+      );
+      updated++;
+    }
   }
-  console.log(`Updated ${ops.length} of ${history.length} metricHistory rows for ${METRIC_KEY}.`);
+  console.log(`Updated ${updated} of ${history.length} metricHistory rows for ${METRIC_KEY}.`);
 }
 
 main()

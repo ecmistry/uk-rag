@@ -87,21 +87,23 @@ declare global {
 }
 
 const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FORGE_BASE_URL = import.meta.env.VITE_FRONTEND_FORGE_API_URL || "";
+const FORGE_BASE_URL =
+  import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
+  "https://forge.butterfly-effect.dev";
 const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
 
 function loadMapScript() {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const script = document.createElement("script");
     script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
     script.async = true;
     script.crossOrigin = "anonymous";
     script.onload = () => {
       resolve(null);
-      script.remove();
+      script.remove(); // Clean up immediately
     };
     script.onerror = () => {
-      reject(new Error("Failed to load Google Maps script"));
+      console.error("Failed to load Google Maps script");
     };
     document.head.appendChild(script);
   });

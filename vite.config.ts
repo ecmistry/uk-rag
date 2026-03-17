@@ -44,14 +44,10 @@ export default defineConfig({
   },
   server: {
     host: true,
-    allowedHosts: ["localhost", "127.0.0.1", "uk-rag.online", ".uk-rag.online"],
+    allowedHosts: ["localhost", "127.0.0.1"],
     fs: {
       strict: true,
       deny: ["**/.*"],
-    },
-    headers: {
-      "Cache-Control": "no-store, no-cache, must-revalidate",
-      Pragma: "no-cache",
     },
   },
 });

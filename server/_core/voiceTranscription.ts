@@ -90,17 +90,10 @@ export async function transcribeAudio(
       };
     }
 
+    // Step 2: Download audio from URL
     let audioBuffer: Buffer;
     let mimeType: string;
     try {
-      const parsed = new URL(options.audioUrl);
-      if (!["https:", "http:"].includes(parsed.protocol)) {
-        return { error: "Invalid URL scheme", code: "INVALID_FORMAT" as const };
-      }
-      const blocked = ["127.0.0.1", "localhost", "169.254.169.254", "::1", "0.0.0.0"];
-      if (blocked.includes(parsed.hostname) || parsed.hostname.endsWith(".internal") || parsed.hostname.startsWith("10.") || parsed.hostname.startsWith("192.168.")) {
-        return { error: "URL not allowed", code: "INVALID_FORMAT" as const };
-      }
       const response = await fetch(options.audioUrl);
       if (!response.ok) {
         return {
