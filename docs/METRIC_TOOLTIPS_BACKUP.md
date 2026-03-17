@@ -279,11 +279,37 @@ These thresholds are calibrated against "Gold Standard" mature, flexible labor m
 
 ### Sickness Absence (`sickness_absence`)
 
-The Sickness Absence Rate measures the percentage of total working hours lost to employee sickness or injury. The ONS calculates this annually using Labour Force Survey data, asking respondents whether they had any time off work due to illness in the reference week and for how long. The rate is calculated as: (hours lost to sickness ÷ total usual hours) × 100. Data is broken down by sector, age, sex, and cause of absence. Common causes include minor illnesses (colds, flu), musculoskeletal problems (back pain), and increasingly, mental health conditions (stress, anxiety, depression). The metric is a proxy for workforce health and can indicate broader public health trends.
+Think of this as the "Nation's Sick Note" metric. It measures the percentage of Full-Time Equivalent (FTE) working days lost to sickness or injury across the NHS workforce every month. If the rate is 5%, it means that for every 100 days of work that should have happened, 5 were lost because staff were off sick. It is one of the most powerful early-warning signals for the health of the country because the NHS is the UK's single largest employer (approximately 1.4 million staff). When the people who look after everyone else are themselves too sick to come to work, it tells you something profound about the state of the nation's health.
 
-Data Source: ONS: Sickness absence in UK
+How it is Calculated
 
-Why it matters to you if it gets worse: More disruption at work, leading to lower productivity for everyone and potential delays or losses for your employer/business.
+NHS Digital compiles this data from the Electronic Staff Record (ESR) system—the payroll and HR database used by virtually every NHS organisation in England. Every month, each trust reports the total number of FTE days its staff were available to work and the total number of FTE days lost to sickness. The national rate is then calculated as: (Total FTE Days Sick ÷ Total FTE Days Available) × 100. The data is broken down by organisation type (acute trusts, mental health trusts, ambulance trusts), by region, and crucially by cause of absence. This is not a survey or an estimate—it is drawn directly from actual payroll records, making it one of the most accurate workforce health metrics available. Data is published approximately four months after the reference period.
+
+Real Impact on the Person on the Street
+
+When the NHS sickness absence rate rises, you feel it directly in three ways:
+
+1. Longer Waits and Cancelled Appointments
+
+Every percentage point of absence translates into tens of thousands of lost staff-days per month. When nurses, doctors, and paramedics are off sick, there are simply fewer people to see you. This means longer waits in A&E, cancelled operations, and delayed GP referrals. The recent surge in absence has been a direct contributor to the NHS backlog crisis.
+
+2. The "Burnout Spiral"
+
+High absence creates a vicious cycle. When one colleague is off sick, the remaining staff have to cover their workload. This leads to longer shifts, higher stress, and eventually more sickness among the people who stayed. Ambulance trusts—which consistently report the highest rates (often above 6.5%)—are a stark example of this spiral in action.
+
+3. The £150 Billion Warning Sign
+
+The NHS workforce is a bellwether for the entire country. Ill health currently costs the UK economy an estimated £150 billion per year. The causes driving NHS absence—anxiety, stress, depression (accounting for nearly 30% of all lost days), musculoskeletal disorders, and post-viral conditions—are the same conditions forcing 2.8 million people out of the wider workforce entirely. If the people trained to manage their own health are struggling, it signals a systemic problem that affects every employer, every business, and every public service in the country.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on pre-pandemic NHS performance benchmarks, when the workforce was considered to be functioning at a sustainable (if stretched) level, calibrated against comparable international public-sector healthcare systems.
+
+🟢 Green (Below 3.0%): This is the "Healthy Workforce" zone. Before 2020, the NHS consistently achieved rates between 2.4% and 3.0%. At this level, seasonal illnesses (colds, flu) are the primary driver and absence is manageable without systemic disruption to patient care. It indicates that preventive health measures, occupational support, and working conditions are functioning well.
+
+🟡 Amber (3.0% – 4.5%): This is the "Chronic Pressure" zone. Absence at this level signals that something beyond seasonal illness is at work—typically rising mental health conditions, long COVID aftereffects, or mounting workplace stress. The NHS can still function, but it is relying heavily on bank and agency staff (at significant extra cost) to fill the gaps. This is where most months have sat since late 2021, indicating a workforce under sustained strain.
+
+🔴 Red (Above 4.5%): This is the "Workforce Crisis" zone. At this level, absence is so high that safe staffing levels are regularly breached. Trusts are forced to close wards, divert ambulances, and cancel elective procedures. Winter peaks in 2021-22 saw rates exceed 5.5%, directly contributing to the worst A&E performance and longest ambulance response times on record. A rate this high is not just an HR problem—it is a patient safety issue.
 
 ---
 
