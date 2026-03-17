@@ -95,10 +95,10 @@ class TestRAGStatus(unittest.TestCase):
         self.assertEqual(calculate_rag_status("defence_spending_gdp", 2.5), "green")
 
     def test_defence_spending_amber(self):
-        self.assertEqual(calculate_rag_status("defence_spending_gdp", 1.9), "amber")
+        self.assertEqual(calculate_rag_status("defence_spending_gdp", 2.1), "amber")
 
     def test_defence_spending_red(self):
-        self.assertEqual(calculate_rag_status("defence_spending_gdp", 1.5), "red")
+        self.assertEqual(calculate_rag_status("defence_spending_gdp", 1.9), "red")
 
     def test_unknown_metric_returns_amber(self):
         self.assertEqual(calculate_rag_status("unknown_metric", 42.0), "amber")
