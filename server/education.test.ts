@@ -1,6 +1,37 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import type { Metric, InsertMetric } from "./schema";
+
+const inMemoryMetrics = new Map<string, Metric>();
+
+vi.mock("./db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./db")>();
+  return {
+    ...actual,
+    getDb: vi.fn().mockResolvedValue({}),
+    upsertMetric: vi.fn().mockImplementation(async (metric: InsertMetric) => {
+      const now = new Date();
+      inMemoryMetrics.set(metric.metricKey, {
+        ...metric,
+        lastUpdated: now,
+        createdAt: now,
+      } as Metric);
+    }),
+    getMetrics: vi.fn().mockImplementation(async (category?: string) => {
+      const all = Array.from(inMemoryMetrics.values());
+      return category ? all.filter((m) => m.category === category) : all;
+    }),
+    getMetricByKey: vi.fn().mockImplementation(async (metricKey: string) => {
+      return inMemoryMetrics.get(metricKey);
+    }),
+    getMetricHistory: vi.fn().mockResolvedValue([]),
+    addMetricHistory: vi.fn().mockResolvedValue(undefined),
+    getExistingHistoryPeriods: vi.fn().mockResolvedValue(new Set()),
+    getMetricTrends: vi.fn().mockResolvedValue([]),
+    getMetricsDiagnostics: vi.fn().mockResolvedValue({ dbConnected: true, metricsCount: 0 }),
+  };
+});
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -57,6 +88,10 @@ function createUserContext(): { ctx: TrpcContext } {
 
   return { ctx };
 }
+
+beforeEach(() => {
+  inMemoryMetrics.clear();
+});
 
 describe("Education Metrics", () => {
   it("should allow admin to refresh Education metrics", async () => {
