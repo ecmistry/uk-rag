@@ -376,11 +376,37 @@ Why it matters to you if it gets worse: The UK has fewer available personnel to 
 Data Source: MOD: Annual Reports
 
 Why it matters to you if it gets worse: Critical assets needed for immediate response (like fighter jets or aircraft carriers) are stuck in maintenance or unserviceable when a crisis hits.`,
-  sea_mass: `Sea Mass measures the UK's naval force structure as a weighted composite of five pillars: Strategic (carriers, ballistic submarines), Undersea (attack submarines), Escort (frigates and destroyers), Support (RFA vessels), and Constabulary (patrol and mine warfare). Each pillar is scored against Tier 1 benchmarks. Green: 90%+, Amber: 70–89%, Red: <70%.
+  sea_mass: `Sea Mass represents a nation's "Maritime Weight." It is not just about the number of hulls in the water, but the total physical scale and combat power of a navy. Think of it like comparing a fleet of delivery vans to a fleet of heavy-duty armored trucks; "Mass" tells you how much punch the navy can pack and how much damage it can absorb. For a global power, Sea Mass is the ultimate measure of Naval Reach — it determines whether a country can protect its trade routes across the entire world simultaneously or is restricted to guarding its own beaches.
 
-Data Source: UK Defence Journal, Navy Lookout, RUSI, IISS
+How is it Calculated?
 
-Why it matters to you if it gets worse: The UK loses ability to protect sea lanes, deter adversaries, and project power globally.`,
+Sea Mass is calculated by measuring the Total Aggregate Displacement (the total weight of water the ship pushes aside) of the "Surface and Sub-Surface Fleet." To capture true Tier 1 capability, this metric is divided into two primary pillars, weighted to favor the ships that project the most power.
+
+Pillar 1: Blue Water Capability (70% Weighting) — This measures the "Heavy Hitters." It is divided into two sub-pillars:
+• Sub-Pillar 1.1: Strategic Platforms (50% of Pillar 1): Focuses on aircraft carriers and nuclear-powered submarines. These are the most valuable because they provide independent global reach and a nuclear deterrent.
+• Sub-Pillar 1.2: Surface Combatants (50% of Pillar 1): Focuses on destroyers and frigates. These are the "workhorses" that escort carriers and protect trade routes.
+
+Pillar 2: Auxiliary & Support Resilience (30% Weighting) — This measures the "Logistical Stamina."
+• Sub-Pillar 2.1: Fleet Auxiliaries (100% of Pillar 2): Focuses on tankers and supply ships. A navy can only stay at sea as long as it has fuel and food; without these, "Mass" is stuck in port.
+
+Real-World Impact: Why should you care?
+
+For the person on the street, Sea Mass is the silent guardian of your daily life:
+• Price Stability: Over 90% of global trade travels by sea. High Sea Mass prevents hostile nations from closing "Choke Points" (like the Suez Canal), keeping the price of your fuel, food, and electronics stable.
+• National Influence: A navy with significant mass can provide disaster relief or evacuate citizens from war zones without firing a single shot.
+• Industrial Jobs: Maintaining a high Sea Mass sustains a domestic industrial ecosystem of shipyards and high-tech engineering firms, providing thousands of high-wage jobs.
+
+RAG Threshold Logic
+
+The RAG thresholds are determined by comparing a nation's total displacement against the Gold Standard of a mature, advanced Tier 1 naval power on a population-proportional basis.
+
+🟢 Green (> 90% of Standard) — Global Projection: The navy can maintain a permanent presence in multiple global theaters simultaneously and protect all major trade routes independently.
+
+🟡 Amber (70% – 90% of Standard) — Regional Focus: The navy is capable of significant operations but lacks "Deep Mass." It may have to choose between protecting trade abroad or defending its home territory.
+
+🔴 Red (< 70% of Standard) — Littoral Limitation: The navy has lost its "Blue Water" weight. It is effectively a coastal defense force dependent on allies to protect its merchant shipping.
+
+Data Source: UK Defence Journal, Navy Lookout, RUSI, IISS`,
   land_mass: `Land Mass measures the UK's land force structure as a weighted composite of four pillars: Armoured Strike (MBTs, AFVs), Personnel Mass (regulars), Indirect Fires (artillery, air defence), and Depth (reserves, recallable veterans, logistics). Each pillar is scored against Tier 1 benchmarks. Green: 90%+, Amber: 70–89%, Red: <70%.
 
 Data Source: Janes, RUSI, IISS Military Balance, MOD statistics
