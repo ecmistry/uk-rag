@@ -847,11 +847,29 @@ The thresholds are based on the vacancy levels at which the NHS can safely staff
 
 ### Defence Spending as % of GDP (`defence_spending_gdp`)
 
-Defence Spending as a Percentage of GDP measures the UK's total military expenditure relative to the size of its economy. The Ministry of Defence calculates this using NATO-agreed definitions of defence spending (which include military pensions, war pensions, and some intelligence spending not in the core MOD budget) divided by nominal GDP from ONS figures. The percentage is expressed as: (total defence spending ÷ GDP) × 100. The NATO target of 2% GDP was set at the 2014 Wales Summit. Calculation methodology matters—different definitions can shift the figure by 0.1-0.2%. Real-terms spending (adjusted for inflation) and per-capita spending provide additional context. The UK has typically hovered around the 2% threshold, though recent commitments aim for 2.5%.
+Think of this as the "National Insurance Premium" for the country's physical security. It measures how much of the UK's total economic output is spent on defence—the armed forces, their equipment, their training, and their operations. If the figure is 2.1%, it means that for every £100 the UK economy generates, £2.10 goes to defence. It is the single most important indicator of whether a country is serious about its own security, because military capability is ultimately a function of sustained investment. Equipment rusts, personnel leave, and skills atrophy without consistent funding. In a world where Russia has invaded Ukraine, China is expanding militarily, and global instability is rising, this number determines whether the UK can defend itself and its allies—or whether it is relying on others to do it.
 
-Data Source: MOD: Finance & Economics
+**How it is Calculated**
 
-Why it matters to you if it gets worse: The UK's influence on the world stage decreases, making it less able to protect its citizens and interests abroad or deter foreign threats.
+The Ministry of Defence reports UK defence expenditure using NATO-agreed definitions, which are broader than the core MOD budget alone. NATO definitions include: military personnel costs, equipment procurement and research, military operations, military pensions and war pensions, and certain intelligence and security spending. This total is then divided by nominal GDP as published by the ONS. The percentage is: (total defence spending under NATO definitions ÷ GDP) × 100. Calculation methodology matters significantly—different accounting treatments can shift the headline figure by 0.1–0.2 percentage points. The UK government also reports defence spending in real terms (adjusted for inflation) and as per-capita spending, which provide additional context. Data is published in the MOD Annual Report and Accounts and cross-referenced with NATO's own published spending figures for member states.
+
+**Real Impact on the Person on the Street**
+
+Defence spending might feel remote from daily life, but it determines the security environment you live in:
+
+1. **The Deterrence Dividend** — The primary purpose of defence spending is not to fight wars—it is to prevent them. A well-funded military deters potential aggressors from challenging the UK or its allies. Russia's invasion of Ukraine in 2022 was a stark reminder that conventional warfare has returned to Europe. If the UK's military is visibly underfunded—with hollowed-out regiments, mothballed ships, and ageing aircraft—it sends a signal to adversaries that aggression may go unchallenged. The cost of deterrence is measured in billions; the cost of a war that deterrence failed to prevent is measured in lives and economic devastation.
+
+2. **Trade Route Protection and Price Stability** — The UK is an island trading nation. Over 90% of its goods arrive by sea, and its energy supplies depend on secure pipelines and shipping lanes. Defence spending funds the Royal Navy's ability to keep these routes open. When Houthi rebels disrupted Red Sea shipping in 2024, it was allied naval forces—funded by defence budgets—that protected commercial vessels. Without this capability, shipping costs spike, supply chains break, and the price of everything from fuel to food on your supermarket shelf rises.
+
+3. **The Industrial and Jobs Multiplier** — Defence spending is not money that vanishes into a black hole. It sustains a domestic industrial base of shipyards (BAE Systems, Babcock), aerospace firms (Rolls-Royce, Leonardo), and thousands of small and medium-sized engineering companies. The defence sector directly employs over 200,000 people in the UK and supports many more indirectly. When defence spending rises, these industries invest in apprenticeships, research, and facilities; when it falls, skilled jobs disappear and sovereign manufacturing capability erodes—capability that is extremely difficult and expensive to rebuild once lost.
+
+**Why the RAG Thresholds were chosen**
+
+🟢 Green (Above 2.5%): This is the "Credible Deterrence" zone. The UK government committed in February 2025 to reaching 2.5% of GDP by 2027—described as "the biggest sustained increase in defence spending since the end of the Cold War." At this level, the armed forces can begin to reverse years of capability cuts, invest in next-generation platforms (Dreadnought submarines, GCAP sixth-generation fighters, autonomous systems), and maintain credible conventional deterrence alongside the nuclear deterrent.
+
+🟡 Amber (2.0% – 2.5%): This is the "Minimum Commitment" zone. The UK currently sits in this bracket at approximately 2.1%. The 2% figure is the NATO baseline agreed at the 2014 Wales Summit, but it is increasingly seen as insufficient given the current threat environment. At this level, the UK meets its alliance obligations on paper but is forced to make difficult trade-offs between equipment programmes, leading to delayed procurements, reduced training, and stretched personnel.
+
+🔴 Red (Below 2.0%): This is the "Capability Erosion" zone. Falling below the NATO 2% commitment would represent a political and strategic failure. It would signal to allies that the UK is not serious about collective defence, embolden adversaries, and accelerate the hollowing-out of military capability. Several NATO members have been criticised for spending below 2%, and the UK dropping into this category would severely damage its credibility as a leading member of the alliance.
 
 ---
 
@@ -893,21 +911,73 @@ Data Source: UK Defence Journal, Navy Lookout, RUSI, IISS
 
 ### Land Mass (`land_mass`)
 
-Land Mass measures the UK's land force structure as a weighted composite of four pillars: Armoured Strike (MBTs, AFVs), Personnel Mass (regulars), Indirect Fires (artillery, air defence), and Depth (reserves, recallable veterans, logistics). Each pillar is scored against Tier 1 benchmarks. Green: 90%+, Amber: 70–89%, Red: <70%.
+Think of this as the "Army Muscle Test." It measures the fighting weight of the UK's land forces—the British Army's ability to deploy credible, war-winning ground power. It is not a single equipment count or a manpower figure; it is a weighted composite score that combines four pillars of land capability into a single percentage, benchmarked against what a Tier 1 "Global Power" standard requires. If the score is 70%, it means the Army has 70% of the land force structure it would need to fight and sustain a high-intensity conflict against a peer adversary. This metric exists because modern warfare is won or lost on the ground. Air power can shape a battle and sea power can control supply lines, but only land forces can take and hold territory. The UK's ability to contribute meaningfully to a NATO Article 5 operation, or to conduct independent expeditionary operations, rests entirely on the strength measured here.
 
-Data Source: Janes, RUSI, IISS Military Balance, MOD statistics
+**How it is Calculated**
 
-Why it matters to you if it gets worse: The Army cannot sustain prolonged operations or regenerate after conflict.
+The Land Mass score is built from four weighted pillars, each normalised against a Tier 1 benchmark representing the minimum inventory a serious global power should maintain:
+
+**Pillar 1 – Armoured Strike (35% weighting):** This measures heavy manoeuvre capability. It counts the UK's main battle tanks (MBTs)—currently 288 Challenger 2s—against a benchmark of 450, and armoured fighting vehicles (AFVs)—currently approximately 1,055—against a benchmark of 1,000. MBTs contribute 60% and AFVs 40% of this pillar. Armoured Strike is weighted highest because peer-on-peer warfare is ultimately decided by the ability to concentrate protected firepower.
+
+**Pillar 2 – Personnel Mass (30% weighting):** This measures the number of full-time, trade-trained regular personnel available for deployment—currently approximately 125,680 against a benchmark of 150,000. No amount of advanced equipment matters without the trained soldiers to operate and sustain it. The British Army has been shrinking steadily since the 2010 Strategic Defence and Security Review, and recruitment and retention remain significant challenges.
+
+**Pillar 3 – Indirect Fires (20% weighting):** This measures the Army's ability to deliver long-range firepower. It combines modern artillery systems (M270 MLRS, Archer, and equivalent)—currently approximately 75 against a benchmark of 300—with ground-based air defence batteries (Sky Sabre / Land Ceptor)—currently 7 against a benchmark of 12. Artillery contributes 70% and air defence 30%. The war in Ukraine has demonstrated that artillery is the dominant casualty-producing weapon in conventional warfare, and the UK's indirect fire capacity is significantly below peer-level requirements.
+
+**Pillar 4 – Depth / Reserves (15% weighting):** This measures the Army's ability to regenerate and sustain operations over time. It combines active trained reserves (approximately 29,000 against a benchmark of 50,000), high-utility recallable veterans (approximately 25,000 against 30,000), and logistics mass (assessed at approximately 90% of requirement). Active reserves contribute 50%, recallable veterans 30%, and logistics 20%. Depth is essential because no army can fight a prolonged conflict with only its peacetime establishment—it must be able to call up trained reserves and sustain supply lines under fire.
+
+The four pillar scores are combined using their weightings to produce a single 0–100 percentage score. Data sources include Janes ORBATs and equipment data, RUSI analysis, IISS Military Balance, MOD "UK Armed Forces Equipment and Formations 2025," and MOD Quarterly Service Personnel Statistics.
+
+**Real Impact on the Person on the Street**
+
+1. **The NATO Warfighting Commitment** — The UK is committed to leading a NATO warfighting division—a formation of 15,000–20,000 troops with full armoured capability—as its core contribution to the alliance's defence of Europe. General Sir Roly Walker has stated the ambition to "double the Army's fighting power in three years and triple it by the end of the decade." If the Land Mass score is low, the UK cannot deliver on this commitment.
+
+2. **The Ukraine Lesson** — The war in Ukraine has provided a brutal, real-time education in what modern ground warfare demands. Armoured vehicles are being destroyed at rates not seen since the Second World War. Artillery ammunition is consumed in quantities that have emptied NATO stockpiles. Personnel casualties in a single year exceed the UK's entire regular Army. If the UK had to fight a similar conflict, a low Land Mass score would mean running out of tanks, guns, and trained soldiers within weeks.
+
+3. **The Sovereign Choice** — A weak land force does not just limit what the UK can do alongside allies—it limits what it can do alone. Whether responding to a crisis in a British Overseas Territory, conducting an evacuation operation, or providing humanitarian assistance at scale, the Army is the instrument of last resort. A hollowed-out Army means the government has fewer options in a crisis and is more dependent on the goodwill and availability of allies.
+
+**Why the RAG Thresholds were chosen**
+
+🟢 Green (90% and above): This is the "War-Ready" zone. At this level, the Army meets or approaches the Tier 1 Global Power standard across all four pillars. It can deploy a full warfighting division, sustain operations for an extended period, absorb combat losses, and regenerate.
+
+🟡 Amber (70% – 89%): This is the "Capable but Strained" zone. The UK currently sits in this bracket. The Army can deploy a credible force for a limited operation, but it lacks the depth and mass for a sustained high-intensity conflict. Key capability gaps—particularly in indirect fires, air defence, and reserve depth—would become critical weaknesses in a peer-on-peer scenario.
+
+🔴 Red (Below 70%): This is the "Hollow Force" zone. At this level, the Army's structure is seriously deficient in one or more pillars. It could not sustain a major operation without significant allied support and would struggle to meet its NATO commitments. Rebuilding from this level takes a decade or more and costs far more than sustained investment would have done.
 
 ---
 
 ### Air Mass (`air_mass`)
 
-Air Mass measures the UK's air power as a weighted composite of four pillars: Combat Strike (multi-role fighters), Force Multipliers (tankers, AEW), Strategic Lift (transports), and Autonomous Mass (loyal wingman-type platforms). Each pillar is scored against Tier 1 benchmarks. Green: 90%+, Amber: 70–89%, Red: <70%.
+Think of this as the "Air Power Balance Sheet." It measures the fighting strength of the UK's air combat capability—the Royal Air Force's ability to control the skies, strike targets on the ground, project power at distance, and adapt to the age of autonomous warfare. Like Land Mass, it is a weighted composite score combining four pillars into a single percentage, benchmarked against a Tier 1 "Global Power" standard. If the score is 48%, it means the RAF has less than half the air power structure a leading military power needs. Air superiority is the foundation upon which all other military operations depend. Without it, naval forces cannot operate safely, ground forces are exposed to devastating attack from above, and the UK cannot move troops or supplies to where they are needed. Every major conflict since 1945 has confirmed the same lesson: the side that controls the air wins.
 
-Data Source: FlightGlobal, RUSI, IISS Military Balance
+**How it is Calculated**
 
-Why it matters to you if it gets worse: The UK loses air superiority, strike capability, and strategic mobility.
+The Air Mass score is built from four weighted pillars, each normalised against Tier 1 benchmarks:
+
+**Pillar 1 – Combat Strike (40% weighting):** This measures the RAF's ability to achieve air superiority and deliver precision strike. It counts mission-ready multi-role fighters—currently approximately 120 aircraft (a mix of Eurofighter Typhoon FGR4 and F-35B Lightning)—against a benchmark of 300. This pillar carries the highest weighting because air-to-air and air-to-ground combat capability is the irreducible core of air power. The UK has 37 F-35B aircraft in service as of mid-2025, with a total commitment to purchase 138, although only 48 are currently on contract.
+
+**Pillar 2 – Force Multipliers (25% weighting):** This measures the support aircraft that make fighters effective over long distances. It combines tanker aircraft (14 Voyager KC2/KC3s) and airborne early warning aircraft (3 E-7 Wedgetail)—a total of 17 against a benchmark of 25. Without tankers, fighters cannot reach distant targets. Without airborne early warning, fighters are blind to threats beyond their own radar horizon.
+
+**Pillar 3 – Strategic Lift (20% weighting):** This measures the RAF's ability to move troops, equipment, and supplies over strategic distances. It counts heavy and medium transport aircraft—currently 30 (8 C-17 Globemaster III and 22 A400M Atlas)—against a benchmark of 40. Strategic airlift is the physical embodiment of global reach.
+
+**Pillar 4 – Autonomous Mass (15% weighting):** This measures the UK's investment in autonomous combat platforms—"loyal wingman" aircraft and Autonomous Collaborative Platforms (ACPs). Currently, the UK has effectively zero operational platforms against a benchmark of 150. The 2025 Strategic Defence Review stated that "the primacy of crewed aircraft is being fundamentally challenged" and committed to accelerating ACP development alongside the GCAP sixth-generation fighter programme.
+
+The four pillar scores are combined using their weightings to produce a single 0–100 percentage score. Data sources include FlightGlobal, RUSI Airpower analysis, IISS Military Balance, MOD equipment statistics, and the 2025 Strategic Defence Review.
+
+**Real Impact on the Person on the Street**
+
+1. **The Air Defence of the United Kingdom** — The RAF maintains 24/7 Quick Reaction Alert (QRA), with armed Typhoons on standby at RAF Coningsby and RAF Lossiemouth to intercept unidentified aircraft approaching UK airspace. Russian military aircraft routinely probe NATO airspace. If the Combat Strike pillar is weak, there are fewer aircraft to maintain QRA, cover training, and deploy overseas simultaneously.
+
+2. **Strike Capability and Deterrence** — Air power provides the UK's fastest conventional response option. When the UK participated in strikes against Houthi targets in Yemen in 2024, it was RAF Typhoons, supported by Voyager tankers, that delivered the capability from thousands of miles away. A weak air force signals to adversaries that the UK's military reach is limited.
+
+3. **The Autonomous Revolution** — The war in Ukraine has demonstrated that cheap, mass-produced drones can destroy equipment worth millions and change the balance of an entire battlefield. The UK's current score of zero in the Autonomous Mass pillar is a stark indicator of a capability gap that adversaries are filling rapidly. If the UK does not invest in autonomous combat platforms, it risks fielding an air force that is technologically outmatched within a decade.
+
+**Why the RAG Thresholds were chosen**
+
+🟢 Green (90% and above): This is the "Air Dominance" zone. At this level, the RAF meets or approaches the Tier 1 standard across all four pillars. It can achieve air superiority in a contested environment, sustain combat operations, project power globally, and is investing credibly in autonomous capability.
+
+🟡 Amber (70% – 89%): This is the "Capable but Stretched" zone. The RAF can conduct effective air operations but faces trade-offs between commitments. Fighter numbers are sufficient for peacetime QRA and limited expeditionary operations but would be strained in a sustained high-intensity conflict.
+
+🔴 Red (Below 70%): This is the "Capability Crisis" zone. The UK currently sits in this bracket, driven largely by the zero score in the Autonomous Mass pillar. Significant gaps exist in one or more pillars. The absence of autonomous platforms means the UK is not keeping pace with the technological direction of modern air warfare. Recovering from this position requires sustained investment over a decade or more.
 
 ---
 
@@ -997,50 +1067,110 @@ Why it matters to you if it gets worse: Critical assets needed for immediate res
 
 ## Population
 
-### Natural Change (`natural_change`)
+### Natural Change — Births vs Deaths (`natural_change`)
 
-Natural Change measures the difference between live births and deaths in a given period, indicating whether the population is growing or shrinking from demographic factors alone (excluding migration). The ONS calculates this from civil registration data: Natural Change = Births − Deaths. A positive figure means more births than deaths (natural increase); negative means more deaths than births (natural decrease). The UK's natural change has declined dramatically—from +200,000+ annually in the 2000s to near-zero or negative in recent years. This reflects falling birth rates (Total Fertility Rate now ~1.5 children per woman, well below the 2.1 replacement level) combined with an ageing population producing more deaths. Some regions and countries within the UK already show natural decrease.
+Think of this as the "Demographic Pulse." It measures the difference between the number of babies born and the number of people who die in the UK each year—the most fundamental indicator of whether a population is sustaining itself or slowly fading. If the figure is +27,200, it means 27,200 more people were born than died. If it turns negative, the population is shrinking from within, regardless of migration. This metric strips away the political noise around immigration and asks the simplest possible question: is the country producing enough children to replace the people who die?
 
-Data Source: ONS: Vital Statistics / Series VVHM
+**How it is Calculated**
 
-Why it matters to you if it gets worse: The local population shrinks, leading to school closures, fewer shops, and a gradual decline of rural and local communities.
+The ONS calculates Natural Change from civil registration data—every birth and death in the UK must be legally registered. The formula is: Natural Change = Live Births − Deaths. Data is drawn from the ONS Vital Statistics series (VVHM) and published in the mid-year population estimates. For the year to mid-2024, there were approximately 662,100 births and 645,900 deaths in the UK, producing a natural change of just +16,200—a vanishingly small positive figure for a population of 69 million. The Total Fertility Rate (TFR) for England and Wales fell to 1.41 children per woman in 2024, the lowest on record for the third consecutive year and far below the 2.1 "replacement level" needed to maintain a stable population without migration.
+
+**Real Impact on the Person on the Street**
+
+1. **The Vanishing Community** — When natural change turns negative in a local area, schools close because there are not enough children. GP surgeries and maternity units consolidate or shut. Shops, pubs, and post offices lose customers. Several UK regions already experience natural decrease, and the trend is spreading—particularly in rural and coastal areas.
+
+2. **The Workforce Pipeline** — Every baby born today is a future worker, taxpayer, and contributor in 20 years. When the birth rate falls persistently below replacement, the pipeline narrows, creating structural dependency on immigration to fill essential roles.
+
+3. **The Fiscal Time Bomb** — Fewer births combined with high life expectancy means fewer workers funding the pensions, healthcare, and social care of a growing elderly population. The OBR has identified this demographic shift as one of the most significant long-term fiscal risks.
+
+**Why the RAG Thresholds were chosen**
+
+🟢 Green (Positive — above zero): Births exceed deaths—the population is at least partially sustaining itself. The UK currently sits just in this zone, but barely.
+
+🟡 Amber (At or near zero): The "Demographic Stall" zone. Any small fluctuation can tip the balance into natural decrease. The country is entirely dependent on net migration for population growth.
+
+🔴 Red (Negative — below zero): The "Population Decline" zone. More people dying than being born. Without significant net migration, the population shrinks. Communities hollow out and the fiscal burden on remaining workers intensifies.
 
 ---
 
 ### Old-Age Dependency Ratio (`old_age_dependency_ratio`)
 
-The Old-Age Dependency Ratio measures the number of people aged 65 and over per 1,000 people of working age (16-64). The ONS calculates this from mid-year population estimates and projections: (Population 65+ ÷ Population 16-64) × 1,000. A ratio of 300 means 300 retirees per 1,000 workers, or roughly 1 retiree per 3 workers. The ratio is rising due to increased life expectancy and lower birth rates—it's projected to exceed 400 by 2050. This metric indicates the 'support burden' on the working population: fewer workers funding more pensioners' state pensions, healthcare, and social care through taxation. Higher ratios put pressure on public finances and may require raising pension ages, increasing taxes, or reducing benefits.
+Think of this as the "Shoulder Burden" metric. It measures how many retired people each group of working-age people must financially support—expressed as the number of people aged 65 and over per 1,000 people of working age (16–64). If the ratio is 278, it means there are 278 retirees for every 1,000 workers—roughly one pensioner for every 3.6 workers. In the 1970s, there were five workers for every retiree. By 2050, projections suggest there could be fewer than 2.5. This determines how much of your pay packet goes to taxes that fund state pensions, the NHS, and social care for the elderly.
 
-Data Source: ONS API: Population Projections
+**How it is Calculated**
 
-Why it matters to you if it gets worse: A tiny workforce must fund the pensions and healthcare for a huge number of retirees, leading to massive tax hikes or benefit cuts.
+The ONS calculates the OADR from mid-year population estimates and national population projections. The formula is: (Population aged 65+ ÷ Population aged 16–64) × 1,000. This uses the same data as mid-year population estimates—updated annually from Census base counts using births, deaths, and migration through the cohort component method. The ONS publishes projections under multiple scenarios (principal, high-migration, low-migration). The state pension age is a critical companion variable—as the pension age rises (currently 66, rising to 67 by 2028), the denominator changes, which mechanically lowers the ratio even if the underlying demographics have not improved.
+
+**Real Impact on the Person on the Street**
+
+1. **The Tax Squeeze** — State pensions are paid from current taxation ("pay as you go"). When the ratio rises, fewer workers fund more pensioners. The state pension costs over £130 billion per year and is protected by the triple lock. The OBR has identified the ageing population as the single largest long-term fiscal risk.
+
+2. **The NHS and Social Care Crunch** — People aged 65+ account for approximately 40% of NHS hospital spending despite being 19% of the population. Over 1.5 million older people have unmet care needs, and the social care workforce has vacancy rates above 8%.
+
+3. **The Intergenerational Contract** — Today's workers fund today's pensioners on the promise that future workers will fund their retirement. When the ratio deteriorates, each successive generation bears a heavier burden—fuelling debates about the triple lock, inheritance tax, and intergenerational fairness.
+
+**Why the RAG Thresholds were chosen**
+
+🟢 Green (Below 300 per 1,000): The "Sustainable Balance" zone. More than 3.3 workers per retiree. The tax base is broad enough to fund pensions, healthcare, and social care. The UK currently sits just within this zone at approximately 278.
+
+🟡 Amber (300 – 350 per 1,000): The "Growing Pressure" zone. Between 2.9 and 3.3 workers per retiree. Governments are forced into difficult trade-offs: raising the pension age, means-testing benefits, or increasing NI contributions.
+
+🔴 Red (Above 350 per 1,000): The "Fiscal Crisis" zone. Fewer than 2.9 workers per retiree. The tax base cannot sustainably fund existing commitments. ONS projections suggest the UK could approach this level by the 2040s under some scenarios.
 
 ---
 
-### Net Migration (`net_migration`)
+### Net Migration — Long-term (`net_migration`)
 
-Long-Term International Migration (LTIM) Net Migration measures the difference between people immigrating to the UK (for 12+ months) and those emigrating from the UK (for 12+ months). The ONS calculates this primarily from administrative data (visa records, National Insurance registrations, GP registrations) combined with survey data: Net Migration = Immigration − Emigration. Positive net migration means more arrivals than departures. Since the 2000s, net migration has become the primary driver of UK population growth as natural change declined. Annual net migration has varied from ~150,000 to over 700,000, influenced by EU freedom of movement, points-based immigration policy, humanitarian crises (Ukraine, Hong Kong), and student visa numbers. The metric is highly politically sensitive.
+Think of this as the "Population Tap." It measures the difference between people moving to the UK for the long term (12+ months) and those leaving—the single largest driver of UK population change in the 21st century. If the figure is +204,000, it means 204,000 more people arrived than left. Unlike natural change, net migration can shift dramatically from year to year—from 150,000 in 2012 to over 860,000 in 2023, then back to 204,000 by mid-2025.
 
-Data Source: ONS API: Series BBGM
+**How it is Calculated**
 
-Why it matters to you if it gets worse: A rapid decline in the working-age population needed to fill essential jobs in the NHS, social care, and other key sectors.
+The ONS calculates LTIM net migration primarily from administrative data—Home Office visa records, DWP National Insurance number registrations, and NHS GP registration data—supplemented by the International Passenger Survey. Net Migration = Immigration − Emigration (both counting people intending to stay/leave for 12+ months). For the year ending June 2025, total immigration was approximately 898,000 and emigration approximately 693,000. The ONS moved from survey-based to administrative-data-based estimation after the 2021 Census revealed undercounting, meaning historical comparisons must be made with caution.
+
+**Real Impact on the Person on the Street**
+
+1. **The Workforce Engine** — The NHS employs over 200,000 overseas-trained staff (~1 in 6). Social care relies on migrants for ~30% of staff. Construction, hospitality, agriculture, and logistics all depend heavily on international labour. When net migration falls sharply, acute staff shortages emerge in sectors that cannot be filled quickly from domestic sources.
+
+2. **The Housing and Infrastructure Squeeze** — Every additional person needs somewhere to live, a GP, a school place, and transport. The UK consistently builds fewer than 250,000 homes against a need of 300,000–380,000. High net migration accelerates the shortfall, pushing up rents and house prices.
+
+3. **The Fiscal and Cultural Balance** — Working-age skilled migrants are net fiscal contributors. But the balance depends on age, skills, and employment status. Rapid population change in local areas can strain social cohesion when housing and services are already scarce.
+
+**Why the RAG Thresholds were chosen**
+
+🟢 Green (0 – 300,000): The "Managed Migration" zone. Net migration supplements the workforce, offsets ageing, and is broadly absorbable by infrastructure. The UK currently sits here at approximately 204,000.
+
+🟡 Amber (300,000 – 500,000): The "Pressure Building" zone. Significant additional demand for housing, healthcare, and school places outpaces infrastructure investment. Public concern about pace of change is elevated.
+
+🔴 Red (Above 500,000): The "Unsustainable Pace" zone. The UK experienced this in 2022–2024. Housing demand far outstrips supply, GP and school capacity is overwhelmed, and the pace of change exceeds communities' capacity to adapt.
 
 ---
 
 ### Healthy Life Expectancy (`healthy_life_expectancy`)
 
-Healthy Life Expectancy (HLE) measures the average number of years a person can expect to live in 'good' or 'very good' health, based on self-reported health status. The ONS calculates this using the Sullivan method, combining mortality data (life tables) with health prevalence data from the Annual Population Survey. HLE is lower than total Life Expectancy—the gap represents years lived in poor health. In England, HLE at birth is approximately 63 years for both sexes, while total LE is ~80 years, meaning ~17 years are typically spent in poor health. Significant inequalities exist: the most deprived areas have HLE roughly 19 years lower than the least deprived. HLE has stagnated or declined in recent years, particularly for women and disadvantaged groups.
+Think of this as the "Quality Years Clock." It measures the average number of years a person born today can expect to live in "good" or "very good" health—not just alive, but genuinely well. If the figure is 61.7 years, it means the average person will enjoy roughly 62 years of good health before chronic illness, disability, or frailty takes hold, even though they may live to 80 or beyond. The gap between healthy life expectancy and total life expectancy—currently around 17–19 years—represents years of pain, dependency, restricted mobility, and declining quality of life.
 
-Data Source: ONS: Health State Life Expectancy
+**How it is Calculated**
 
-Why it matters to you if it gets worse: You spend a greater proportion of your final years in poor health, becoming dependent on family and straining the NHS/care system.
+The ONS calculates HLE using the Sullivan method, combining two data sources: period life tables (from registered death data) and health prevalence data from the Annual Population Survey (proportion reporting "very good" or "good" health at each age). By multiplying person-years lived at each age by the proportion in good health, total life expectancy is partitioned into years in good health and years in poor health. For 2022–2024, UK male HLE at birth was 60.7 years and female HLE was 60.9 years—both the lowest since the series began in 2011–2013, representing declines of 1.8 and 2.5 years respectively.
+
+**Real Impact on the Person on the Street**
+
+1. **The "Years in Misery" Gap** — The ~17–19 year gap between total life expectancy and HLE represents years of chronic pain, limited mobility, and dependency. Men in the most deprived areas spend only 70% of life in good health vs 85% in the least deprived. For women in deprived areas, it's just 65%. Your postcode can determine whether you get 20 years of healthy retirement or 20 years of illness.
+
+2. **The Working-Life Squeeze** — State pension age is 66, rising to 67 by 2028. If HLE is 61 years, millions of people are being asked to work 5+ years after their health has deteriorated significantly—too ill to work effectively but too young to retire.
+
+3. **The NHS and Social Care Avalanche** — When HLE falls while total life expectancy stays flat, the years per person requiring intensive support increases. The 7.5-million NHS waiting list, the social care funding crisis, and the collapse of dentistry in many areas are all symptoms of a population living longer but not healthier.
+
+**Why the RAG Thresholds were chosen**
+
+🟢 Green (63 years and above): The "Healthy Working Life" zone. Most people remain in good health until close to pension age. The least deprived areas of England currently achieve this level.
+
+🟡 Amber (60 – 63 years): The "Health Deficit" zone. The UK currently sits here at approximately 61 years. Many people experience poor health several years before retirement. The decline from 63+ to below 61 since the pandemic represents genuine deterioration.
+
+🔴 Red (Below 60 years): The "Premature Decline" zone. Good health lost before age 60—a full decade before pension age. The most deprived areas of England already have HLE below 57, meaning residents live in a "red" zone while the national average masks their reality.
 
 ---
 
 ### Total Population (`total_population`) *(not currently on dashboard)*
 
-Total Population measures the number of usual residents in the UK at a given point, typically reported as mid-year estimates (30 June). The ONS calculates this by starting with the most recent Census count, then annually updating using the 'cohort component method': adding births and inward migration, subtracting deaths and outward migration. Estimates are produced for the UK total and broken down by country (England, Scotland, Wales, Northern Ireland), local authority, age, and sex. Population projections extend these trends into the future under various assumptions. The UK population is approximately 67 million and growing slowly, primarily through net migration. Population distribution matters as much as total—some areas grow rapidly while others decline.
-
-Data Source: ONS: Total Population
-
-Why it matters to you if it gets worse: (Note: A shrinking population slows economic growth, while a rapidly growing population strains housing and infrastructure.)
+Total Population measures the number of usual residents in the UK at a given point, typically reported as mid-year estimates (30 June). The ONS calculates this by starting with the most recent Census count, then annually updating using the 'cohort component method': adding births and inward migration, subtracting deaths and outward migration. The UK population reached approximately 69.3 million by mid-2024 and an estimated 69.5 million by mid-2025, growing primarily through net migration as natural change contributes minimally.
