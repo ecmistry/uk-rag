@@ -298,37 +298,25 @@ These thresholds are based on the Average Score (the result after dividing by 10
 Data Source: DfE: School Workforce
 
 Why it matters to you if it gets worse: Class sizes increase, subjects are dropped, and your child's education suffers due to relying on non-specialist or temporary staff.`,
-  neet_rate: `Think of this as the "Lost Generation" metric. It measures the percentage of young people aged 16–24 who are Not in Education, Employment, or Training—they are not at school, not at college, not in a job, and not doing an apprenticeship. They have effectively dropped off every ladder that society offers. An unemployed graduate searching for work is not NEET (they are "unemployed but active"). A NEET is someone who has stopped engaging with the system entirely. When this number is high, it means the country is wasting the potential of its youngest citizens at the exact moment when their habits, skills, and confidence are being formed for life.
+  neet_rate: `Think of the NEET rate as the "Wasted Potential" index. It tracks the percentage of young people (typically aged 16–24) who are currently "parked" on the sidelines of society—they aren't in a classroom, they aren't learning a trade, and they aren't earning a paycheck. While some people in this group are taking a temporary break or caring for family, a high NEET rate usually signals a "disconnection" from the future. It is a warning light that a generation is failing to gain the experience they need to become the productive taxpayers and innovators of tomorrow.
 
 How it is Calculated
 
-The Office for National Statistics (ONS) calculates this from the Labour Force Survey—a quarterly household survey of approximately 80,000 individuals. They identify everyone aged 16–24 and classify them into three groups: (a) in education or training, (b) in employment, or (c) neither. The NEET rate is: (those in group C ÷ total 16–24 population) × 100. The data is broken down by age band (16–17 and 18–24), sex, region, and reason for inactivity. It is important to note that the majority of NEETs (around 59%) are not "unemployed" in the traditional sense—they are economically inactive, meaning they are not even looking for work, often due to long-term health conditions (27%), caring responsibilities (13%), or discouragement. Current estimates place approximately 957,000 young people in NEET status across the UK—nearly one million.
+This metric is primarily derived from national labor force surveys, which interview a large, representative sample of households to determine the work and study status of residents. To calculate the rate, we look at the total population of young people within a specific age bracket. First, we identify everyone in that group who is not currently enrolled in any form of formal education or training. From that sub-group, we then remove anyone who is currently in a job (even part-time). The remaining number—those who are neither learning nor working—is divided by the total number of young people in that age group to produce a percentage. This gives a clear view of how much of the "youth engine" is currently idle.
 
 Real Impact on the Person on the Street
 
-The NEET rate might seem like someone else's problem, but its effects ripple through every community:
-
-1. The "Scarring Effect"
-
-Research consistently shows that a period of NEET status in your late teens or early twenties leaves a permanent mark on your earnings and career. Nearly half (48%) of young people who become NEET remain NEET a year later, and 58% of NEET young people have never had a paid job. This isn't a temporary blip—it is the start of a lifetime of lower wages, worse health, and greater reliance on the welfare system, all of which are funded by your taxes.
-
-2. Community Decline and Anti-Social Behaviour
-
-High NEET concentrations in a local area correlate with higher rates of anti-social behaviour, substance abuse, and mental health crises. When young people have no structure, no income, and no purpose, the social fabric of a neighbourhood deteriorates. You see it in boarded-up high streets, rising local crime, and overstretched community services.
-
-3. The Fiscal Black Hole
-
-Every NEET young person represents a double cost to the taxpayer: they are not contributing to the economy through work and taxes, and they are drawing on public services (benefits, healthcare, housing, and eventually the criminal justice system). The estimated lifetime cost to the public purse of a single young person who remains long-term NEET is over £100,000. Multiply that by nearly a million and the scale of the fiscal challenge becomes clear.
+For the person on the street, the NEET rate is a massive Economic Gravity metric. When young people are NEET for long periods, they suffer from "wage scarring"—they never fully catch up on the earnings they missed, which means they spend less in local shops and pay less tax over their lifetime. For you, this means a lower national tax base, which leads to higher individual taxes or poorer public services. On a community level, high NEET rates often correlate with higher crime and a sense of social decay. Economically, a "lost generation" represents a multi-billion pound loss in future GDP; it's like a factory where 10% or 15% of the machinery is permanently switched off, but the owner still has to pay the rent and maintenance for the whole building.
 
 Why the RAG Thresholds were chosen
 
-The thresholds are calibrated against the performance of the best-performing advanced economies and the UK's own pre-2008 track record, when youth engagement was significantly higher.
+These thresholds are calibrated against "Gold Standard" advanced economies with high-functioning apprenticeship and vocational systems (such as Germany, Switzerland, or the Netherlands), where youth unemployment and disconnection are kept historically low.
 
-🟢 Green (Below 3.0%): This is the "Full Engagement" zone. It matches the performance of countries like the Netherlands, Germany, and the Nordic nations, where virtually every young person is either studying, training, or working. At this level, NEET status is limited to short transitional periods (e.g. between finishing a course and starting a job), not a chronic condition.
+🟢 Green (Below 8.0%): The "High-Aspiration" Standard. This represents a world-class economy where the transition from school to work is seamless. It indicates that almost every young person is either building skills or contributing to the economy, ensuring long-term national growth.
 
-🟡 Amber (3.0% – 5.0%): This is the "Structural Gap" zone. The UK currently sits in this bracket. It indicates that while the majority of young people are engaged, a persistent minority—often concentrated in deprived areas or among those with health conditions—are falling through the cracks. The system is functioning but not reaching everyone.
+🟡 Amber (8.0% – 12.0%): The "Fractured" Zone. This is the average for many developed nations. It suggests that while the majority are moving forward, a significant minority is "falling through the cracks," creating a long-term economic burden and a future shortage of skilled workers.
 
-🔴 Red (Above 5.0%): This is the "Systemic Failure" zone. At this level, more than 1 in 20 young people have disengaged entirely. It signals fundamental problems with the education-to-employment pipeline—whether that is inadequate careers guidance, a lack of entry-level jobs, unaffordable further education, or a youth mental health crisis that the system cannot contain.`,
+🔴 Red (Above 12.0%): The "Scarring" Zone. At this level, the country faces a systemic crisis of youth disconnection. This predicts a future of low productivity, higher social costs, and a struggle to attract high-wage employers. It signals that the "talent pipeline" is broken and the economy will struggle to remain competitive.`,
   persistent_absence: `Persistent Absence measures the percentage of pupils who miss 10% or more of their possible school sessions (typically 38+ sessions per year, where one session = half a day). The Department for Education calculates this from termly school census returns, which record authorised absences (illness, appointments, religious observance) and unauthorised absences (truancy, holidays in term time). A pupil crossing the 10% threshold is classified as 'persistently absent.' Chronic absence severely impacts educational outcomes—missing 10% equates to approximately 19 school days or nearly 4 weeks. Post-pandemic persistent absence rates roughly doubled, with particular increases among disadvantaged pupils and those with special educational needs.
 
 Data Source: DfE: Pupil Absence
