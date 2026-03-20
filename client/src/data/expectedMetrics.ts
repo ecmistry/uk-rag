@@ -27,9 +27,9 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
     { metricKey: "apprenticeship_intensity", name: "Apprenticeship Intensity" },
   ],
   Crime: [
+    { metricKey: "street_confidence_index", name: "Perception of Safety" },
     { metricKey: "recorded_crime_rate", name: "Total Recorded Crime" },
     { metricKey: "charge_rate", name: "Charge Rate %" },
-    { metricKey: "street_confidence_index", name: "Perception of Safety - Main" },
     { metricKey: "crown_court_backlog", name: "Crown Court Backlog" },
     { metricKey: "reoffending_rate", name: "Reoffending Rate" },
   ],

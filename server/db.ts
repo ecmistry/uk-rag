@@ -197,7 +197,7 @@ const DISPLAY_NAME_OVERRIDES: Partial<Record<string, string>> = {
   staff_vacancy_rate: "Staff Vacancy Rate",
   recorded_crime_rate: "Total Recorded Crime",
   charge_rate: "Charge Rate %",
-  street_confidence_index: "Perception of Safety - Main",
+  street_confidence_index: "Perception of Safety",
 
   crown_court_backlog: "Crown Court Backlog",
   reoffending_rate: "Reoffending Rate",
