@@ -30,6 +30,43 @@ export function filterToQuarterlyOnly<T extends { dataDate: string }>(
   return quarterly.length > 0 ? quarterly : history;
 }
 
+const MONTH_MAP: Record<string, number> = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+
+/**
+ * Convert a dataDate string into a numeric value for chronological sorting.
+ * Handles: "2025 Q4", "Q1 2025", "Nov 2025", "2025 JAN", "2025", "2024/25".
+ * Returns a number where larger = more recent.
+ */
+function dateSortKey(dataDate: string): number {
+  const s = String(dataDate).trim();
+
+  // Quarterly: "2025 Q3" or "Q3 2025"
+  const qMatch = s.match(/(\d{4})\s+Q([1-4])/i) || s.match(/Q([1-4])\s+(\d{4})/i);
+  if (qMatch) {
+    const year = parseInt(qMatch[1].length === 4 ? qMatch[1] : qMatch[2]);
+    const q = parseInt(qMatch[1].length === 4 ? qMatch[2] : qMatch[1]);
+    return year * 100 + q * 3;
+  }
+
+  // Monthly: "Nov 2025", "2025 JAN", "January 2025"
+  for (const [abbr, num] of Object.entries(MONTH_MAP)) {
+    const re = new RegExp(`\\b${abbr}[a-z]*\\b`, "i");
+    const yearRe = s.match(/\b(\d{4})\b/);
+    if (re.test(s) && yearRe) {
+      return parseInt(yearRe[1]) * 100 + num;
+    }
+  }
+
+  // Annual: "2025" or "2024/25"
+  const yearMatch = s.match(/^(\d{4})/);
+  if (yearMatch) return parseInt(yearMatch[1]) * 100;
+
+  return 0;
+}
+
 /**
  * Deduplicate history so there is at most one row per period (normalised dataDate).
  * Keeps the entry with the latest recordedAt for each period so we don't show
@@ -53,8 +90,7 @@ export function deduplicateByPeriod<T extends { dataDate: string; recordedAt: Da
       byPeriod.set(period, h);
     }
   }
-  // Return newest period first (e.g. 2026 Q1 before 2025 Q4)
   return Array.from(byPeriod.values()).sort((a, b) =>
-    String(b.dataDate).trim().localeCompare(String(a.dataDate).trim())
+    dateSortKey(b.dataDate) - dateSortKey(a.dataDate)
   );
 }
