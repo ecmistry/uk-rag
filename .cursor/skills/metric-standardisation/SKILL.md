@@ -106,6 +106,73 @@ git push origin main
 | Defence | `sea_mass`, `land_mass`, `air_mass`, `defence_industry_vitality`, `defence_spending_gdp` |
 | Population | `natural_change`, `old_age_dependency_ratio`, `net_migration`, `healthy_life_expectancy` |
 
+## Date format standard: canonical "YYYY QN"
+
+**ALL dataDates MUST be in the format `YYYY QN`** (e.g. `"2025 Q4"`, `"2026 Q1"`).
+This applies to both the `metrics` collection (scorecard) and `metricHistory` collection (history).
+
+### How incoming dates are normalised
+
+The `normaliseDataDate()` function in `server/db.ts` automatically converts any incoming date to canonical format:
+
+| Input format | Example | Converts to |
+|---|---|---|
+| Monthly | `"Nov 2025"`, `"2026 JAN"` | `"2025 Q4"`, `"2026 Q1"` |
+| Annual | `"2025"` | `"2025 Q4"` |
+| Academic year | `"202425"` | `"2025 Q3"` |
+| Financial year quarter | `"Q2 2025/26"` | `"2025 Q3"` |
+| Month range | `"Oct-Dec 2023"` | `"2023 Q4"` |
+| Year Ending | `"YE Jun 25 P"` | `"2025 Q2"` |
+| Multi-year range | `"2021-2023"` | `"2023 Q4"` |
+| Already canonical | `"2025 Q4"` | `"2025 Q4"` (no change) |
+
+### Month-to-quarter mapping
+
+- Jan/Feb/Mar → Q1
+- Apr/May/Jun → Q2
+- Jul/Aug/Sep → Q3
+- Oct/Nov/Dec → Q4
+
+### Aggregation rules for monthly → quarterly
+
+When converting monthly data to quarterly (e.g. via `scripts/quarterly_normalise.cjs`):
+
+- **Take the LAST available month** in each quarter (latest snapshot)
+- If multiple entries exist for the same month within a quarter, keep the one with the latest `recordedAt`
+- Do NOT average monthly values — use the end-of-quarter reading
+
+### Financial year quarter conversion to calendar quarter
+
+NHS/government financial year runs April–March:
+
+| FY Quarter | Calendar months | Calendar quarter |
+|---|---|---|
+| FY Q1 | Apr–Jun | Q2 |
+| FY Q2 | Jul–Sep | Q3 |
+| FY Q3 | Oct–Dec | Q4 |
+| FY Q4 | Jan–Mar | Q1 (next year) |
+
+### Bulk normalisation script
+
+`scripts/quarterly_normalise.cjs` processes ALL metrics in one pass:
+
+1. Parses every history entry's `dataDate` to `{ year, quarter, monthInQuarter }`
+2. Groups entries by canonical `"YYYY QN"` key
+3. Picks the best entry per quarter (latest month, then latest `recordedAt`)
+4. Replaces old entries with canonical entries
+5. Updates scorecard `dataDate` to canonical format
+6. Runs verification pass to confirm zero non-canonical entries remain
+
+Run: `node scripts/quarterly_normalise.cjs`
+
+### Important: adding new metrics or fetchers
+
+When adding a new metric or fetcher, ensure:
+
+1. The fetcher outputs `dataDate` in **any** parseable format — `normaliseDataDate()` in `db.ts` auto-converts on ingest
+2. The fetcher aggregates to quarterly cadence where possible (e.g. take last month of each quarter)
+3. After seeding history, run `node scripts/quarterly_normalise.cjs` to verify all entries are canonical
+
 ## Formatting rules (MUST follow for every section)
 
 These rules are already implemented in the shared code. Do NOT re-implement or override them. If a section's data looks wrong, the fix is almost always in the data, not the formatting code.
@@ -118,12 +185,12 @@ These rules are already implemented in the shared code. Do NOT re-implement or o
 - The shared function is `formatValue(metricKey, rawValue)` in `client/src/data/formatValue.ts`
 - Do NOT use `parseFloat().toFixed()` inline anywhere -- always call `formatValue()`
 
-### Periods: always human-readable
+### Periods: always canonical "YYYY QN"
 
-- 6-digit academic year codes like `202425` must display as `2024/25`
-- The shared function is `formatPeriod(dataDate)` in `client/src/data/formatValue.ts`
-- Already applied in MetricDetail.tsx chart X-axis and table Period cells
-- During data audit, check for compact codes and note them -- `formatPeriod()` handles them automatically
+- All period strings stored and displayed as `"YYYY QN"` (e.g. `"2025 Q4"`)
+- The `formatPeriod(dataDate)` function in `client/src/data/formatValue.ts` passes through canonical format unchanged
+- Legacy 6-digit academic year codes (`202425` → `2024/25`) handled as fallback but should not appear in new data
+- Server-side `normaliseDataDate()` in `db.ts` converts any format on ingest
 
 ### Chart Y-axis: never clip labels
 
@@ -146,18 +213,19 @@ These rules are already implemented in the shared code. Do NOT re-implement or o
 - RAG dot: `w-2.5 h-2.5 rounded-full`, centred under "Status" header
 - Period cell uses `formatPeriod()`, Value cell uses `formatValue()`
 
-### Filtering: match scorecard periodicity
+### Filtering: all data is quarterly
 
-- If scorecard `dataDate` is quarterly (matches `/\bQ[1-4]\b/`), show only quarterly history
-- If scorecard `dataDate` is monthly/annual/other, show ALL history (skip `filterToQuarterlyOnly`)
-- This prevents mismatches where scorecard shows a monthly value but table shows quarterly
+- Since all `dataDate` values are now canonical `"YYYY QN"`, `isQuarterlyPeriod()` matches every entry
+- `filterToQuarterlyOnly()` returns the full dataset (no filtering needed)
+- The `dateSortKey()` function in `quarterlyMetrics.ts` handles chronological sorting
 
 ## Key learnings (data and testing)
 
-1. **Monthly dates don't sort lexicographically** -- "Sep" > "Nov" alphabetically. The `dateSortKey()` function in `quarterlyMetrics.ts` handles this. Do NOT sort by `String.localeCompare`.
+1. **All dates must be canonical `YYYY QN`** -- the server's `normaliseDataDate()` auto-converts, and the bulk script `quarterly_normalise.cjs` can fix existing data. Never store monthly, annual, or custom date formats.
 2. **Test with upsert, not refresh** -- `metrics.refresh` calls Python fetchers needing external APIs. Use `upsertMetric` directly in tests and wrap refresh calls in try/catch.
 3. **`getExistingHistoryPeriods` returns a Set** -- mock must return `new Set()`, not `[]`.
 4. **`recordedAt` can be null** -- always handle with fallback in `db.ts`: `h.recordedAt instanceof Date ? h.recordedAt : new Date()`.
 5. **Never touch tooltips** during standardisation -- tooltips are managed separately and are content-sensitive.
 6. **Seed history when fetchers only return latest** -- some fetchers (e.g. attainment8, neet_rate) only return the current value. If the sub-page shows just 1 data point, seed published historical values manually via MongoDB insert.
 7. **Verify after seeding** -- always re-run the data audit after inserting history to confirm scorecard still matches latest entry and no placeholders remain.
+8. **Aggregation strategy** -- for monthly → quarterly, take the last available month value in each quarter (not average). This follows standard statistical agency practice.

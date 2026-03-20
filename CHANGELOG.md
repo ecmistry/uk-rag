@@ -4,6 +4,15 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.8] - 2026-03-20
+
+### Changed
+
+- **Canonical date format "YYYY QN"** – All 48 metric scorecards and 2,355 history entries normalised to a single canonical `YYYY QN` format (e.g. `"2025 Q4"`). Monthly data aggregated to quarterly (last-month-of-quarter value), annual data mapped to Q4, custom formats (NHS financial year, academic year, month ranges, "Year Ending") all converted. Net reduction of 3,423 duplicate/monthly entries.
+- **Server-side auto-normalisation** – `normaliseDataDate()` in `server/db.ts` now automatically converts any incoming date format to canonical `YYYY QN` on ingest, preventing format drift from future fetcher runs.
+- **Bulk normalisation script** – Added `scripts/quarterly_normalise.cjs` for repeatable one-pass conversion of all metrics to canonical quarterly format with verification.
+- **Metric standardisation skill updated** – Added comprehensive date format standard documentation including conversion tables, aggregation rules, financial year mapping, and instructions for new metrics.
+
 ## [1.0.7] - 2026-03-20
 
 ### Changed

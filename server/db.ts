@@ -481,9 +481,88 @@ export async function getMetricByKey(metricKey: string): Promise<Metric | undefi
 /**
  * Add a metric history entry
  */
-/** Normalise period string so the same logical period (e.g. "2026 Q1") is stored consistently and we avoid duplicate rows from "2026 Q1" vs "2026 Q1 " */
+const MONTH_MAP: Record<string, number> = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+
+function monthToQuarter(m: number): number {
+  if (m <= 3) return 1;
+  if (m <= 6) return 2;
+  if (m <= 9) return 3;
+  return 4;
+}
+
+/**
+ * Normalise any period string to canonical "YYYY QN" format.
+ * Handles monthly ("Nov 2025", "2026 JAN"), annual ("2025"), academic year
+ * ("202425"), financial year quarters ("Q2 2025/26"), month ranges ("Oct-Dec 2023"),
+ * and "Year Ending" ("YE Jun 25 P"). Falls back to trimmed string if unparseable.
+ */
 function normaliseDataDate(dataDate: string): string {
-  return String(dataDate).trim();
+  const s = String(dataDate).trim();
+  if (!s || s.toLowerCase() === "placeholder") return s;
+
+  // Already canonical
+  if (/^\d{4}\s+Q[1-4]$/.test(s)) return s;
+
+  let m: RegExpMatchArray | null;
+
+  // "QN YYYY"
+  m = s.match(/^Q([1-4])\s+(\d{4})$/i);
+  if (m) return `${m[2]} Q${m[1]}`;
+
+  // NHS financial year quarterly: "Q4 2024/25"
+  m = s.match(/^Q([1-4])\s+(\d{4})\/(\d{2})$/i);
+  if (m) {
+    const fq = +m[1], startYear = +m[2];
+    const map: Record<number, [number, number]> = {
+      1: [startYear, 2], 2: [startYear, 3], 3: [startYear, 4], 4: [startYear + 1, 1],
+    };
+    const [yr, cq] = map[fq];
+    return `${yr} Q${cq}`;
+  }
+
+  // Month range: "Oct-Dec 2023"
+  m = s.match(/^(\w+)-(\w+)\s+(\d{4})/i);
+  if (m) {
+    const endMonth = MONTH_MAP[m[2].toLowerCase()];
+    if (endMonth) return `${m[3]} Q${monthToQuarter(endMonth)}`;
+  }
+
+  // "Year Ending": "YE Jun 25 P"
+  m = s.match(/^YE\s+(\w+)\s+(\d{2,4})/i);
+  if (m) {
+    const month = MONTH_MAP[m[1].toLowerCase()];
+    let year = +m[2];
+    if (year < 100) year += 2000;
+    if (month) return `${year} Q${monthToQuarter(month)}`;
+  }
+
+  // Monthly: "Nov 2025" / "2025 NOV"
+  for (const [abbr, num] of Object.entries(MONTH_MAP)) {
+    const re1 = new RegExp(`^${abbr}[a-z]*\\s+(\\d{4})$`, "i");
+    const m1 = s.match(re1);
+    if (m1) return `${m1[1]} Q${monthToQuarter(num)}`;
+
+    const re2 = new RegExp(`^(\\d{4})\\s+${abbr}[a-z]*$`, "i");
+    const m2 = s.match(re2);
+    if (m2) return `${m2[1]} Q${monthToQuarter(num)}`;
+  }
+
+  // Multi-year range: "2021-2023"
+  m = s.match(/^(\d{4})-(\d{4})$/);
+  if (m) return `${m[2]} Q4`;
+
+  // Academic year: "202425"
+  m = s.match(/^(\d{4})(\d{2})$/);
+  if (m) return `${+m[1] + 1} Q3`;
+
+  // Pure annual: "2025"
+  m = s.match(/^(\d{4})$/);
+  if (m) return `${m[1]} Q4`;
+
+  return s;
 }
 
 export async function addMetricHistory(history: InsertMetricHistory): Promise<void> {
