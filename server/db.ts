@@ -501,7 +501,8 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
         value: history.value,
         ragStatus: history.ragStatus,
         recordedAt,
-        dataDate, // store normalised so future lookups match
+        dataDate,
+        ...(history.information != null && { information: history.information }),
       },
     },
     { upsert: true }
@@ -568,7 +569,7 @@ export async function getMetricHistory(metricKey: string, limit: number = 50): P
   // Ensure recordedAt is a Date object (MongoDB may return it as string in some cases)
   const normalizedHistory = history.map(h => ({
     ...h,
-    recordedAt: h.recordedAt instanceof Date ? h.recordedAt : new Date(h.recordedAt),
+    recordedAt: h.recordedAt instanceof Date ? h.recordedAt : h.recordedAt ? new Date(h.recordedAt) : (h.createdAt instanceof Date ? h.createdAt : new Date()),
   }));
   
   // Only cache if we have data (don't cache empty arrays to avoid stale empty results)

@@ -221,6 +221,7 @@ export const appRouter = router({
               value: metricData.value.toString(),
               ragStatus,
               dataDate: metricData.time_period,
+              ...(metricData.information != null && { information: metricData.information }),
             });
             console.log(`  ✓ Added history: ${metricData.metric_name} - ${metricData.time_period}`);
           }

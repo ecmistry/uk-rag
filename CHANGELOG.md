@@ -4,6 +4,25 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.5] - 2026-03-20
+
+### Changed
+
+- **Modernised metric detail tables** – Redesigned history tables across all metric sub-pages with alternating striped rows (`bg-muted/25`), hover highlights, increased cell padding, uppercase column headers with tracking, and a centred "Status" column with slightly larger RAG dots (`w-2.5 h-2.5`).
+- **Consistent 1 decimal place formatting** – Created shared `formatValue()` helper (`client/src/data/formatValue.ts`) used by Home.tsx scorecards, MetricDetail.tsx hero values, table cells, chart tooltips, and chart Y-axis. All numeric values now display with exactly 1 decimal place, with exceptions for comma-formatted backlog counts and population shown in millions.
+- **Left-aligned table values** – Value column changed from right-aligned to left-aligned to match the Period column for visual consistency.
+- **Smart quarterly filtering** – Metric detail pages now show monthly history data when the scorecard's latest value is monthly (e.g. CPI), preventing mismatches where the scorecard showed a monthly figure but the table only displayed quarterly data.
+- **Chart tooltip positioning** – Tooltip anchored to top of chart area (`position={{ y: 0 }}`) with dashed vertical cursor line, drop shadow, and pointer-events disabled to prevent overlap with data lines.
+- **Chart tooltip precision** – Changed from 2 decimal places to 1 decimal place for consistency with all other displays.
+
+### Added
+
+- **`information` field on metric history** – Added optional `information` field to `MetricHistory` and `InsertMetricHistory` schemas; `addMetricHistory` in `db.ts` and the refresh path in `routers.ts` now persist this field when provided by fetchers.
+
+### Fixed
+
+- **Economy data cleanup** – Removed 4 placeholder history entries and corrected `public_sector_net_debt` latest history value to match the current scorecard (95%).
+
 ## [1.0.4] - 2026-03-17
 
 ### Added

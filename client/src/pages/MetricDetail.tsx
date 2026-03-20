@@ -14,7 +14,9 @@ import {
 import {
   filterToQuarterlyOnly,
   deduplicateByPeriod,
+  isQuarterlyPeriod,
 } from "@/data/quarterlyMetrics";
+import { formatValue } from "@/data/formatValue";
 import { trpc } from "@/lib/trpc";
 import { Loader2 } from "lucide-react";
 import { useParams, Link } from "wouter";
@@ -105,7 +107,10 @@ export default function MetricDetail() {
     dataDate: string;
   };
   const rawHistory = (data.history ?? []) as HistoryRow[];
-  const filtered = filterToQuarterlyOnly(rawHistory);
+  const scorecardIsQuarterly = isQuarterlyPeriod(metric.dataDate ?? "");
+  const filtered = scorecardIsQuarterly
+    ? filterToQuarterlyOnly(rawHistory)
+    : rawHistory;
   const history = deduplicateByPeriod(filtered);
   const periodSubtitle = getMetricTileSubtitle(metric.metricKey, metric.dataDate ?? "");
   const periodLabel = periodSubtitle ?? metric.dataDate ?? null;
@@ -168,7 +173,7 @@ export default function MetricDetail() {
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-semibold tabular-nums">
-            {metric.value}
+            {formatValue(metric.metricKey, metric.value)}
             <span className="text-base font-normal text-muted-foreground ml-2">
               {metric.unit}
             </span>
@@ -207,19 +212,29 @@ export default function MetricDetail() {
                   />
                   <YAxis
                     tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                    tickFormatter={(v) => (metric.unit ? `${v}${metric.unit}` : String(v))}
+                    tickFormatter={(v) => (metric.unit ? `${Number(v).toFixed(1)}${metric.unit}` : Number(v).toFixed(1))}
                     width={44}
                   />
                   <Tooltip
+                    position={{ y: 0 }}
+                    offset={16}
+                    cursor={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1, strokeDasharray: "4 4" }}
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      padding: "8px 12px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      fontSize: "12px",
+                      lineHeight: "1.6",
+                      pointerEvents: "none",
                     }}
-                    labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+                    wrapperStyle={{ zIndex: 50, pointerEvents: "none" }}
+                    labelStyle={{ color: "hsl(var(--muted-foreground))", fontWeight: 600, marginBottom: "4px" }}
+                    itemStyle={{ padding: "2px 0" }}
                     formatter={(value: number, name: string) => [
-                      typeof value === "number" && !Number.isNaN(value) ? `${value.toFixed(2)}${metric.unit}` : "—",
-                      name === "trendValue" ? "Trend line" : name === "movingAvg12m" ? "12-month moving average" : metric.name,
+                      typeof value === "number" && !Number.isNaN(value) ? `${value.toFixed(1)}${metric.unit}` : "—",
+                      name === "trendValue" ? "Trend line" : name === "movingAvg12m" ? "12-month moving avg" : metric.name,
                     ]}
                     labelFormatter={(label) => label}
                   />
@@ -281,27 +296,33 @@ export default function MetricDetail() {
             <div className="overflow-x-auto -mx-6 px-6">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Period</TableHead>
-                    <TableHead className="text-right">Value</TableHead>
-                    <TableHead className="min-w-[280px] max-w-md">Information</TableHead>
-                    <TableHead className="w-20" />
+                  <TableRow className="border-b-2">
+                    <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Period</TableHead>
+                    <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Value</TableHead>
+                    <TableHead className="py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-[280px] max-w-md">Information</TableHead>
+                    <TableHead className="py-3 w-16 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {history.map((row, i) => (
-                    <TableRow key={`${row.dataDate}-${i}`}>
-                      <TableCell className="font-medium">{row.dataDate}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {row.value} {metric.unit}
+                    <TableRow
+                      key={`${row.dataDate}-${i}`}
+                      className={cn(
+                        "transition-colors hover:bg-muted/50",
+                        i % 2 === 0 ? "bg-transparent" : "bg-muted/25"
+                      )}
+                    >
+                      <TableCell className="py-3 font-medium tabular-nums">{row.dataDate}</TableCell>
+                      <TableCell className="py-3 tabular-nums">
+                        {formatValue(metric.metricKey, row.value)}{metric.unit ? ` ${metric.unit}` : ""}
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm align-top whitespace-pre-line">
+                      <TableCell className="py-3 text-muted-foreground text-sm align-top whitespace-pre-line leading-relaxed">
                         {row.information ?? "—"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-3 text-center">
                         <span
                           className={cn(
-                            "inline-block w-2 h-2 rounded-full",
+                            "inline-block w-2.5 h-2.5 rounded-full",
                             row.ragStatus === "red" && "bg-red-500",
                             row.ragStatus === "amber" && "bg-amber-500",
                             row.ragStatus === "green" && "bg-green-500"

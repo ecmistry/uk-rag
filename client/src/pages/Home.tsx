@@ -19,6 +19,7 @@ import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeT
 import { EXPECTED_METRICS } from "@/data/expectedMetrics";
 import PopulationBreakdownChart from "@/components/PopulationBreakdownChart";
 import TrendIndicator from "@/components/TrendIndicator";
+import { formatValue } from "@/data/formatValue";
 
 function formatCardTitle(name: string) {
   let out = name;
@@ -284,15 +285,7 @@ export default function Home() {
                                 <span>
                                   {!hasValue
                                     ? "—"
-                                    : metric.metricKey === "attainment8"
-                                      ? parseFloat(metric.value).toFixed(1)
-                                      : metric.metricKey === "apprenticeship_intensity"
-                                        ? parseFloat(metric.value) >= 1000
-                                          ? `${parseInt(metric.value, 10).toLocaleString()}${metric.unit ? ` ${metric.unit}` : ""}`
-                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit ? metric.unit : ""}`
-                                        : metric.metricKey === "total_population" && parseFloat(metric.value) >= 1e6
-                                          ? `${(parseFloat(metric.value) / 1e6).toFixed(1)}m`
-                                          : `${parseFloat(metric.value).toFixed(1)}${metric.unit}`}
+                                    : `${formatValue(metric.metricKey, metric.value)}${metric.unit ? ` ${metric.unit}` : ""}`}
                                 </span>
                                 {hasValue && trends && (
                                   <TrendIndicator

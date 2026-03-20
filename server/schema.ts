@@ -74,6 +74,7 @@ export interface MetricHistory {
   ragStatus: "red" | "amber" | "green";
   dataDate: string;
   recordedAt: Date;
+  information?: string;
 }
 
 export interface InsertMetricHistory {
@@ -82,4 +83,5 @@ export interface InsertMetricHistory {
   ragStatus: "red" | "amber" | "green";
   dataDate: string;
   recordedAt?: Date;
+  information?: string;
 }
