@@ -84,7 +84,7 @@ beforeEach(() => {
 const CRIME_KEYS = [
   "recorded_crime_rate",
   "charge_rate",
-  "perception_of_safety",
+  "street_confidence_index",
   "crown_court_backlog",
   "reoffending_rate",
 ];
@@ -168,7 +168,7 @@ describe("Crime Metrics", () => {
     const testData = [
       { key: "recorded_crime_rate", value: "87.85", rag: "amber" as const },
       { key: "charge_rate", value: "7.2", rag: "red" as const },
-      { key: "perception_of_safety", value: "59", rag: "amber" as const },
+      { key: "street_confidence_index", value: "12.4", rag: "green" as const },
       { key: "crown_court_backlog", value: "74651", rag: "red" as const },
       { key: "reoffending_rate", value: "28.3", rag: "amber" as const },
     ];

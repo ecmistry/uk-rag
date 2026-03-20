@@ -454,37 +454,6 @@ The thresholds are based on the charge rates needed to maintain public confidenc
 🟡 Amber (7% – 10%): This is the "Eroding Confidence" zone. The UK currently sits near the bottom of this bracket. Police are solving some crimes, particularly violent and sexual offences, but the vast majority of volume crime (theft, criminal damage, fraud) goes uncharged. Public trust is declining and offenders are becoming bolder.
 
 🔴 Red (Below 7%): This is the "Justice Failure" zone. At this level, fewer than 1 in 14 crimes result in a charge. The criminal justice system has effectively ceased to function as a deterrent for most offence types. Victims have no realistic expectation of seeing justice, and the cycle of consequence-free offending becomes self-reinforcing.`,
-  perception_of_safety: `Think of this as the "Freedom After Dark" metric. It measures the percentage of adults who feel "very safe" or "fairly safe" walking alone in their local area after dark. Unlike recorded crime statistics—which tell you what has happened—this metric captures how safe you actually feel. That distinction matters enormously, because fear of crime restricts people's lives just as powerfully as crime itself. A woman who avoids walking home alone after 7pm, a pensioner who will not answer the door after dark, a teenager who takes a longer route to avoid a particular estate—these are all real consequences of low perceived safety, regardless of whether the official crime statistics are going up or down.
-
-How it is Calculated
-
-The Crime Survey for England and Wales (CSEW)—a large-scale household survey run by the ONS—interviews approximately 35,000 adults annually in their homes. Respondents are asked the standardised question: "How safe do you feel walking alone in your area after dark?" with response options ranging from "very safe" to "very unsafe." The headline figure is the percentage who answer "very safe" or "fairly safe." Results are broken down by sex, age, ethnicity, disability status, area deprivation, and whether the respondent has been a victim of crime. This survey-based approach captures the "dark figure" of fear that never shows up in police data. It is important to note that perception and reality often diverge: some of the safest neighbourhoods (by recorded crime) have high fear levels due to media coverage or environmental factors (poor street lighting, derelict buildings), while some high-crime areas have residents who feel relatively safe because they know the local dynamics.
-
-Real Impact on the Person on the Street
-
-When the perception of safety falls, the effects are immediate and deeply personal:
-
-1. The "Curfew Effect"
-
-Low perceived safety imposes an invisible curfew on millions of people—particularly women, older people, and disabled individuals. Research consistently shows that around half of all women feel unsafe walking alone after dark, compared to roughly one in seven men. When 40% of people who feel unsafe after dark actively change their behaviour—avoiding certain streets, not going out alone, taking taxis they cannot afford—it is a direct loss of personal freedom. Evening economies suffer, community events lose attendance, and public spaces become deserted after dark, which paradoxically makes them less safe.
-
-2. The Gender and Inequality Gap
-
-Perception of safety is one of the starkest inequality metrics in the UK. The gap between men (approximately 88% feeling safe) and women (approximately 68%) represents a 20-percentage-point divide in the freedom to move through public space. The gap widens further for women in deprived areas (65% feel safe) compared to affluent areas (88%). Disabled people report significantly lower safety perceptions than non-disabled people. When large segments of the population feel unable to use public space freely, it entrenches social exclusion and limits economic participation.
-
-3. The Property and Investment Signal
-
-Estate agents, businesses, and investors all track perceived safety. Areas with low safety perceptions struggle to attract new shops, restaurants, and employers. House prices stagnate or fall. Young professionals and families leave, replaced by transient populations with less stake in the community. This "fear-driven flight" can hollow out a neighbourhood far more effectively than actual crime, creating the very decline that residents feared.
-
-Why the RAG Thresholds were chosen
-
-The thresholds are based on CSEW historical data and the levels achieved by the safest comparable European nations, where public space is widely accessible to all demographics after dark.
-
-🟢 Green (Above 70%): This is the "Community Confidence" zone. It indicates that a clear majority of the population—including most women and older people—feel comfortable using their local area after dark. Public spaces are lively, evening economies thrive, and the "invisible curfew" applies to only a small minority. The best-performing areas in the UK and the safest European countries consistently achieve this level.
-
-🟡 Amber (55% – 70%): This is the "Divided Safety" zone. The UK currently sits in this bracket. While the majority still feel safe, a substantial minority—disproportionately women, older people, disabled individuals, and those in deprived areas—do not. This is the zone where behavioural changes become widespread: people avoid certain routes, refuse to go out alone, and restrict their social lives. The evening economy is weakened and community cohesion is under strain.
-
-🔴 Red (Below 55%): This is the "Fear Dominance" zone. When fewer than 55% of people feel safe walking alone after dark, fear of crime has become the dominant experience. Public spaces are effectively abandoned after dark, women and vulnerable groups face severe restrictions on their freedom of movement, and the social and economic life of communities atrophies. This level would represent a fundamental failure of policing, urban design, and community safety.`,
   crown_court_backlog: `Think of this as the "Justice Queue." It measures the total number of outstanding criminal cases waiting to be heard in the Crown Courts of England and Wales—the courts that handle the most serious offences, including murder, rape, robbery, serious assault, and large-scale fraud. If the backlog is 75,000, it means 75,000 defendants are awaiting trial, and 75,000 victims are waiting for their day in court. Some of those cases are already scheduled for trial dates in 2028 or 2029. For every month a case sits in the queue, witnesses' memories fade, victims' trauma deepens, and the chance of a fair and effective trial diminishes. This is the ultimate stress test of whether the justice system can deliver justice at all.
 
 How it is Calculated
