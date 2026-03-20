@@ -547,6 +547,36 @@ The thresholds are based on the reoffending rates achieved by the most effective
 🟡 Amber (25% – 30%): This is the "Persistent Challenge" zone. The UK currently sits in this bracket at approximately 28–29%. While the majority of offenders do not reoffend within a year, a stubborn minority continue to cycle through the system. The most concerning subgroups—short-sentence prisoners, young adult males, and those with substance abuse or mental health issues—reoffend at far higher rates than the headline figure suggests.
 
 🔴 Red (Above 30%): This is the "Systemic Failure" zone. At this level, nearly one in three offenders is back in the system within a year, and prolific reoffenders are generating a disproportionate share of all crime. It signals that rehabilitation programmes are inadequate, prison conditions are counterproductive, and the transition support (housing, employment, mental health) that ex-offenders need to stay out of trouble is failing. The justice system is consuming vast resources simply to process the same people repeatedly, with diminishing returns for public safety.`,
+
+  street_confidence_index: `This is the "Street Confidence Index." It measures the percentage of the population that feels "Not very safe" or "Not safe at all" walking alone in their local area — effectively capturing the real-time psychological state of the nation. Unlike official crime statistics, which only track reported incidents, this metric reflects the impact of police visibility, street lighting, and the presence of anti-social behaviour on daily life. A lower percentage means more people feel safe.
+
+How is it Measured?
+
+This metric is tracked through high-frequency, representative surveys (the YouGov Personal Safety Tracker).
+
+The Methodology: Participants are asked: "Generally speaking, how safe or unsafe do you feel walking on the street during the day in your area?"
+
+The Calculation: We combine the "Not very safe" and "Not safe at all" responses, excluding "Don't know" and "Prefer not to say", to create the percentage of the population living with a restrictive fear of crime.
+
+Frequency: The YouGov tracker is biannual (February and August). Quarterly values are interpolated between waves to provide a smoother trend, allowing the state to react to emerging anxieties before they become entrenched.
+
+Real-World Impact: Why should you care?
+
+Economic Vitality: When people feel safe, they use public transport and visit high streets. A low "feeling unsafe" percentage is a prerequisite for a thriving "24-hour" economy and local retail growth.
+
+The "Fear Tax": When this metric rises, citizens pay a "Fear Tax" — spending more on private taxis, home security, or avoiding certain areas, which reduces overall disposable income and freedom of movement.
+
+Social Cohesion: Low perceived insecurity indicates a strong social contract. It suggests that the "person on the street" trusts their neighbours and the authorities to maintain order.
+
+RAG Threshold Logic (International Gold Standard)
+
+The RAG thresholds are benchmarked against Gold Standard mature economies — specifically The Netherlands, Denmark, and Singapore — where high-density urban safety is a core pillar of national identity. In these nations, the combined "feeling unsafe" percentage consistently tracks below 15%.
+
+🟢 Green (Below 20% feeling unsafe / above 80% feeling safe): Social Harmony. Aligned with the Gold Standard (e.g., Netherlands). Safety is a "background fact." The public feels no restriction on movement, and trust in the state's ability to maintain order is strong.
+
+🟡 Amber (20% – 30% feeling unsafe / 70–80% feeling safe): Emerging Anxiety. The nation is beginning to decouple from the Gold Standard. While the majority feel safe, a significant minority are changing their behaviours (avoiding certain routes or times) due to perceived risks.
+
+🔴 Red (Above 30% feeling unsafe / below 70% feeling safe): Systemic Fear. A critical breakdown in the social contract. Fear of crime is actively suppressing economic activity and civic engagement. The state is perceived as having lost control of the "public square."`,
 };
 
 export function getCrimeTooltip(metricKey: string): string | undefined {
