@@ -16,9 +16,9 @@ import json
 # RAG Thresholds for Education Metrics
 RAG_THRESHOLDS = {
     "attainment8": {
-        "green": 48.0,  # Above national average
-        "amber": 44.0,  # Near national average
-        # Red: < 44.0
+        "green": 5.5,  # Average Score basis (total / 10)
+        "amber": 4.5,  # Solid Competency zone
+        # Red: < 4.5
     },
     "teacher_vacancy_rate": {
         "green": 1.0,   # Low vacancies
@@ -133,9 +133,10 @@ def fetch_attainment8_data():
             print("Warning: No 'Total' data found, using first row")
             all_pupils = latest_data.head(1)
         
-        # Extract Attainment 8 average
+        # Extract Attainment 8 average and convert to per-subject scale (0-9)
         if 'attainment8_average' in all_pupils.columns:
-            attainment8_value = all_pupils['attainment8_average'].iloc[0]
+            raw_value = float(all_pupils['attainment8_average'].iloc[0])
+            attainment8_value = round(raw_value / 10, 1)
         else:
             print(f"Warning: 'attainment8_average' column not found. Available columns: {all_pupils.columns.tolist()}")
             return None
@@ -147,7 +148,7 @@ def fetch_attainment8_data():
             "metric_name": "Attainment 8 Score",
             "metric_key": "attainment8",
             "category": "Education",
-            "value": float(attainment8_value),
+            "value": attainment8_value,
             "rag_status": rag_status,
             "time_period": str(latest_period),
             "data_source": "DfE: KS4 Performance",
