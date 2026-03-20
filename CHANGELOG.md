@@ -4,6 +4,32 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.6] - 2026-03-20
+
+### Changed
+
+- **Standardised all 7 metric sections** – Completed systematic data audit, cleanup, history seeding, and test coverage across Economy, Employment, Education, Crime, Healthcare, Defence, and Population. Every metric sub-page now follows the same visual and data conventions.
+
+### Added
+
+- **Historical data seeded for 18 metrics** – Metrics whose fetchers only return the latest value now have full historical time series seeded from published government sources:
+  - Crime: `perception_of_safety` (11 quarterly), `crown_court_backlog` (20 monthly from Mar 2020), `reoffending_rate` (20 quarterly from Jan 2019)
+  - Healthcare: `a_e_wait_time` (26 quarterly from 2019 Q4), `elective_backlog` (20 from Feb 2020), `gp_appt_access` (25 quarterly from 2020 Q1), `staff_vacancy_rate` (25 quarterly from Q2 2019/20)
+  - Population: `natural_change` (11 annual from 2011), `old_age_dependency_ratio` (12 annual from 2011), `net_migration` (10 entries from YE Jun 16), `healthy_life_expectancy` (13 entries from 2009-2011)
+- **Section test suites** – Created standardised test files for Crime (`crime.test.ts`, 6 tests), Healthcare (`healthcare.test.ts`, 6 tests), Defence (`defence.test.ts`, 6 tests), and Population (`population.test.ts`, 6 tests). All use in-memory DB mocks with `vi.mock("./db")` pattern. Total: 151 tests across 19 files, all passing.
+- **Metric-standardisation skill** (`.cursor/skills/metric-standardisation/SKILL.md`) – Comprehensive repeatable process capturing all formatting rules, a 10-point visual verification checklist, and key learnings from all 7 sections.
+
+### Fixed
+
+- **Crime data quality** – Removed 3 `recorded_crime_rate` entries with paragraph-length dataDates; deduplicated 19 entries across `recorded_crime_rate` and `charge_rate`; fixed `charge_rate` scorecard from stale "year" period to latest quarterly.
+- **Healthcare data quality** – Deleted 6 bad `a_e_wait_time` entries (values ~5 instead of ~74%); deduplicated 11 `ambulance_response_time` entries.
+- **Defence data quality** – Removed suspicious `defence_industry_vitality` 2026 Q1 = 100.0 outlier entry.
+- **Population data quality** – Deleted 4 placeholder entries (one per Population metric).
+- **Education history** – Seeded `attainment8` (7 entries from 2017/18) and `neet_rate` (8 entries from 2017) with published historical data; fixed `formatPeriod()` for 6-digit academic year codes (e.g. `202425` → `2024/25`).
+- **Employment chronological sort** – Introduced `dateSortKey()` to correctly sort monthly, quarterly, and annual date strings chronologically instead of lexicographically (fixing `sickness_absence` and similar metrics).
+- **Chart Y-axis clipping** – Dynamic width (`72px` with unit, `48px` without) prevents label truncation for metrics with units like "Score", "%", or "minutes".
+- **`recordedAt` null safety** – `getMetricHistory` in `db.ts` now falls back to `createdAt` or `new Date()` when `recordedAt` is null, preventing client-side SuperJSON deserialisation crashes.
+
 ## [1.0.5] - 2026-03-20
 
 ### Changed
