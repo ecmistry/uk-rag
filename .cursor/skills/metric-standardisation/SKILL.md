@@ -74,11 +74,18 @@ lsof -ti:3000 | xargs kill -9; sleep 2
 nohup node dist/index.js > /tmp/server.log 2>&1 &
 ```
 
-Check each metric sub-page:
-- Scorecard value matches table's first row
-- Table is left-aligned, striped, 1dp formatted
-- Chart tooltip shows 1dp, anchored at top
-- No placeholder or "—" values in the table
+Check each metric sub-page against this checklist:
+
+- [ ] Scorecard hero value matches table's first row value (both 1dp)
+- [ ] Table: left-aligned, striped rows, 1dp values, period formatted (no 6-digit codes)
+- [ ] Table: RAG dots visible and centred in Status column
+- [ ] Table: no "placeholder" or lone "—" values (information column "—" is OK if no data)
+- [ ] Chart Y-axis: labels fully visible, not clipped on left edge
+- [ ] Chart Y-axis: space between value and unit (e.g. "45.9 Score" not "45.9Score")
+- [ ] Chart tooltip: anchored at top of chart, not overlapping data lines
+- [ ] Chart tooltip: shows 1dp values consistent with table
+- [ ] Chart X-axis: periods human-readable (2024/25 not 202425)
+- [ ] History has more than 1 entry (seed if fetcher only returns latest)
 
 ### 5. Commit
 
@@ -99,13 +106,58 @@ git push origin main
 | Defence | `sea_mass`, `land_mass`, `air_mass`, `defence_industry_vitality`, `defence_spending_gdp` |
 | Population | `natural_change`, `old_age_dependency_ratio`, `net_migration`, `healthy_life_expectancy` |
 
-## Key learnings
+## Formatting rules (MUST follow for every section)
 
-1. **Monthly dates don't sort lexicographically** -- "Sep" > "Nov" alphabetically. Always use `dateSortKey()` for chronological sorting.
-2. **Quarterly filter must be conditional** -- metrics with monthly scorecards (e.g. CPI, sickness_absence) must show monthly history, not filtered quarterly.
-3. **Test with upsert, not refresh** -- `metrics.refresh` calls Python fetchers needing external APIs. Use `upsertMetric` directly in tests and wrap refresh calls in try/catch.
-4. **`getExistingHistoryPeriods` returns a Set** -- mock must return `new Set()`, not `[]`.
-5. **`recordedAt` can be null** -- always handle with fallback: `h.recordedAt instanceof Date ? h.recordedAt : new Date()`.
-6. **Never touch tooltips** during standardisation -- tooltips are managed separately.
-7. **Academic year codes** -- DfE data uses 6-digit codes like `202425`. Always run through `formatPeriod()` for display. Check for this pattern during data audit.
-8. **Y-axis width** -- `width={44}` clips labels with units. Use `width={metric.unit ? 72 : 48}` so labels like "50.2 Score" aren't cut off.
+These rules are already implemented in the shared code. Do NOT re-implement or override them. If a section's data looks wrong, the fix is almost always in the data, not the formatting code.
+
+### Values: always 1 decimal place
+
+- Every numeric value displays as `toFixed(1)` -- e.g. `3` becomes `3.0`, `0.97` becomes `1.0`
+- This applies to: scorecards (Home.tsx), hero values, table cells, chart tooltips, chart Y-axis
+- Only exceptions: `elective_backlog`/`crown_court_backlog` (comma integers), `total_population` >= 1M (e.g. `69.5m`)
+- The shared function is `formatValue(metricKey, rawValue)` in `client/src/data/formatValue.ts`
+- Do NOT use `parseFloat().toFixed()` inline anywhere -- always call `formatValue()`
+
+### Periods: always human-readable
+
+- 6-digit academic year codes like `202425` must display as `2024/25`
+- The shared function is `formatPeriod(dataDate)` in `client/src/data/formatValue.ts`
+- Already applied in MetricDetail.tsx chart X-axis and table Period cells
+- During data audit, check for compact codes and note them -- `formatPeriod()` handles them automatically
+
+### Chart Y-axis: never clip labels
+
+- Y-axis `width` is set to `72px` when the metric has a unit, `48px` without
+- Labels include a space between value and unit: `"45.9 Score"` not `"45.9Score"`
+- Do NOT hardcode `width={44}` -- this clips anything over ~3 digits
+
+### Chart tooltip: anchored at top, never overlapping
+
+- Tooltip uses `position={{ y: 0 }}` to stay above chart lines
+- `offset={16}`, dashed vertical cursor, drop shadow, `pointerEvents: "none"`
+- Values in tooltip use `toFixed(1)` -- consistent with everything else
+
+### Table: left-aligned, striped, consistent
+
+- All columns left-aligned (including Value -- do NOT right-align)
+- Alternating row backgrounds: `bg-muted/25` on odd rows
+- Hover effect: `hover:bg-muted/50 transition-colors`
+- Uppercase column headers with `text-xs font-semibold uppercase tracking-wider`
+- RAG dot: `w-2.5 h-2.5 rounded-full`, centred under "Status" header
+- Period cell uses `formatPeriod()`, Value cell uses `formatValue()`
+
+### Filtering: match scorecard periodicity
+
+- If scorecard `dataDate` is quarterly (matches `/\bQ[1-4]\b/`), show only quarterly history
+- If scorecard `dataDate` is monthly/annual/other, show ALL history (skip `filterToQuarterlyOnly`)
+- This prevents mismatches where scorecard shows a monthly value but table shows quarterly
+
+## Key learnings (data and testing)
+
+1. **Monthly dates don't sort lexicographically** -- "Sep" > "Nov" alphabetically. The `dateSortKey()` function in `quarterlyMetrics.ts` handles this. Do NOT sort by `String.localeCompare`.
+2. **Test with upsert, not refresh** -- `metrics.refresh` calls Python fetchers needing external APIs. Use `upsertMetric` directly in tests and wrap refresh calls in try/catch.
+3. **`getExistingHistoryPeriods` returns a Set** -- mock must return `new Set()`, not `[]`.
+4. **`recordedAt` can be null** -- always handle with fallback in `db.ts`: `h.recordedAt instanceof Date ? h.recordedAt : new Date()`.
+5. **Never touch tooltips** during standardisation -- tooltips are managed separately and are content-sensitive.
+6. **Seed history when fetchers only return latest** -- some fetchers (e.g. attainment8, neet_rate) only return the current value. If the sub-page shows just 1 data point, seed published historical values manually via MongoDB insert.
+7. **Verify after seeding** -- always re-run the data audit after inserting history to confirm scorecard still matches latest entry and no placeholders remain.
