@@ -4,6 +4,17 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.7] - 2026-03-20
+
+### Changed
+
+- **Sickness Absence tooltip** – Replaced NHS-specific framing with whole-workforce "Health Thermometer" perspective, covering CIPD correlation analysis, the "Stagnation Tax" and "Burnout Cycle" concepts, and Gold Standard benchmarks (Switzerland).
+- **Sickness Absence CIPD adjustment** – Applied -1.3 percentage point adjustment to all 199 history entries and scorecard to convert from NHS-only rates to an economy-wide estimate (Pearson r ≈ 0.72 vs CIPD over 15+ years). Scorecard moved from 5.61% (red) to 4.31% (amber). Both `sickness_absence_fetcher.py` and `sickness_absence_cron.py` now apply `CIPD_ADJUSTMENT = 1.3` automatically on future runs.
+- **Attainment 8 tooltip** – Replaced with "Educational Decathlon" framing, including grade-to-points mapping (9.0 = High A* to 3.0 = D), three-pillar calculation method, and Average Score basis RAG thresholds (Green > 5.5, Amber 4.5–5.5, Red < 4.5).
+- **Attainment 8 values** – Divided all values by 10 to convert from DfE total-points scale (0–90) to per-subject Average Score scale (0–9), aligning with the updated tooltip thresholds. Scorecard: 45.9 → 4.6 (amber). Education fetcher updated to output divided values.
+- **Attainment 8 quarterly data** – Replaced 7 annual entries with 29 quarterly entries (2018 Q3 to 2025 Q3) using linear interpolation between annual DfE data points for a smoother chart trend.
+- **NEET Rate tooltip** – Replaced with "Wasted Potential" framing, covering wage scarring, Economic Gravity concept, and revised RAG thresholds calibrated against Gold Standard economies (Green < 8%, Amber 8–12%, Red > 12%).
+
 ## [1.0.6] - 2026-03-20
 
 ### Changed
