@@ -19,6 +19,7 @@ import {
 import { formatValue, formatPeriod } from "@/data/formatValue";
 import { trpc } from "@/lib/trpc";
 import { Loader2 } from "lucide-react";
+import { useMemo } from "react";
 import { useParams, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import {
@@ -116,35 +117,36 @@ export default function MetricDetail() {
   const periodLabel = periodSubtitle ?? metric.dataDate ?? null;
   const historyDescription = getMetricHistoryDescription(metric.metricKey);
 
-  // Chart: chronological order (oldest first), numeric value, plus trend line
-  const chartDataChronological = [...history].reverse();
-  const chartDataWithValue = chartDataChronological.map((row) => ({
-    date: formatPeriod(row.dataDate),
-    value: parseFloat(String(row.value)),
-  }));
-  const values = chartDataWithValue.map((d) => d.value).filter((v) => !Number.isNaN(v));
-  const { slope, intercept } = linearRegression(values);
-  const showMovingAvg12m = metricKey === "real_wage_growth";
-  const WINDOW = 4;
-  const movingAvg12m = showMovingAvg12m
-    ? chartDataWithValue.map((_, i) => {
-        if (i < WINDOW - 1) return undefined;
-        const slice = chartDataWithValue.slice(i - WINDOW + 1, i + 1).map((d) => d.value);
-        if (slice.some((v) => Number.isNaN(v))) return undefined;
-        return slice.reduce((a, b) => a + b, 0) / WINDOW;
-      })
-    : [];
-  const chartData = chartDataWithValue.map((d, i) => ({
-    ...d,
-    value: Number.isNaN(d.value) ? undefined : d.value,
-    trendValue: values.length > 0 ? intercept + slope * i : undefined,
-    ...(showMovingAvg12m && { movingAvg12m: movingAvg12m[i] }),
-  }));
-  const trendPerPeriod = slope;
-  const trendSubtitle =
-    history.length > 0
-      ? `Trending ${trendPerPeriod >= 0 ? "up" : "down"} (${trendPerPeriod >= 0 ? "+" : ""}${trendPerPeriod.toFixed(2)}% per period)`
-      : null;
+  const { chartData, trendSubtitle } = useMemo(() => {
+    const chronological = [...history].reverse();
+    const withValue = chronological.map((row) => ({
+      date: formatPeriod(row.dataDate),
+      value: parseFloat(String(row.value)),
+    }));
+    const values = withValue.map((d) => d.value).filter((v) => !Number.isNaN(v));
+    const { slope, intercept } = linearRegression(values);
+    const showMovingAvg = metricKey === "real_wage_growth";
+    const WINDOW = 4;
+    const movingAvg = showMovingAvg
+      ? withValue.map((_, i) => {
+          if (i < WINDOW - 1) return undefined;
+          const slice = withValue.slice(i - WINDOW + 1, i + 1).map((d) => d.value);
+          if (slice.some((v) => Number.isNaN(v))) return undefined;
+          return slice.reduce((a, b) => a + b, 0) / WINDOW;
+        })
+      : [];
+    const chartData = withValue.map((d, i) => ({
+      ...d,
+      value: Number.isNaN(d.value) ? undefined : d.value,
+      trendValue: values.length > 0 ? intercept + slope * i : undefined,
+      ...(showMovingAvg && { movingAvg12m: movingAvg[i] }),
+    }));
+    const trendSubtitle =
+      history.length > 0
+        ? `Trending ${slope >= 0 ? "up" : "down"} (${slope >= 0 ? "+" : ""}${slope.toFixed(2)}% per period)`
+        : null;
+    return { chartData, trendSubtitle };
+  }, [history, metricKey]);
 
   return (
     <div className="w-full space-y-8">

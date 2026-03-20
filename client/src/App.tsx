@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -6,21 +7,23 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
-import MetricDetail from "./pages/MetricDetail";
-import DataRefresh from "./pages/DataRefresh";
 import { useHidePreviewBanner } from "./hooks/useHidePreviewBanner";
+
+const MetricDetail = lazy(() => import("./pages/MetricDetail"));
+const DataRefresh = lazy(() => import("./pages/DataRefresh"));
 
 function Router() {
   return (
     <DashboardLayout>
-      <Switch>
-        <Route path={"/"} component={Home} />
-        <Route path={"/metric/:metricKey"} component={MetricDetail} />
-        <Route path={"/data-refresh"} component={DataRefresh} />
-        <Route path={"/404"} component={NotFound} />
-        {/* Final fallback route */}
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
+        <Switch>
+          <Route path={"/"} component={Home} />
+          <Route path={"/metric/:metricKey"} component={MetricDetail} />
+          <Route path={"/data-refresh"} component={DataRefresh} />
+          <Route path={"/404"} component={NotFound} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     </DashboardLayout>
   );
 }

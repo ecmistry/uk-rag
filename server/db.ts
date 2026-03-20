@@ -594,7 +594,7 @@ export async function addMetricHistory(history: InsertMetricHistory): Promise<vo
 
 /**
  * Batch-check which metricKey+dataDate pairs already exist in history.
- * Returns a Set of "metricKey|dataDate" strings for existing entries.
+ * Uses targeted $or query matching only the exact pairs requested.
  */
 export async function getExistingHistoryPeriods(
   pairs: Array<{ metricKey: string; dataDate: string }>
@@ -603,9 +603,15 @@ export async function getExistingHistoryPeriods(
   const collection = await getCollection<MetricHistory>(COLLECTIONS.metricHistory);
   if (!collection) return new Set();
 
-  const metricKeys = Array.from(new Set(pairs.map(p => p.metricKey)));
+  const uniquePairs = Array.from(
+    new Map(pairs.map(p => [`${p.metricKey}|${p.dataDate}`, p])).values()
+  );
+
   const docs = await collection
-    .find({ metricKey: { $in: metricKeys } }, { projection: { metricKey: 1, dataDate: 1 } })
+    .find(
+      { $or: uniquePairs.map(p => ({ metricKey: p.metricKey, dataDate: p.dataDate })) },
+      { projection: { metricKey: 1, dataDate: 1 } }
+    )
     .toArray();
 
   const existing = new Set<string>();
@@ -671,21 +677,25 @@ export async function getMetricTrends(): Promise<
   if (!collection) return {};
 
   const pipeline = [
-    { $sort: { metricKey: 1 as const, dataDate: -1 as const, recordedAt: -1 as const } },
     {
       $group: {
         _id: "$metricKey",
-        current: { $first: "$value" },
-        entries: { $push: { value: "$value", dataDate: "$dataDate" } },
+        topTwo: {
+          $topN: {
+            n: 2,
+            sortBy: { dataDate: -1 as const, recordedAt: -1 as const },
+            output: "$value",
+          },
+        },
       },
     },
     {
       $project: {
-        current: 1,
+        current: { $arrayElemAt: ["$topTwo", 0] },
         previous: {
           $cond: {
-            if: { $gte: [{ $size: "$entries" }, 2] },
-            then: { $getField: { field: "value", input: { $arrayElemAt: ["$entries", 1] } } },
+            if: { $gte: [{ $size: "$topTwo" }, 2] },
+            then: { $arrayElemAt: ["$topTwo", 1] },
             else: null,
           },
         },

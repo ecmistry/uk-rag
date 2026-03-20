@@ -40,15 +40,11 @@ export function getSessionCookieOptions(
   //       : undefined;
 
   const secure = isSecureRequest(req);
-  
-  // sameSite: "none" requires secure: true
-  // For HTTP requests, use "lax" instead
-  const sameSite: "none" | "lax" | "strict" = secure ? "none" : "lax";
 
   return {
     httpOnly: true,
     path: "/",
-    sameSite,
+    sameSite: "lax" as const,
     secure,
   };
 }

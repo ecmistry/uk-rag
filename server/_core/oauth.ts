@@ -1,22 +1,28 @@
 import { COOKIE_NAME, DEFAULT_DEV_USER, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
+import { timingSafeEqual } from "crypto";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
 const ADMIN_OPENID = "admin-uk-rag-online";
-// Admin credentials must be set via ADMIN_EMAIL and ADMIN_PASSWORD env vars (no defaults in code).
 
 const ADMIN_LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const ADMIN_LOGIN_MAX_ATTEMPTS = 3;
 const adminLoginAttempts = new Map<string, { count: number; resetAt: number }>();
 
-function getClientIp(req: Request): string {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string") {
-    return forwarded.split(",")[0].trim();
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    timingSafeEqual(bufA, bufA);
+    return false;
   }
-  return req.socket?.remoteAddress ?? "unknown";
+  return timingSafeEqual(bufA, bufB);
+}
+
+function getClientIp(req: Request): string {
+  return req.ip ?? req.socket?.remoteAddress ?? "unknown";
 }
 
 function isAdminLoginRateLimited(ip: string): boolean {
@@ -75,13 +81,7 @@ export function registerOAuthRoutes(app: Express) {
         res.status(400).json({ error: "Email and password are required" });
         return;
       }
-      // Reject any email that is not the configured admin email (case-sensitive)
-      if (email !== adminEmail.trim()) {
-        recordAdminLoginAttempt(clientIp, false);
-        res.status(401).json({ error: "Invalid email or password" });
-        return;
-      }
-      if (password !== adminPassword.trim()) {
+      if (!safeEqual(email, adminEmail.trim()) || !safeEqual(password, adminPassword.trim())) {
         recordAdminLoginAttempt(clientIp, false);
         res.status(401).json({ error: "Invalid email or password" });
         return;

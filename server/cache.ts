@@ -45,8 +45,9 @@ class SimpleCache {
    * Set a value in cache
    */
   set<T>(key: string, value: T, ttl?: number): void {
-    // If cache is full, remove least recently used (first item)
-    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+    // Delete first so re-insert moves the key to the end (most recently used)
+    const existed = this.cache.delete(key);
+    if (!existed && this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
       if (firstKey) {
         this.cache.delete(firstKey);

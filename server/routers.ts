@@ -19,7 +19,8 @@ import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 import { cache } from "./cache";
 
 function csvEscape(field: unknown): string {
-  const s = String(field ?? "");
+  let s = String(field ?? "");
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
@@ -113,10 +114,7 @@ export const appRouter = router({
       return { ok: true };
     }),
 
-    /**
-     * Diagnostics: DB connection and metrics count (public, for debugging dashboard not showing cards).
-     */
-    getDiagnostics: publicProcedure.query(async () => {
+    getDiagnostics: adminProcedure.query(async () => {
       return getMetricsDiagnostics();
     }),
 
@@ -230,52 +228,50 @@ export const appRouter = router({
           validated.map(m => ({ metricKey: m.metric_key, dataDate: m.time_period }))
         );
 
+        const EMPLOYMENT_RAG_KEYS = new Set(['inactivity_rate', 'real_wage_growth', 'job_vacancy_ratio', 'underemployment']);
+        const PCT_KEYS = new Set(['cpi_inflation', 'real_gdp_growth', 'output_per_hour', 'defence_spending_gdp', 'public_sector_net_debt', 'business_investment', 'persistent_absence', 'a_e_wait_time']);
+        const UNIT_MAP: Record<string, string> = { attainment8: 'Score', apprentice_starts: '', cancer_wait_time: ' days', ambulance_response_time: ' minutes' };
+
+        const upsertPromises: Promise<void>[] = [];
+        const historyPromises: Promise<void>[] = [];
+        let newHistoryCount = 0;
+
         for (const metricData of validated) {
-          const ragStatus =
-            metricData.metric_key === 'inactivity_rate'
-              ? calculateRAGStatus('inactivity_rate', Number(metricData.value))
-              : metricData.metric_key === 'real_wage_growth'
-                ? calculateRAGStatus('real_wage_growth', Number(metricData.value))
-                : metricData.metric_key === 'job_vacancy_ratio'
-                  ? calculateRAGStatus('job_vacancy_ratio', Number(metricData.value))
-                  : metricData.metric_key === 'underemployment'
-                    ? calculateRAGStatus('underemployment', Number(metricData.value))
-                    : metricData.rag_status;
+          const ragStatus = EMPLOYMENT_RAG_KEYS.has(metricData.metric_key)
+            ? calculateRAGStatus(metricData.metric_key, Number(metricData.value))
+            : metricData.rag_status;
 
-          const unit = metricData.unit || (
-            metricData.metric_key === 'cpi_inflation' || metricData.metric_key === 'real_gdp_growth' || metricData.metric_key.includes('rate') || metricData.metric_key.includes('vacancy') || metricData.metric_key === 'defence_spending_gdp' || metricData.metric_key === 'public_sector_net_debt' || metricData.metric_key === 'business_investment' || metricData.metric_key === 'persistent_absence' ? '%' :
-            metricData.metric_key === 'output_per_hour' ? '%' :
-            metricData.metric_key === 'attainment8' ? 'Score' :
-            metricData.metric_key === 'apprentice_starts' ? '' :
-            metricData.metric_key === 'a_e_wait_time' ? '%' :
-            metricData.metric_key === 'cancer_wait_time' ? ' days' :
-            metricData.metric_key === 'ambulance_response_time' ? ' minutes' : ''
-          );
+          const unit = metricData.unit
+            || UNIT_MAP[metricData.metric_key]
+            || (PCT_KEYS.has(metricData.metric_key) || metricData.metric_key.includes('rate') || metricData.metric_key.includes('vacancy') ? '%' : '');
 
-          await upsertMetric({
+          upsertPromises.push(upsertMetric({
             metricKey: metricData.metric_key,
             name: metricData.metric_name,
             category: metricData.category,
             value: metricData.value.toString(),
-            unit: unit,
+            unit,
             ragStatus,
             dataDate: metricData.time_period,
             sourceUrl: metricData.source_url,
-          });
+          }));
 
           if (!existingPeriods.has(`${metricData.metric_key}|${metricData.time_period}`)) {
-            await addMetricHistory({
+            historyPromises.push(addMetricHistory({
               metricKey: metricData.metric_key,
               value: metricData.value.toString(),
               ragStatus,
               dataDate: metricData.time_period,
               ...(metricData.information != null && { information: metricData.information }),
-            });
-            console.log(`  ✓ Added history: ${metricData.metric_name} - ${metricData.time_period}`);
+            }));
+            newHistoryCount++;
           }
         }
 
-        // Check for threshold breaches and send alerts
+        await Promise.all(upsertPromises);
+        await Promise.all(historyPromises);
+        console.log(`[Metrics Refresh] ${upsertPromises.length} tiles upserted, ${newHistoryCount} new history entries`);
+
         try {
           await checkAndSendAlerts();
         } catch (alertError) {
@@ -285,7 +281,7 @@ export const appRouter = router({
         return {
           success: true,
           count: validated.length,
-          metrics: validated,
+          newHistory: newHistoryCount,
           errors: errors.length > 0 ? errors : undefined,
           validationWarnings: validationWarnings.length > 0 ? validationWarnings : undefined,
         };
@@ -307,15 +303,14 @@ export const appRouter = router({
           if (!metric) {
             throw new TRPCError({ code: 'NOT_FOUND', message: 'Metric not found' });
           }
-          const history = await getMetricHistory(input.metricKey, 1000);
-          // Return CSV format
+          const history = await getMetricHistory(input.metricKey, 500);
           const csv = [
             ['Period', 'Value', 'Status', 'Recorded'].join(','),
             ...history.map(h => [
-              h.dataDate,
-              h.value,
-              h.ragStatus,
-              h.recordedAt.toISOString()
+              csvEscape(h.dataDate),
+              csvEscape(h.value),
+              csvEscape(h.ragStatus),
+              csvEscape(h.recordedAt.toISOString()),
             ].join(','))
           ].join('\n');
           const safeMetricKey = input.metricKey.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64) || 'metric';
@@ -326,13 +321,13 @@ export const appRouter = router({
           const csv = [
             ['Name', 'Category', 'Value', 'Unit', 'Status', 'Data Date', 'Last Updated'].join(','),
             ...metrics.map(m => [
-              `"${m.name}"`,
-              m.category,
-              m.value,
-              m.unit,
-              m.ragStatus,
-              m.dataDate,
-              m.lastUpdated.toISOString()
+              csvEscape(m.name),
+              csvEscape(m.category),
+              csvEscape(m.value),
+              csvEscape(m.unit),
+              csvEscape(m.ragStatus),
+              csvEscape(m.dataDate),
+              csvEscape(m.lastUpdated.toISOString()),
             ].join(','))
           ].join('\n');
           return { csv, filename: `metrics_${safeCategory}.csv` };

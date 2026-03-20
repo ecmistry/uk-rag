@@ -12,7 +12,7 @@ import { RefreshCw, AlertCircle, Info } from "lucide-react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { cn } from "@/lib/utils";
 import type { Metric } from '@shared/types';
 import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip, getPopulationTooltip } from "@/data/metricTooltips";
@@ -58,6 +58,29 @@ function getRAGCardClasses(status: string) {
   }
 }
 
+const MetricInfoDialog = memo(function MetricInfoDialog({
+  info,
+  onClose,
+}: {
+  info: { title: string; content: string } | null;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open={!!info} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="bg-white text-black border border-gray-200 shadow-xl max-w-[min(480px,92vw)] max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-2 border-b border-gray-200">
+          <DialogTitle className="text-base font-bold text-black leading-tight pr-8">
+            {info?.title}
+          </DialogTitle>
+        </div>
+        <div className="px-5 py-4 overflow-y-auto flex-1 min-h-0 text-sm text-black whitespace-pre-line">
+          {info?.content ?? ''}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+});
+
 function getTooltipForMetric(category: string, metricKey: string): string | undefined {
   switch (category) {
     case "Economy": return getEconomyTooltip(metricKey);
@@ -75,6 +98,7 @@ export default function Home() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [metricInfoOpen, setMetricInfoOpen] = useState<{ title: string; content: string } | null>(null);
+  const closeMetricInfo = useCallback(() => setMetricInfoOpen(null), []);
 
   const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = trpc.metrics.list.useQuery(
     undefined,
@@ -339,19 +363,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Metric info dialog: click-on click-off, white bg, black text */}
-      <Dialog open={!!metricInfoOpen} onOpenChange={(open) => !open && setMetricInfoOpen(null)}>
-        <DialogContent className="bg-white text-black border border-gray-200 shadow-xl max-w-[min(480px,92vw)] max-h-[85vh] overflow-hidden flex flex-col p-0">
-          <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-2 border-b border-gray-200">
-            <DialogTitle className="text-base font-bold text-black leading-tight pr-8">
-              {metricInfoOpen?.title}
-            </DialogTitle>
-          </div>
-          <div className="px-5 py-4 overflow-y-auto flex-1 min-h-0 text-sm text-black whitespace-pre-line">
-            {metricInfoOpen?.content ?? ''}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <MetricInfoDialog info={metricInfoOpen} onClose={closeMetricInfo} />
     </div>
   );
 }

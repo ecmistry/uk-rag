@@ -3,7 +3,8 @@ import { promisify } from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const execAsync = promisify(exec);
+const MAX_BUFFER = 10 * 1024 * 1024; // 10 MB
+const execAsync = (cmd: string) => promisify(exec)(cmd, { maxBuffer: MAX_BUFFER });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
