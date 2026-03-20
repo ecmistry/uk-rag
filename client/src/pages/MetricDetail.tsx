@@ -69,36 +69,7 @@ export default function MetricDetail() {
     { enabled: !!metricKey }
   );
 
-  if (!metricKey) {
-    return (
-      <div className="w-full py-12 text-center text-muted-foreground">
-        No metric selected.
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (error || !data?.metric) {
-    return (
-      <div className="w-full py-12 text-center">
-        <p className="text-muted-foreground">
-          {error?.message ?? "Metric not found."}
-        </p>
-        <Link href="/" className="text-primary hover:underline mt-2 inline-block">
-          Back to Dashboard
-        </Link>
-      </div>
-    );
-  }
-
-  const metric = data.metric as {
+  const metric = data?.metric as {
     metricKey: string;
     name: string;
     category: string;
@@ -106,18 +77,21 @@ export default function MetricDetail() {
     unit: string;
     ragStatus: string;
     dataDate: string;
-  };
-  const rawHistory = (data.history ?? []) as HistoryRow[];
-  const scorecardIsQuarterly = isQuarterlyPeriod(metric.dataDate ?? "");
+  } | undefined;
+  const rawHistory = (data?.history ?? []) as HistoryRow[];
+  const scorecardIsQuarterly = isQuarterlyPeriod(metric?.dataDate ?? "");
   const filtered = scorecardIsQuarterly
     ? filterToQuarterlyOnly(rawHistory)
     : rawHistory;
   const history = deduplicateByPeriod(filtered);
-  const periodSubtitle = getMetricTileSubtitle(metric.metricKey, metric.dataDate ?? "");
-  const periodLabel = periodSubtitle ?? metric.dataDate ?? null;
-  const historyDescription = getMetricHistoryDescription(metric.metricKey);
+  const periodSubtitle = getMetricTileSubtitle(metric?.metricKey ?? "", metric?.dataDate ?? "");
+  const periodLabel = periodSubtitle ?? metric?.dataDate ?? null;
+  const historyDescription = getMetricHistoryDescription(metric?.metricKey ?? "");
 
-  const { chartData, trendSubtitle } = useMemo(() => {
+  const { chartData, trendSubtitle, showMovingAvg } = useMemo(() => {
+    if (history.length === 0) {
+      return { chartData: [] as Record<string, unknown>[], trendSubtitle: null as string | null, showMovingAvg: false };
+    }
     const chronological = [...history].reverse();
     const withValue = chronological.map((row) => ({
       date: formatPeriod(row.dataDate),
@@ -145,8 +119,37 @@ export default function MetricDetail() {
       history.length > 0
         ? `Trending ${slope >= 0 ? "up" : "down"} (${slope >= 0 ? "+" : ""}${slope.toFixed(2)}% per period)`
         : null;
-    return { chartData, trendSubtitle };
+    return { chartData, trendSubtitle, showMovingAvg };
   }, [history, metricKey]);
+
+  if (!metricKey) {
+    return (
+      <div className="w-full py-12 text-center text-muted-foreground">
+        No metric selected.
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !metric) {
+    return (
+      <div className="w-full py-12 text-center">
+        <p className="text-muted-foreground">
+          {error?.message ?? "Metric not found."}
+        </p>
+        <Link href="/" className="text-primary hover:underline mt-2 inline-block">
+          Back to Dashboard
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-8">
@@ -201,7 +204,7 @@ export default function MetricDetail() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
-                  margin={{ top: 8, right: 16, left: 8, bottom: 24 }}
+                  margin={{ top: 60, right: 16, left: 8, bottom: 24 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted/50" vertical={false} />
                   <XAxis
@@ -218,7 +221,7 @@ export default function MetricDetail() {
                     width={metric.unit ? 72 : 48}
                   />
                   <Tooltip
-                    position={{ y: 0 }}
+                    position={{ y: -50 }}
                     offset={16}
                     cursor={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1, strokeDasharray: "4 4" }}
                     contentStyle={{
@@ -255,7 +258,7 @@ export default function MetricDetail() {
                     dot={false}
                     connectNulls
                   />
-                  {showMovingAvg12m && (
+                  {showMovingAvg && (
                     <Line
                       type="monotone"
                       dataKey="movingAvg12m"
