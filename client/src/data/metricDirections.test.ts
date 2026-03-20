@@ -36,11 +36,11 @@ describe("getTrendSentiment", () => {
 
   describe("lower_better metrics", () => {
     it("returns positive when value goes down (e.g. crime falls)", () => {
-      expect(getTrendSentiment("recorded_crime_rate", 80, 90)).toBe("positive");
+      expect(getTrendSentiment("crown_court_backlog", 80, 90)).toBe("positive");
     });
 
     it("returns negative when value goes up (e.g. crime rises)", () => {
-      expect(getTrendSentiment("recorded_crime_rate", 95, 85)).toBe("negative");
+      expect(getTrendSentiment("crown_court_backlog", 95, 85)).toBe("negative");
     });
 
     it("returns neutral when unchanged", () => {

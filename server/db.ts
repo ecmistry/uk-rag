@@ -195,8 +195,6 @@ const DISPLAY_NAME_OVERRIDES: Partial<Record<string, string>> = {
   elective_backlog: "Elective Backlog",
   gp_appt_access: "GP Appt. Access",
   staff_vacancy_rate: "Staff Vacancy Rate",
-  recorded_crime_rate: "Total Recorded Crime",
-  charge_rate: "Charge Rate %",
   street_confidence_index: "Perception of Safety",
   asb_low_level_crime: "Anti-Social Behaviour and Low Level Crime per capita",
   serious_crime: "Serious Crime per capita",
@@ -302,8 +300,6 @@ function filterEducationMetrics(metrics: Metric[], category?: string): Metric[] 
 
 /** Crime section: only these five cards (and their detail pages). */
 const CRIME_ALLOWED_METRIC_KEYS = new Set([
-  "recorded_crime_rate",
-  "charge_rate",
   "street_confidence_index",
   "crown_court_backlog",
   "reoffending_rate",

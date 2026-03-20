@@ -24,7 +24,7 @@ function csvEscape(field: unknown): string {
   return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-const SKIP_METRIC_KEYS = new Set(["perception_of_safety"]);
+const SKIP_METRIC_KEYS = new Set(["perception_of_safety", "recorded_crime_rate", "charge_rate"]);
 
 const VALIDATION_RANGES: Record<string, [number, number]> = {
   real_gdp_growth: [-30, 30], cpi_inflation: [-5, 30], output_per_hour: [-20, 20],
@@ -32,7 +32,7 @@ const VALIDATION_RANGES: Record<string, [number, number]> = {
   inactivity_rate: [0, 100], real_wage_growth: [-30, 30], job_vacancy_ratio: [0, 10],
   underemployment: [0, 100], attainment8: [0, 100], persistent_absence: [0, 100],
   apprentice_starts: [0, 5_000_000], pupil_attendance: [0, 100],
-  recorded_crime_rate: [0, 500], charge_rate: [0, 100], street_confidence_index: [0, 100],
+  street_confidence_index: [0, 100],
   crown_court_backlog: [0, 1_000_000], reoffending_rate: [0, 100],
   asb_low_level_crime: [0, 10_000], serious_crime: [0, 10_000],
   a_e_wait_time: [0, 100], cancer_wait_time: [0, 365], ambulance_response_time: [0, 120],

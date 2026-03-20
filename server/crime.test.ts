@@ -82,8 +82,6 @@ beforeEach(() => {
 });
 
 const CRIME_KEYS = [
-  "recorded_crime_rate",
-  "charge_rate",
   "street_confidence_index",
   "crown_court_backlog",
   "reoffending_rate",

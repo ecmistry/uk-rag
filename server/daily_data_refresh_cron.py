@@ -112,8 +112,6 @@ VALIDATION_RANGES: Dict[str, Tuple[float, float]] = {
     "apprenticeship_intensity": (0.0, 200.0),
     "sea_mass":                 (0.0, 200.0),
     # Crime
-    "recorded_crime_rate":      (0.0, 500.0),
-    "charge_rate":              (0.0, 100.0),
     "street_confidence_index":  (0.0, 100.0),
     "crown_court_backlog":      (0.0, 1_000_000.0),
     "reoffending_rate":         (0.0, 100.0),

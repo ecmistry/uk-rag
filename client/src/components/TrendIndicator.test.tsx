@@ -42,7 +42,7 @@ describe("TrendIndicator", () => {
 
   it("renders green colour for positive lower_better trend (value down = good)", () => {
     const { container } = render(
-      <TrendIndicator metricKey="recorded_crime_rate" currentValue={70} previousValue={90} />
+      <TrendIndicator metricKey="crown_court_backlog" currentValue={70} previousValue={90} />
     );
     const path = container.querySelector("path");
     expect(path?.getAttribute("stroke")).toBe("#16a34a");
@@ -50,7 +50,7 @@ describe("TrendIndicator", () => {
 
   it("renders red colour for negative lower_better trend (value up = bad)", () => {
     const { container } = render(
-      <TrendIndicator metricKey="recorded_crime_rate" currentValue={95} previousValue={80} />
+      <TrendIndicator metricKey="crown_court_backlog" currentValue={95} previousValue={80} />
     );
     const path = container.querySelector("path");
     expect(path?.getAttribute("stroke")).toBe("#dc2626");

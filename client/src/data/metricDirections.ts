@@ -36,8 +36,6 @@ export const METRIC_DIRECTION: Record<string, MetricDirection> = {
   apprenticeship_intensity: "higher_better",
 
   // Crime
-  recorded_crime_rate: "lower_better",
-  charge_rate: "higher_better",
   street_confidence_index: "lower_better",
   crown_court_backlog: "lower_better",
   reoffending_rate: "lower_better",

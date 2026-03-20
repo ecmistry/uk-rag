@@ -392,68 +392,6 @@ export function getEducationTooltip(metricKey: string): string | undefined {
 
 /** Crime section: metricKey -> tooltip text */
 export const CRIME_TOOLTIPS: Record<string, string> = {
-  recorded_crime_rate: `Think of this as the "Safety Barometer" for the country. It measures the total number of criminal offences recorded by the 43 police forces in England and Wales, expressed as a rate per 1,000 people in the population. If the rate is 90, it means that for every 1,000 people in your area, 90 crimes were recorded by police in a year. It covers everything from shoplifting and burglary to violence, sexual offences, and fraud. This is the most comprehensive single number for answering the question: "Is crime getting worse or better where I live?"
-
-How it is Calculated
-
-The 43 police forces in England and Wales record crimes according to the Home Office Counting Rules (HOCR)—a strict, standardised set of definitions that determines what counts as a "crime" and how each offence is categorised. When a crime is reported by the public or discovered through police activity, it is logged on the force's crime recording system. Forces submit this data to the Home Office, and the ONS publishes it quarterly alongside the Crime Survey for England and Wales (CSEW)—a complementary household survey of approximately 35,000 adults that captures crimes people experienced but may not have reported to police. The rate per 1,000 is calculated as: (total recorded offences ÷ mid-year population estimate) × 1,000. It is important to understand that police recorded crime is influenced by two factors: actual crime levels and recording practices. Changes in police recording standards, public willingness to report, and the inclusion of new offence types (such as online fraud) can all shift the headline number without the underlying reality necessarily changing.
-
-Real Impact on the Person on the Street
-
-A rising crime rate is not an abstract statistic—it changes how you live, work, and feel in your community:
-
-1. Personal Victimisation Risk
-
-The most direct impact is the increased likelihood that you, your family, or your neighbours will become victims of crime. A rate above 100 per 1,000 means, statistically, roughly 1 in 10 people will experience a recorded crime in a given year. The recent surge in shoplifting—up 20% to a record 530,643 offences in the year to March 2025—pushes up costs for retailers, which are passed on to you in higher prices. Vehicle theft, residential burglary, and fraud all erode your sense of security and can cause lasting financial and emotional harm.
-
-2. The "Broken Windows" Effect
-
-High crime rates degrade the quality of life in a neighbourhood. When anti-social behaviour, vandalism, and petty crime go unchecked, the visible signs of disorder—graffiti, litter, damaged property—signal to residents that the area is declining. This drives down property values, discourages businesses from investing, and causes those who can afford to leave to do so, deepening the cycle of deprivation for those who remain.
-
-3. The Policing Resource Squeeze
-
-Every recorded crime generates a workload: an investigation, a crime reference number, victim contact, and often court preparation. When the overall rate is high, police forces are stretched thinner across more cases, meaning each individual crime receives less attention. This is one reason charge rates have collapsed—officers simply have too many cases and too little time. The result is that many victims never see justice, which further erodes trust in the system.
-
-Why the RAG Thresholds were chosen
-
-The thresholds are based on historical crime rate trends and the level at which police forces can realistically investigate and respond to reported crime without being overwhelmed.
-
-🟢 Green (Below 80 per 1,000): This is the "Safe Community" zone. It reflects the lower crime rates achieved in the mid-2010s when overall recorded crime was in sustained decline. At this level, police resources are sufficient to investigate the majority of crimes effectively, and most residents feel their neighbourhood is a safe place to live.
-
-🟡 Amber (80 – 100 per 1,000): This is the "Rising Pressure" zone. The UK currently sits in this bracket. Crime is at a level where police are managing but under strain. Certain categories—shoplifting, fraud, and online crime—are rising faster than resources can keep pace. Residents may notice more visible crime in their daily lives but still broadly feel safe.
-
-🔴 Red (Above 100 per 1,000): This is the "Crisis" zone. At this rate, more than 1 in 10 people are victims of recorded crime annually. Police forces cannot keep up with demand, investigation quality drops sharply, and public confidence in law enforcement collapses. Communities experience visible deterioration and the "broken windows" effect accelerates.`,
-  charge_rate: `Think of this as the "Justice Delivery Rate." It measures the percentage of all recorded crimes that result in a suspect being formally charged or summonsed to court. If the charge rate is 7%, it means that for every 100 crimes reported to police, only 7 end with someone being charged. The remaining 93 cases result in no prosecution—either because no suspect was identified, the victim withdrew, or the case was closed for evidential reasons. This is arguably the single most important metric for understanding whether the criminal justice system is actually working, because a crime that is recorded but never solved delivers no justice to the victim and no deterrent to the offender.
-
-How it is Calculated
-
-The Home Office collects "crime outcomes" data from all 43 police forces in England and Wales. When a recorded crime is concluded, the force assigns it one of several outcome codes: Outcome 1 (charged or summonsed), Outcome 2 (caution), Outcome 3 (community resolution), or various "no further action" codes (suspect not identified, evidential difficulties, victim withdraws, etc.). The charge rate is then: (Outcome 1 cases ÷ total recorded crimes) × 100. Data is published annually in the "Crime Outcomes in England and Wales" statistical bulletin, broken down by offence type, police force area, and outcome category. The charge rate varies dramatically by crime type—homicide has a charge rate above 80%, while theft, criminal damage, and fraud often fall below 5%.
-
-Real Impact on the Person on the Street
-
-A falling charge rate does not just affect statistics; it changes the country you live in:
-
-1. The "Consequence-Free" Culture
-
-When only 7 out of every 100 crimes result in a charge, criminals learn—rationally—that offending carries almost no risk of prosecution. This is the driving force behind the epidemic of brazen shoplifting, with thieves openly filling bags and walking out of shops knowing that police are unlikely to attend, let alone charge anyone. The same logic applies to bike theft, car crime, and low-level assault. For the person on the street, this manifests as a creeping sense that "nobody cares" and "nothing happens" when you report a crime.
-
-2. The Collapse of Public Confidence
-
-In 2015, 62% of the public said their local police were doing a good or excellent job. By 2025, that figure had dropped to 49%. The charge rate is the primary driver of this decline. When victims take the time and emotional energy to report a crime—filling out statements, providing evidence, reliving the experience—and then receive a letter saying "no further action," it destroys trust in the entire system. Many people simply stop reporting crime altogether, which means the true scale of offending becomes invisible.
-
-3. The Investigative Spiral
-
-The charge rate has halved in a decade, from 15.5% in 2015 to 7.3% in 2024/25. The causes are structural: police funding remains 5% below 2009/10 levels in real terms; the shift toward complex, evidence-heavy crimes (domestic abuse, sexual offences, online fraud) demands more investigative time per case; and the explosion of digital evidence—phones, CCTV, social media—has created a forensic bottleneck that most forces lack the specialist staff to clear. The result is a vicious circle: fewer charges mean less deterrence, which means more crime, which means even more cases for the same number of officers.
-
-Why the RAG Thresholds were chosen
-
-The thresholds are based on the charge rates needed to maintain public confidence in policing and provide a meaningful deterrent to offending, calibrated against both historical UK performance and comparable international systems.
-
-🟢 Green (Above 10%): This is the "Effective Deterrence" zone. While still below the 15% achieved a decade ago, a charge rate above 10% indicates that police forces are investigating effectively and the criminal justice system is delivering consequences for a meaningful proportion of offenders. At this level, most victims can expect their case to be properly investigated.
-
-🟡 Amber (7% – 10%): This is the "Eroding Confidence" zone. The UK currently sits near the bottom of this bracket. Police are solving some crimes, particularly violent and sexual offences, but the vast majority of volume crime (theft, criminal damage, fraud) goes uncharged. Public trust is declining and offenders are becoming bolder.
-
-🔴 Red (Below 7%): This is the "Justice Failure" zone. At this level, fewer than 1 in 14 crimes result in a charge. The criminal justice system has effectively ceased to function as a deterrent for most offence types. Victims have no realistic expectation of seeing justice, and the cycle of consequence-free offending becomes self-reinforcing.`,
   crown_court_backlog: `Think of this as the "Justice Queue." It measures the total number of outstanding criminal cases waiting to be heard in the Crown Courts of England and Wales—the courts that handle the most serious offences, including murder, rape, robbery, serious assault, and large-scale fraud. If the backlog is 75,000, it means 75,000 defendants are awaiting trial, and 75,000 victims are waiting for their day in court. Some of those cases are already scheduled for trial dates in 2028 or 2029. For every month a case sits in the queue, witnesses' memories fade, victims' trauma deepens, and the chance of a fair and effective trial diminishes. This is the ultimate stress test of whether the justice system can deliver justice at all.
 
 How it is Calculated
