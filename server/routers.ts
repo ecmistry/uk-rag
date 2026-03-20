@@ -34,6 +34,7 @@ const VALIDATION_RANGES: Record<string, [number, number]> = {
   apprentice_starts: [0, 5_000_000], pupil_attendance: [0, 100],
   recorded_crime_rate: [0, 500], charge_rate: [0, 100], street_confidence_index: [0, 100],
   crown_court_backlog: [0, 1_000_000], reoffending_rate: [0, 100],
+  asb_low_level_crime: [0, 10_000], serious_crime: [0, 10_000],
   a_e_wait_time: [0, 100], cancer_wait_time: [0, 365], ambulance_response_time: [0, 120],
   nhs_vacancy_rate: [0, 100], sickness_absence: [0, 100],
   defence_spending_gdp: [0, 20], equipment_plan_risk: [0, 100],

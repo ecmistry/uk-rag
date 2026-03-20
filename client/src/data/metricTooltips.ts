@@ -546,6 +546,50 @@ The RAG thresholds are benchmarked against Gold Standard mature economies — sp
 🟡 Amber (20% – 30% feeling unsafe / 70–80% feeling safe): Emerging Anxiety. The nation is beginning to decouple from the Gold Standard. While the majority feel safe, a significant minority are changing their behaviours (avoiding certain routes or times) due to perceived risks.
 
 🔴 Red (Above 30% feeling unsafe / below 70% feeling safe): Systemic Fear. A critical breakdown in the social contract. Fear of crime is actively suppressing economic activity and civic engagement. The state is perceived as having lost control of the "public square."`,
+
+  asb_low_level_crime: `This metric tracks the quarterly rate of Anti-Social Behaviour and Low-Level Crime incidents per 100,000 population across England and Wales. It aggregates nine categories of street-level crime recorded by all 43 police forces: Anti-social behaviour, Shoplifting, Bicycle theft, Other theft, Theft from the person, Vehicle crime, Public order offences, Other crime, and Criminal damage and arson.
+
+How is it Calculated?
+
+Source: Police-recorded crime data published monthly by data.police.uk, which covers all 43 territorial police forces in England and Wales.
+
+The Calculation: All incidents matching the nine included crime types are summed for each calendar quarter (Q1: Jan–Mar, Q2: Apr–Jun, Q3: Jul–Sep, Q4: Oct–Dec). The total is then expressed as a rate per 100,000 population using the latest ONS mid-year population estimate.
+
+Frequency: Updated quarterly from monthly police data releases. Each month's data is typically published with a 2–3 month lag.
+
+Real-World Impact:
+
+These are the crimes that most directly shape the day-to-day experience of living in a neighbourhood. A rising rate of ASB and low-level crime erodes community confidence, depresses property values, and drives the "broken windows" cycle where visible disorder invites more serious offending. Shoplifting losses alone cost UK retailers over £1 billion annually, costs which are passed on to consumers through higher prices.
+
+RAG Thresholds (per 100,000 population per quarter):
+
+🟢 Green (Below 800): Low-level crime is well controlled. Communities feel orderly and safe.
+
+🟡 Amber (800 – 1,200): Elevated disorder. Noticeable impact on quality of life in affected areas.
+
+🔴 Red (Above 1,200): Widespread disorder indicating systemic pressures on neighbourhood policing.`,
+
+  serious_crime: `This metric tracks the quarterly rate of Serious Crime incidents per 100,000 population across England and Wales. It aggregates five categories of the most harmful street-level crime: Violence and sexual offences, Robbery, Burglary, Drugs offences, and Possession of weapons.
+
+How is it Calculated?
+
+Source: Police-recorded crime data published monthly by data.police.uk, which covers all 43 territorial police forces in England and Wales.
+
+The Calculation: All incidents matching the five included serious crime types are summed for each calendar quarter (Q1: Jan–Mar, Q2: Apr–Jun, Q3: Jul–Sep, Q4: Oct–Dec). The total is then expressed as a rate per 100,000 population using the latest ONS mid-year population estimate.
+
+Frequency: Updated quarterly from monthly police data releases. Each month's data is typically published with a 2–3 month lag.
+
+Real-World Impact:
+
+These crimes represent the most severe threats to personal safety and community wellbeing. Violence and sexual offences alone account for roughly a third of all recorded crime. Rising serious crime rates signal a breakdown in both deterrence and prevention, with consequences that extend far beyond the immediate victims — affecting community trust, economic investment, and the long-term mental health of entire neighbourhoods.
+
+RAG Thresholds (per 100,000 population per quarter):
+
+🟢 Green (Below 400): Serious crime is well contained. Strong deterrent effect from policing and justice system.
+
+🟡 Amber (400 – 700): Elevated serious crime. Certain communities are experiencing disproportionate harm.
+
+🔴 Red (Above 700): Critical levels of serious crime indicating systemic failures in prevention and deterrence.`,
 };
 
 export function getCrimeTooltip(metricKey: string): string | undefined {

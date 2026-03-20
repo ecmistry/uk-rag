@@ -198,6 +198,8 @@ const DISPLAY_NAME_OVERRIDES: Partial<Record<string, string>> = {
   recorded_crime_rate: "Total Recorded Crime",
   charge_rate: "Charge Rate %",
   street_confidence_index: "Perception of Safety",
+  asb_low_level_crime: "Anti-Social Behaviour and Low Level Crime per capita",
+  serious_crime: "Serious Crime per capita",
 
   crown_court_backlog: "Crown Court Backlog",
   reoffending_rate: "Reoffending Rate",
@@ -305,6 +307,8 @@ const CRIME_ALLOWED_METRIC_KEYS = new Set([
   "street_confidence_index",
   "crown_court_backlog",
   "reoffending_rate",
+  "asb_low_level_crime",
+  "serious_crime",
 ]);
 
 function filterCrimeMetrics(metrics: Metric[], category?: string): Metric[] {

@@ -41,6 +41,8 @@ export const METRIC_DIRECTION: Record<string, MetricDirection> = {
   street_confidence_index: "lower_better",
   crown_court_backlog: "lower_better",
   reoffending_rate: "lower_better",
+  asb_low_level_crime: "lower_better",
+  serious_crime: "lower_better",
 
   // Healthcare
   a_e_wait_time: "higher_better",

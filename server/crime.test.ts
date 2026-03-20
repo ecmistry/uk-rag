@@ -87,6 +87,8 @@ const CRIME_KEYS = [
   "street_confidence_index",
   "crown_court_backlog",
   "reoffending_rate",
+  "asb_low_level_crime",
+  "serious_crime",
 ];
 
 describe("Crime Metrics", () => {
