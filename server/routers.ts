@@ -23,6 +23,37 @@ function csvEscape(field: unknown): string {
   return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+const SKIP_METRIC_KEYS = new Set(["perception_of_safety"]);
+
+const VALIDATION_RANGES: Record<string, [number, number]> = {
+  real_gdp_growth: [-30, 30], cpi_inflation: [-5, 30], output_per_hour: [-20, 20],
+  public_sector_net_debt: [0, 300], business_investment: [-50, 50],
+  inactivity_rate: [0, 100], real_wage_growth: [-30, 30], job_vacancy_ratio: [0, 10],
+  underemployment: [0, 100], attainment8: [0, 100], persistent_absence: [0, 100],
+  apprentice_starts: [0, 5_000_000], pupil_attendance: [0, 100],
+  recorded_crime_rate: [0, 500], charge_rate: [0, 100], street_confidence_index: [0, 100],
+  crown_court_backlog: [0, 1_000_000], reoffending_rate: [0, 100],
+  a_e_wait_time: [0, 100], cancer_wait_time: [0, 365], ambulance_response_time: [0, 120],
+  nhs_vacancy_rate: [0, 100], sickness_absence: [0, 100],
+  defence_spending_gdp: [0, 20], equipment_plan_risk: [0, 100],
+  recruitment_gap: [-100, 100], morale_index: [0, 100], defence_industry_vitality: [0, 200],
+  total_population: [50_000_000, 100_000_000], net_migration: [-2_000_000, 5_000_000],
+  dependency_ratio: [0, 200], urbanisation_rate: [0, 100], population_density: [0, 2000],
+};
+
+function validateMetricValue(m: MetricData): { valid: boolean; warning?: string } {
+  const val = Number(m.value);
+  if (isNaN(val) && String(m.value).toLowerCase() !== 'placeholder') {
+    return { valid: false, warning: `${m.metric_key}: value '${m.value}' is not numeric` };
+  }
+  if (isNaN(val)) return { valid: true };
+  const range = VALIDATION_RANGES[m.metric_key];
+  if (range && (val < range[0] || val > range[1])) {
+    return { valid: true, warning: `${m.metric_key}: value ${val} outside expected range [${range[0]}, ${range[1]}]` };
+  }
+  return { valid: true };
+}
+
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
@@ -177,12 +208,29 @@ export const appRouter = router({
           });
         }
 
+        // Filter superseded metrics and validate values
+        const validated: MetricData[] = [];
+        const validationWarnings: string[] = [];
+        for (const m of results) {
+          if (SKIP_METRIC_KEYS.has(m.metric_key)) continue;
+          const check = validateMetricValue(m);
+          if (!check.valid) {
+            console.warn(`[Metrics Refresh] Rejected: ${check.warning}`);
+            continue;
+          }
+          if (check.warning) {
+            console.warn(`[Metrics Refresh] Warning: ${check.warning}`);
+            validationWarnings.push(check.warning);
+          }
+          validated.push(m);
+        }
+
         // Batch-check which history periods already exist (avoids N+1 queries)
         const existingPeriods = await getExistingHistoryPeriods(
-          results.map(m => ({ metricKey: m.metric_key, dataDate: m.time_period }))
+          validated.map(m => ({ metricKey: m.metric_key, dataDate: m.time_period }))
         );
 
-        for (const metricData of results) {
+        for (const metricData of validated) {
           const ragStatus =
             metricData.metric_key === 'inactivity_rate'
               ? calculateRAGStatus('inactivity_rate', Number(metricData.value))
@@ -236,9 +284,10 @@ export const appRouter = router({
 
         return {
           success: true,
-          count: results.length,
-          metrics: results,
+          count: validated.length,
+          metrics: validated,
           errors: errors.length > 0 ? errors : undefined,
+          validationWarnings: validationWarnings.length > 0 ? validationWarnings : undefined,
         };
       }),
 

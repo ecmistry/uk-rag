@@ -51,6 +51,10 @@ MONTH_MAP = {
     "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
 }
 MONTH_NAMES = {v: k.capitalize() for k, v in MONTH_MAP.items()}
+MONTH_TO_QUARTER = {
+    1: "Q1", 2: "Q1", 3: "Q1", 4: "Q2", 5: "Q2", 6: "Q2",
+    7: "Q3", 8: "Q3", 9: "Q3", 10: "Q4", 11: "Q4", 12: "Q4",
+}
 
 LOG_PREFIX = "[SicknessCron]"
 
@@ -69,7 +73,8 @@ def rag_status(value: float) -> str:
 
 
 def format_period(year: int, month: int) -> str:
-    return f"{MONTH_NAMES.get(month, str(month))} {year}"
+    """Canonical quarterly format matching the normalised DB convention."""
+    return f"{year} {MONTH_TO_QUARTER[month]}"
 
 
 # ---------------------------------------------------------------------------
@@ -200,13 +205,17 @@ def get_existing_months(db) -> set:
 
 def insert_history(db, period: str, value: float, rag: str) -> None:
     coll = db["metricHistory"]
-    coll.insert_one({
-        "metricKey": "sickness_absence",
-        "value": str(value),
-        "ragStatus": rag,
-        "dataDate": period,
-        "recordedAt": datetime.now(timezone.utc),
-    })
+    coll.find_one_and_update(
+        {"metricKey": "sickness_absence", "dataDate": period},
+        {"$set": {
+            "metricKey": "sickness_absence",
+            "value": str(value),
+            "ragStatus": rag,
+            "dataDate": period,
+            "recordedAt": datetime.now(timezone.utc),
+        }},
+        upsert=True,
+    )
 
 
 def upsert_metric(db, period: str, value: float, rag: str) -> None:

@@ -481,11 +481,6 @@ def main():
     if charge_rate:
         metrics.append(charge_rate)
 
-    # Perception of Safety (ONS: Crime Survey CSEW)
-    perception = fetch_perception_of_safety_data()
-    if perception:
-        metrics.append(perception)
-
     # Crown Court Backlog (MoJ: Criminal Court Stats)
     crown_backlog = fetch_crown_court_backlog_data()
     if crown_backlog:
