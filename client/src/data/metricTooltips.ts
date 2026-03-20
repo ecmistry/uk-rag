@@ -261,37 +261,38 @@ export function getEmploymentTooltip(metricKey: string): string | undefined {
 
 /** Education section: metricKey -> tooltip text */
 export const EDUCATION_TOOLTIPS: Record<string, string> = {
-  attainment8: `Think of this as the "School Report Card" for the entire country. Attainment 8 measures the average achievement of pupils across 8 GCSE-level qualifications at Key Stage 4 (age 16). Rather than the old system that only asked "Did you get 5 good GCSEs?", this score captures how well a pupil performed across a broad range of subjects. A score of 50 means the average pupil achieved roughly a Grade 5 (a "strong pass") across all 8 subjects. It is the single most important measure of whether the education system is giving the next generation the foundation they need to succeed.
+  attainment8: `Attainment 8 is a measure of a student's "Academic Breadth and Depth." It represents how well a young person performs across a wide range of subjects, rather than just focusing on one or two areas. Think of it as an "Educational Decathlon"—to get a high score, a student cannot just be good at sprinting (Maths); they must also perform well in endurance (English), throwing (Sciences), and jumping (Arts or Humanities). It is the primary way we measure whether a school system is producing well-rounded, capable citizens ready for the modern workforce.
 
-How it is Calculated
+How is it Measured
 
-The Department for Education calculates this by summing point scores across 8 qualifying subjects, divided into four "buckets": English (double-weighted, counting in two slots), Maths (double-weighted, counting in two slots), three English Baccalaureate subjects (sciences, computing, history, geography, or languages), and three further approved qualifications from an "open bucket." Each grade earns points: Grade 9 = 9 points, Grade 1 = 1 point, U (ungraded) = 0. The maximum possible score is 90. A pupil's total is divided by 10 (the number of slots, including the double-weighted English and Maths) to produce their Attainment 8 score. The national figure is simply the average of all pupils' individual scores. Data is published annually by the DfE and broken down by school, region, gender, ethnicity, and crucially, disadvantage status (pupils eligible for Free School Meals).
+Attainment 8 takes a student's grades in eight specific subjects and turns them into points. To ensure "core" skills are prioritized, the subjects are divided into four "buckets." To understand the points, use this mapping to traditional letter grades:
+9.0 = High A*
+7.0 = A
+5.5 = High B
+5.0 = B / Strong Pass
+4.5 = Average Pass / C+
+4.0 = Standard Pass / C
+3.0 = D
 
-Real Impact on the Person on the Street
+The Calculation Method:
 
-Attainment 8 might sound like a number that only matters to teachers and politicians, but it directly shapes the country you live in:
+Pillar 1: The Core (Double Weighted): English and Maths. Because these are foundational, their individual point scores are doubled.
 
-1. Your Children's Life Chances
+Pillar 2: The Academic Foundation: The best three scores from the Sciences, History, Geography, and Languages are added.
 
-A pupil's Attainment 8 score is the strongest single predictor of whether they will go on to further education, secure a skilled apprenticeship, or enter a well-paid career. The gap between disadvantaged pupils and their peers remains stubbornly wide—typically 13-14 points—meaning a child born into poverty is statistically likely to leave school with significantly weaker qualifications, locking in inequality for a generation.
+Pillar 3: The Specialist Breadth (Open): The three highest scores from any other approved subjects (Vocational, Arts, or Music) are added.
 
-2. Local Economic Health
+The Final Score: The total points from all 10 available "slots" are added together and then divided by 10 to get the final Attainment 8 Average Score.
 
-Areas with consistently low Attainment 8 scores tend to have weaker local economies. If young people leave school without strong foundational skills, local employers struggle to fill skilled roles, businesses are less likely to invest in the area, and the cycle of deprivation deepens. High-performing areas attract investment; low-performing areas lose it.
+RAG Threshold Logic (Average Score Basis)
 
-3. The National Skills Pipeline
+These thresholds are based on the Average Score (the result after dividing by 10), comparing performance against the Gold Standard of a mature, advanced economy.
 
-At a national level, Attainment 8 is the "intake valve" for the entire skills system. If the average score is falling, it means fewer young people are entering the workforce with the literacy, numeracy, and scientific understanding needed for a modern economy. This feeds directly into the UK's chronic productivity problem and its ability to compete globally in technology, engineering, and advanced manufacturing.
+🟢 Green (Above 5.5): Elite Performance. The average student is achieving a "High B / A" grade across all subjects. This represents a world-leading education system producing a highly competitive, top-tier workforce.
 
-Why the RAG Thresholds were chosen
+🟡 Amber (4.5 – 5.5): Solid Competency. The average student is achieving between a "Strong Pass" and a "High B." The system is functional and stable but lacks the "top-end" excellence found in elite global tiers.
 
-The thresholds are based on DfE national averages and the level of attainment considered necessary for a young person to access meaningful post-16 pathways (sixth form, college, or quality apprenticeships).
-
-🟢 Green (Above 48): This is the "Strong Foundation" zone. A national average above 48 indicates that the typical pupil is achieving solid Grade 5s across all subjects—the level universities and employers consider a "strong pass." At this level, the education system is broadly delivering for the majority of young people.
-
-🟡 Amber (44 – 48): This is the "Underperformance" zone. The national average hovers here in recent years (around 46). It means the average pupil is achieving between Grade 4 and Grade 5—a "standard pass" but not a strong one. While functional, it signals that a significant proportion of pupils are leaving school without the depth of knowledge needed for higher-level study or competitive apprenticeships.
-
-🔴 Red (Below 44): This is the "Skills Crisis" zone. An average below 44 would indicate that the typical pupil is not achieving a solid standard pass across their core subjects. At this level, the country is systematically failing to equip the next generation with basic competencies, with severe long-term consequences for economic productivity, social mobility, and public service quality.`,
+🔴 Red (Below 4.5): Critical Skill Gap. The average performance is below a "Strong Pass" (4.5) across the board. This indicates a "hollowing out" of the talent pool and a potential long-term economic dependency.`,
   teacher_vacancy_rate: `Teacher Vacancies measures the number and rate of unfilled teaching positions across state-funded schools in England. The Department for Education calculates this from the annual School Workforce Census, conducted each November, where schools report posts that are vacant or temporarily filled. The vacancy rate is: (vacancies ÷ total posts) × 100. Data is broken down by phase (primary/secondary), subject, and region. Certain subjects face acute shortages: physics, computing, modern foreign languages, and design technology regularly recruit below target. High vacancy rates correlate with increased class sizes, subject non-availability, and reliance on non-specialist or supply teachers. Retention is equally problematic, with significant proportions leaving within 5 years.
 
 Data Source: DfE: School Workforce
