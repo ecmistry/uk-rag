@@ -16,6 +16,8 @@ These shared changes apply to all sections and only need doing once:
 - **Smart quarterly filter** (`MetricDetail.tsx`): if scorecard `dataDate` is not quarterly, skip `filterToQuarterlyOnly` so monthly/annual data shows
 - **Chronological sort** (`client/src/data/quarterlyMetrics.ts`): `dateSortKey()` parses quarterly, monthly, and annual date strings for correct sort order
 - **Chart tooltip** (`MetricDetail.tsx`): anchored to `position={{ y: 0 }}`, `offset={16}`, dashed cursor, drop shadow, 1dp values
+- **Period formatting** (`client/src/data/formatValue.ts`): `formatPeriod()` converts 6-digit academic year codes like `202425` to `2024/25`. Used in chart X-axis data and table Period cells.
+- **Y-axis width** (`MetricDetail.tsx`): `width={metric.unit ? 72 : 48}` to prevent label clipping for units like "Score", "%", "minutes"
 - **Schema** (`server/schema.ts`): `information?: string` on `MetricHistory` and `InsertMetricHistory`
 - **`addMetricHistory`** (`server/db.ts`): persists `information` field when provided
 - **Refresh path** (`server/routers.ts`): passes `information` from fetcher data to `addMetricHistory`
@@ -105,3 +107,5 @@ git push origin main
 4. **`getExistingHistoryPeriods` returns a Set** -- mock must return `new Set()`, not `[]`.
 5. **`recordedAt` can be null** -- always handle with fallback: `h.recordedAt instanceof Date ? h.recordedAt : new Date()`.
 6. **Never touch tooltips** during standardisation -- tooltips are managed separately.
+7. **Academic year codes** -- DfE data uses 6-digit codes like `202425`. Always run through `formatPeriod()` for display. Check for this pattern during data audit.
+8. **Y-axis width** -- `width={44}` clips labels with units. Use `width={metric.unit ? 72 : 48}` so labels like "50.2 Score" aren't cut off.

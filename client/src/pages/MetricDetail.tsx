@@ -16,7 +16,7 @@ import {
   deduplicateByPeriod,
   isQuarterlyPeriod,
 } from "@/data/quarterlyMetrics";
-import { formatValue } from "@/data/formatValue";
+import { formatValue, formatPeriod } from "@/data/formatValue";
 import { trpc } from "@/lib/trpc";
 import { Loader2 } from "lucide-react";
 import { useParams, Link } from "wouter";
@@ -119,7 +119,7 @@ export default function MetricDetail() {
   // Chart: chronological order (oldest first), numeric value, plus trend line
   const chartDataChronological = [...history].reverse();
   const chartDataWithValue = chartDataChronological.map((row) => ({
-    date: row.dataDate,
+    date: formatPeriod(row.dataDate),
     value: parseFloat(String(row.value)),
   }));
   const values = chartDataWithValue.map((d) => d.value).filter((v) => !Number.isNaN(v));
@@ -212,8 +212,8 @@ export default function MetricDetail() {
                   />
                   <YAxis
                     tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                    tickFormatter={(v) => (metric.unit ? `${Number(v).toFixed(1)}${metric.unit}` : Number(v).toFixed(1))}
-                    width={44}
+                    tickFormatter={(v) => (metric.unit ? `${Number(v).toFixed(1)} ${metric.unit}` : Number(v).toFixed(1))}
+                    width={metric.unit ? 72 : 48}
                   />
                   <Tooltip
                     position={{ y: 0 }}
@@ -312,7 +312,7 @@ export default function MetricDetail() {
                         i % 2 === 0 ? "bg-transparent" : "bg-muted/25"
                       )}
                     >
-                      <TableCell className="py-3 font-medium tabular-nums">{row.dataDate}</TableCell>
+                      <TableCell className="py-3 font-medium tabular-nums">{formatPeriod(row.dataDate)}</TableCell>
                       <TableCell className="py-3 tabular-nums">
                         {formatValue(metric.metricKey, row.value)}{metric.unit ? ` ${metric.unit}` : ""}
                       </TableCell>

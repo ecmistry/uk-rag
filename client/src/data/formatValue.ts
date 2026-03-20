@@ -19,3 +19,17 @@ export function formatValue(metricKey: string, rawValue: string): string {
 
   return num.toFixed(1);
 }
+
+/**
+ * Format a dataDate period string for display.
+ * Converts compact academic-year codes like "202425" to "2024/25",
+ * and "201718" to "2017/18". Leaves other formats unchanged.
+ */
+export function formatPeriod(dataDate: string): string {
+  const s = String(dataDate).trim();
+  // 6-digit academic year: "202425" -> "2024/25"
+  if (/^\d{6}$/.test(s)) {
+    return `${s.slice(0, 4)}/${s.slice(4)}`;
+  }
+  return s;
+}

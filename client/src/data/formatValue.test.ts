@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatValue } from "./formatValue";
+import { formatValue, formatPeriod } from "./formatValue";
 
 describe("formatValue", () => {
   it("formats standard metrics to 1 decimal place", () => {
@@ -32,5 +32,29 @@ describe("formatValue", () => {
 
   it("handles zero", () => {
     expect(formatValue("cpi_inflation", "0")).toBe("0.0");
+  });
+});
+
+describe("formatPeriod", () => {
+  it("converts 6-digit academic year codes to year/yy format", () => {
+    expect(formatPeriod("202425")).toBe("2024/25");
+    expect(formatPeriod("201718")).toBe("2017/18");
+    expect(formatPeriod("202021")).toBe("2020/21");
+    expect(formatPeriod("202223")).toBe("2022/23");
+  });
+
+  it("leaves quarterly periods unchanged", () => {
+    expect(formatPeriod("2025 Q4")).toBe("2025 Q4");
+    expect(formatPeriod("2024 Q1")).toBe("2024 Q1");
+  });
+
+  it("leaves annual periods unchanged", () => {
+    expect(formatPeriod("2024")).toBe("2024");
+    expect(formatPeriod("2017")).toBe("2017");
+  });
+
+  it("leaves monthly periods unchanged", () => {
+    expect(formatPeriod("Nov 2025")).toBe("Nov 2025");
+    expect(formatPeriod("2026 JAN")).toBe("2026 JAN");
   });
 });
