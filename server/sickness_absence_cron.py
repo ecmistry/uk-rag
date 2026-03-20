@@ -44,7 +44,7 @@ MONGO_URI = os.environ.get("MONGODB_URI") or os.environ.get("DATABASE_URL") or "
 
 GREEN_MAX = 3.0
 AMBER_MAX = 4.5
-CIPD_ADJUSTMENT = 0.0
+CIPD_ADJUSTMENT = 1.3
 
 MONTH_MAP = {
     "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
