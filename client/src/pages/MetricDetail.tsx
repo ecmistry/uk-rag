@@ -120,7 +120,7 @@ export default function MetricDetail() {
         ? `Trending ${slope >= 0 ? "up" : "down"} (${slope >= 0 ? "+" : ""}${slope.toFixed(2)}% per period)`
         : null;
     return { chartData, trendSubtitle, showMovingAvg };
-  }, [history, metricKey]);
+  }, [data?.history, metricKey]);
 
   if (!metricKey) {
     return (
