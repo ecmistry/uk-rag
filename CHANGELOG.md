@@ -4,6 +4,29 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.9] - 2026-03-20
+
+### Added
+
+- **Anti-Social Behaviour and Low Level Crime per capita** – New Crime scorecard sourcing monthly street-level crime data from all 43 police forces via data.police.uk cumulative archive. Aggregates 9 crime types (Anti-social behaviour, Shoplifting, Bicycle theft, Other theft, Theft from the person, Vehicle crime, Public order, Other crime, Criminal damage and arson) quarterly and expresses as a rate per 100,000 population. 11 quarters of history seeded (2023 Q2 – 2025 Q4).
+- **Serious Crime per capita** – New Crime scorecard aggregating 5 serious crime types (Violence and sexual offences, Robbery, Burglary, Drugs, Possession of weapons) from the same data.police.uk archive, also per 100,000 population with 11 quarters of history.
+- **`server/crime_per_capita_cron.py`** – Daily cron (08:00 UTC) downloads the cumulative data.police.uk archive (~1.7 GB, 1,566 force-level CSVs), categorises street crime, aggregates quarterly, calculates per-capita rates, and upserts to MongoDB. Supports `--seed` flag for full historical backfill.
+- **Tooltips and directions** – Full tooltip text for both new metrics covering methodology, real-world impact, and RAG threshold rationale. Both set to `lower_better` direction.
+
+### Changed
+
+- **Chart tooltip positioning** – Tooltip now pinned above the chart area (`position={{ y: -50 }}` with 60px top margin) so it never overlaps data lines or trend lines on any metric detail page.
+
+### Fixed
+
+- **React error #310 on MetricDetail** – Moved `useMemo` hook before early returns to fix "Rendered more hooks than during the previous render" caused by conditional hook execution when `isLoading` was true.
+- **Moving average line** – Fixed `showMovingAvg12m` undefined reference in JSX; variable now correctly returned from `useMemo` and used in the chart for `real_wage_growth`.
+
+### Removed
+
+- **Total Recorded Crime** (`recorded_crime_rate`) – Tile, tooltip, direction, validation range, and all database data (metric + 8 history entries) removed. Added to `SKIP_METRIC_KEYS` to prevent re-ingestion.
+- **Charge Rate %** (`charge_rate`) – Tile, tooltip, direction, validation range, and all database data (metric + 8 history entries) removed. Added to `SKIP_METRIC_KEYS` to prevent re-ingestion.
+
 ## [1.0.8] - 2026-03-20
 
 ### Changed
