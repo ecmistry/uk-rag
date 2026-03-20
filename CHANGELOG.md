@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Attainment 8 quarterly data** – Replaced 7 annual entries with 29 quarterly entries (2018 Q3 to 2025 Q3) using linear interpolation between annual DfE data points for a smoother chart trend.
 - **NEET Rate tooltip** – Replaced with "Wasted Potential" framing, covering wage scarring, Economic Gravity concept, and revised RAG thresholds calibrated against Gold Standard economies (Green < 8%, Amber 8–12%, Red > 12%).
 
+### Fixed
+
+- **NEET Rate data correction** – Previous data showed an incorrect 4.2% annual figure from a wrong measure/age group. Replaced with 33 correct quarterly entries from the ONS Labour Force Survey (16–24 age group, 2017 Q1 to 2025 Q1). Scorecard corrected from 4.2% (amber) to 12.5% (red) for 2025 Q1, reflecting the actual UK youth disconnection rate.
+- **Attainment 8 quarterly conversion** – Replaced 7 annual entries with 29 interpolated quarterly entries (2018 Q3 to 2025 Q3) to match dashboard quarterly standard. Database-only change; values remain on the corrected 0–9 Average Score scale.
+
 ## [1.0.6] - 2026-03-20
 
 ### Changed
