@@ -113,7 +113,7 @@ VALIDATION_RANGES: Dict[str, Tuple[float, float]] = {
     "sea_mass":                 (0.0, 200.0),
     # Crime
     "street_confidence_index":  (0.0, 100.0),
-    "crown_court_backlog":      (0.0, 1_000_000.0),
+    "crown_court_backlog":      (0.0, 500.0),
     "reoffending_rate":         (0.0, 100.0),
     "asb_low_level_crime":      (0.0, 10_000.0),
     "serious_crime":            (0.0, 10_000.0),
@@ -145,7 +145,7 @@ UNIT_OVERRIDES: Dict[str, str] = {
     "apprentice_starts": "",
     "cancer_wait_time": " days",
     "ambulance_response_time": " minutes",
-    "crown_court_backlog": "",
+    "crown_court_backlog": "per 100k",
     "total_population": "",
     "net_migration": "",
     "population_density": "per km²",

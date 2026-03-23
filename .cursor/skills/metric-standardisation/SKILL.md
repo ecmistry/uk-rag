@@ -181,7 +181,7 @@ These rules are already implemented in the shared code. Do NOT re-implement or o
 
 - Every numeric value displays as `toFixed(1)` -- e.g. `3` becomes `3.0`, `0.97` becomes `1.0`
 - This applies to: scorecards (Home.tsx), hero values, table cells, chart tooltips, chart Y-axis
-- Only exceptions: `elective_backlog`/`crown_court_backlog` (comma integers), `total_population` >= 1M (e.g. `69.5m`)
+- Only exceptions: `elective_backlog` (comma integers), `total_population` >= 1M (e.g. `69.5m`)
 - The shared function is `formatValue(metricKey, rawValue)` in `client/src/data/formatValue.ts`
 - Do NOT use `parseFloat().toFixed()` inline anywhere -- always call `formatValue()`
 

@@ -122,8 +122,8 @@ describe("Crime Metrics", () => {
         metricKey: key,
         name: key.replace(/_/g, " "),
         category: "Crime",
-        value: key === "crown_court_backlog" ? "74651" : "50.0",
-        unit: key === "crown_court_backlog" ? "" : "%",
+        value: key === "crown_court_backlog" ? "107.4" : "50.0",
+        unit: key === "crown_court_backlog" ? "per 100k" : "%",
         ragStatus: "amber",
         dataDate: "2025 Q4",
         sourceUrl: "https://example.com",
@@ -146,10 +146,10 @@ describe("Crime Metrics", () => {
     const { upsertMetric } = await import("./db");
     await upsertMetric({
       metricKey: "crown_court_backlog",
-      name: "Crown Court Backlog",
+      name: "Crown Court Backlog per 100k",
       category: "Crime",
-      value: "74651",
-      unit: "",
+      value: "107.4",
+      unit: "per 100k",
       ragStatus: "red",
       dataDate: "Dec 2024",
       sourceUrl: "https://example.com",
@@ -169,7 +169,7 @@ describe("Crime Metrics", () => {
       { key: "recorded_crime_rate", value: "87.85", rag: "amber" as const },
       { key: "charge_rate", value: "7.2", rag: "red" as const },
       { key: "street_confidence_index", value: "12.4", rag: "green" as const },
-      { key: "crown_court_backlog", value: "74651", rag: "red" as const },
+      { key: "crown_court_backlog", value: "107.4", rag: "red" as const },
       { key: "reoffending_rate", value: "28.3", rag: "amber" as const },
     ];
     for (const d of testData) {
@@ -178,7 +178,7 @@ describe("Crime Metrics", () => {
         name: d.key.replace(/_/g, " "),
         category: "Crime",
         value: d.value,
-        unit: d.key === "crown_court_backlog" ? "" : "%",
+        unit: d.key === "crown_court_backlog" ? "per 100k" : "%",
         ragStatus: d.rag,
         dataDate: "2025 Q4",
         sourceUrl: "https://example.com",

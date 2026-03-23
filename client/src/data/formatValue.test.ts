@@ -14,7 +14,11 @@ describe("formatValue", () => {
 
   it("formats backlog metrics as comma-separated integers", () => {
     expect(formatValue("elective_backlog", "4186974")).toBe("4,186,974");
-    expect(formatValue("crown_court_backlog", "74651")).toBe("74,651");
+  });
+
+  it("formats crown_court_backlog as 1dp (per-100k rate)", () => {
+    expect(formatValue("crown_court_backlog", "107.4")).toBe("107.4");
+    expect(formatValue("crown_court_backlog", "86.3")).toBe("86.3");
   });
 
   it("formats total_population in millions", () => {

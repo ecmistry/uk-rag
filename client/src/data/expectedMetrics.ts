@@ -30,7 +30,7 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
     { metricKey: "street_confidence_index", name: "Perception of Safety" },
     { metricKey: "asb_low_level_crime", name: "Anti-Social Behaviour and Low Level Crime per capita" },
     { metricKey: "serious_crime", name: "Serious Crime per capita" },
-    { metricKey: "crown_court_backlog", name: "Crown Court Backlog" },
+    { metricKey: "crown_court_backlog", name: "Crown Court Backlog per 100k" },
     { metricKey: "reoffending_rate", name: "Reoffending Rate" },
   ],
   Healthcare: [

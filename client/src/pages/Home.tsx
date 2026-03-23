@@ -155,7 +155,7 @@ export default function Home() {
             'Economy': 'Output per Hour, Real GDP Growth, CPI Inflation, Public Sector Net Debt, Business Investment',
             'Employment': 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence',
             'Education': 'Attainment 8 Score, NEET Rate (16-24), Unauthorised Pupil Absence, Apprenticeship Intensity',
-            'Crime': 'Total Recorded Crime, Charge Rate %, Perception of Safety, Crown Court Backlog, Reoffending Rate',
+            'Crime': 'Perception of Safety, ASB & Low-Level Crime per capita, Serious Crime per capita, Crown Court Backlog per 100k, Reoffending Rate',
             'Healthcare': 'A&E 4-Hour Wait %, Elective Backlog, Ambulance (Cat 2), GP Appt. Access, Staff Vacancy Rate',
             'Defence': 'Sea Mass, Land Mass, Air Mass, Defence Industry Vitality, Spend as % of GDP',
             'Population': 'Natural Change (Births vs Deaths), Old-Age Dependency Ratio, Net Migration (Long-term), Healthy Life Expectancy',

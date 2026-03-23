@@ -199,7 +199,7 @@ const DISPLAY_NAME_OVERRIDES: Partial<Record<string, string>> = {
   asb_low_level_crime: "Anti-Social Behaviour and Low Level Crime per capita",
   serious_crime: "Serious Crime per capita",
 
-  crown_court_backlog: "Crown Court Backlog",
+  crown_court_backlog: "Crown Court Backlog per 100k",
   reoffending_rate: "Reoffending Rate",
   teacher_vacancy_rate: "Teacher Vacancies",
   neet_rate: "NEET Rate (16-24)",

@@ -43,9 +43,9 @@ RAG_THRESHOLDS = {
         # Red: < 55.0
     },
     "crown_court_backlog": {
-        "green": 40000,  # Lower backlog is better
-        "amber": 60000,
-        # Red: > 60000
+        "green": 57.6,   # ≈40,000 / 69.487M × 100k — lower is better
+        "amber": 86.3,   # ≈60,000 / 69.487M × 100k
+        # Red: > 86.3
     },
     "reoffending_rate": {
         "green": 25.0,   # Lower reoffending is better
@@ -351,26 +351,26 @@ def fetch_perception_of_safety_data():
         return None
 
 
+EW_POPULATION_FALLBACK = 69_487_000
+
 def fetch_crown_court_backlog_data():
     """
-    Fetch Crown Court backlog from MoJ: Criminal Court Statistics.
+    Fetch Crown Court backlog from MoJ: Criminal Court Statistics and
+    convert to a per-100,000 population rate.
     Source: https://www.gov.uk/government/collections/criminal-court-statistics
     """
     try:
         print("\n" + "="*60)
         print("Fetching Crown Court Backlog Data (MoJ: Criminal Court Stats)")
         print("="*60)
-        # MoJ Criminal Court Statistics - Crown Court open caseload
-        backlog = None
+        raw_backlog = None
         time_period = "Oct-Dec 2024"
-        # Try ODS if we have odfpy; otherwise try to find Excel from stats page
         try:
             resp = requests.get(
                 "https://assets.publishing.service.gov.uk/media/68f1a1b12f0fc56403a3cfd9/criminal-court-statistics-quarterly-october-to-december-2024.ods",
                 timeout=60
             )
             if resp.status_code == 200 and len(resp.content) > 1000:
-                # pandas can read ODS with engine='odf' if odfpy is installed
                 try:
                     df = pd.read_excel(io.BytesIO(resp.content), engine="odf", header=None)
                 except Exception:
@@ -383,32 +383,37 @@ def fetch_crown_court_backlog_data():
                                 try:
                                     v = float(str(c).replace(",", ""))
                                     if 30000 <= v <= 100000:
-                                        backlog = v
+                                        raw_backlog = v
                                         break
                                 except Exception:
                                     pass
-                    if backlog is not None:
+                    if raw_backlog is not None:
                         break
         except Exception as e:
             print(f"  ODS fetch/parse failed: {e}")
-        if backlog is None:
-            # Known headline: Dec 2024 Crown Court open caseload 74,651
+        if raw_backlog is None:
             print("  Using published headline: Crown Court open caseload ~74,651 (Dec 2024)")
-            backlog = 74651
+            raw_backlog = 74651
             time_period = "Dec 2024"
-        rag_status = calculate_rag_status("crown_court_backlog", backlog)
+
+        per_capita = round((raw_backlog / EW_POPULATION_FALLBACK) * 100_000, 1)
+
+        rag_status = calculate_rag_status("crown_court_backlog", per_capita)
         result = {
-            "metric_name": "Crown Court Backlog",
+            "metric_name": "Crown Court Backlog per 100k",
             "metric_key": "crown_court_backlog",
             "category": "Crime",
-            "value": backlog,
+            "value": per_capita,
+            "unit": "per 100k",
             "rag_status": rag_status,
             "time_period": time_period,
             "data_source": "MoJ: Criminal Court Stats",
             "source_url": SOURCE_URLS["crown_court_backlog"],
-            "last_updated": datetime.now().isoformat()
+            "last_updated": datetime.now().isoformat(),
+            "information": f"Raw count: {int(raw_backlog):,} cases"
         }
-        print(f"  Value: {int(backlog)} (RAG: {rag_status.upper()})")
+        print(f"  Raw count: {int(raw_backlog):,}")
+        print(f"  Per 100k: {per_capita} (RAG: {rag_status.upper()})")
         return result
     except Exception as e:
         print(f"Error fetching crown court backlog data: {e}", file=sys.stderr)
