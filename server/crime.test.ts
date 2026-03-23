@@ -84,7 +84,7 @@ beforeEach(() => {
 const CRIME_KEYS = [
   "street_confidence_index",
   "crown_court_backlog",
-  "reoffending_rate",
+  "recall_rate",
   "asb_low_level_crime",
   "serious_crime",
 ];
@@ -170,7 +170,7 @@ describe("Crime Metrics", () => {
       { key: "charge_rate", value: "7.2", rag: "red" as const },
       { key: "street_confidence_index", value: "12.4", rag: "green" as const },
       { key: "crown_court_backlog", value: "107.4", rag: "red" as const },
-      { key: "reoffending_rate", value: "28.3", rag: "amber" as const },
+      { key: "recall_rate", value: "14.7", rag: "red" as const },
     ];
     for (const d of testData) {
       await upsertMetric({

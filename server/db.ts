@@ -200,7 +200,7 @@ const DISPLAY_NAME_OVERRIDES: Partial<Record<string, string>> = {
   serious_crime: "Serious Crime per capita",
 
   crown_court_backlog: "Crown Court Backlog per 100k",
-  reoffending_rate: "Reoffending Rate",
+  recall_rate: "Recall Rate",
   teacher_vacancy_rate: "Teacher Vacancies",
   neet_rate: "NEET Rate (16-24)",
   defence_spending_gdp: "Spend as % of GDP",
@@ -302,7 +302,7 @@ function filterEducationMetrics(metrics: Metric[], category?: string): Metric[] 
 const CRIME_ALLOWED_METRIC_KEYS = new Set([
   "street_confidence_index",
   "crown_court_backlog",
-  "reoffending_rate",
+  "recall_rate",
   "asb_low_level_crime",
   "serious_crime",
 ]);

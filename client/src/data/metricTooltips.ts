@@ -425,37 +425,43 @@ The RAG thresholds are benchmarked against the Gold Standard for G7 and Large Eu
 🟡 Amber (60 – 90 per 100k) — Operational Strain: The system is "running hot." Delays are beginning to stretch toward 12 months. This is the "Safety Limit"—beyond this point, the quality of justice begins to degrade.
 
 🔴 Red (> 90 per 100k) — Systemic Failure: The current UK status (~117 per 100k). The backlog is so dense that justice is effectively being denied. The system is "underwater," with the queue growing faster than the courts can clear it.`,
-  reoffending_rate: `Think of this as the "Revolving Door" metric. It measures the percentage of offenders who commit another crime within one year of being released from prison or starting a community sentence—and where that new offence is subsequently proven by a court conviction or caution. If the rate is 28%, it means that for every 100 offenders who leave prison or begin a community order, 28 of them will be back in the system within a year. It is the most direct measure of whether the criminal justice system is actually rehabilitating people or simply cycling them through a revolving door of offending, punishment, release, and reoffending.
+  recall_rate: `Think of the prison system as a hospital. The Population is the number of patients in beds. The Recall Rate is the number of patients who were discharged but had to be rushed back into the ER within 90 days because their recovery failed. If a hospital has 1,000 beds, but 150 people are being "re-admitted" every single quarter, it tells you two things: the "Medicine" (Rehabilitation) didn't work the first time, and the "Home Care" (Probation) wasn't strong enough to keep them healthy.
+
+Most crime metrics are "lagged"—they tell you what happened two years ago. This metric is live. It tells you right now if the streets are becoming more chaotic and if the prisons are about to overflow. It is the ultimate measure of Systemic Grip: the state's ability to keep its promises of safety without just locking everyone up forever.
 
 How it is Calculated
 
-The Ministry of Justice (MoJ) tracks a "cohort" of offenders—everyone who was released from custody, received a non-custodial conviction, or received a caution in a given quarter. Each offender is then followed for one year using the Police National Computer (PNC) to see if they commit any further offences. A six-month "waiting period" is added after the one-year follow-up to allow time for court proceedings to conclude, meaning the data has an 18-month lag. The headline rate is: (offenders who committed at least one proven reoffence ÷ total cohort) × 100. The MoJ also publishes a "frequency rate"—the average number of reoffences per reoffender—which captures prolific offending. Data is broken down by sentence type, sentence length, age, sex, and offence category. This allows analysis of which interventions are working and which are failing.
+The Formula: Recall Velocity (%) = (Total Recall Events in Quarter / Total Prison Population Snapshot) × 100.
 
-Real Impact on the Person on the Street
+The Numerator (Total Recall Events): Every single time a "Recall Warrant" is executed in a 3-month window. If one prolific offender is released and recalled twice in that quarter, they count twice. This captures the true administrative burden on the police and courts.
 
-High reoffending rates are not just a problem for the justice system—they directly affect your safety and your wallet:
+The Denominator (Prison Population): The "Snapshot" of how many people are physically in a cell on the last day of that quarter. This represents the static capacity of the state.
 
-1. The Same Offenders, Again and Again
+The Frequency: Updated quarterly using HMCTS / HMPPS management information from the Offender Management Statistics Quarterly publication.
 
-When reoffending is high, the victims of crime are disproportionately created by a relatively small group of prolific repeat offenders. A shoplifter released on a Friday who is stealing again by Monday, a domestic abuser who assaults a new partner within weeks of release, a burglar who returns to the same neighbourhood—these are not hypothetical scenarios. They are the lived reality of communities where reoffending is entrenched. For every repeat offender who is not rehabilitated, there are new victims who would not otherwise have been harmed.
+Real-World Impact: Why should you care?
 
-2. The £18 Billion Bill
+1. The Deterrent Effect
 
-Reoffending costs the UK economy an estimated £18 billion per year when you account for the costs of re-arrest, re-prosecution, re-imprisonment, victim services, healthcare, and lost economic output. The most alarming statistic is that offenders sentenced to less than 12 months in prison have a reoffending rate of 66%—two out of three are back in the system within a year. These short sentences are too brief for meaningful rehabilitation programmes but long enough to disrupt employment, housing, and family relationships, making reoffending more likely. It is, in effect, the worst of both worlds: expensive enough to strain the public purse but too short to change behaviour.
+Justice is a perishable commodity. A high recall rate signals that the rehabilitation and probation systems are failing to keep released offenders stable in the community, creating a revolving door that erodes public confidence.
 
-3. The Prison Population Spiral
+2. Witness Attrition
 
-England and Wales hold approximately 87,000 prisoners—one of the highest incarceration rates in Western Europe. High reoffending drives this number relentlessly upward, as the same individuals cycle through the system repeatedly. The prison estate is overcrowded, underfunded, and struggling to deliver rehabilitation programmes. When prisons are so full that inmates spend 23 hours a day in their cells with no access to education, training, or mental health support, the conditions that drive reoffending are reinforced rather than addressed. The government has been forced to implement early release schemes to manage capacity, which itself risks increasing reoffending.
+High recall volumes place enormous strain on probation officers, police recall teams, and the courts, diverting resources from proactive crime prevention and new investigations.
 
-Why the RAG Thresholds were chosen
+3. Prison Overcrowding
 
-The thresholds are based on the reoffending rates achieved by the most effective criminal justice systems internationally and the level at which the UK system can be considered to be successfully rehabilitating offenders rather than simply warehousing them.
+A high recall rate is the primary driver of the "Remand Crisis," where prisons are filled with people who have been recalled on licence, hollowing out the capacity of the correctional system and preventing long-term rehabilitation work for those who remain.
 
-🟢 Green (Below 25%): This is the "Effective Rehabilitation" zone. It indicates that the criminal justice system is successfully breaking the cycle for three out of four offenders. Countries with strong rehabilitation programmes—such as Norway and the Netherlands—consistently achieve rates in this range. At this level, prison and community sentences are genuinely changing behaviour, and the downstream benefits (fewer victims, lower costs, safer communities) are substantial.
+RAG Threshold Logic (G7/Large Economy Gold Standard)
 
-🟡 Amber (25% – 30%): This is the "Persistent Challenge" zone. The UK currently sits in this bracket at approximately 28–29%. While the majority of offenders do not reoffend within a year, a stubborn minority continue to cycle through the system. The most concerning subgroups—short-sentence prisoners, young adult males, and those with substance abuse or mental health issues—reoffend at far higher rates than the headline figure suggests.
+The RAG thresholds are benchmarked against the Gold Standard for G7 and Large European economies.
 
-🔴 Red (Above 30%): This is the "Systemic Failure" zone. At this level, nearly one in three offenders is back in the system within a year, and prolific reoffenders are generating a disproportionate share of all crime. It signals that rehabilitation programmes are inadequate, prison conditions are counterproductive, and the transition support (housing, employment, mental health) that ex-offenders need to stay out of trouble is failing. The justice system is consuming vast resources simply to process the same people repeatedly, with diminishing returns for public safety.`,
+🟢 Green (< 7.5% of prison pop) — Systemic Health: Aligned with the German and Nordic models. This indicates that the "Social Mass" (Probation/Support) is strong enough to maintain offenders in the community.
+
+🟡 Amber (7.5% – 11.0% of prison pop) — Operational Strain: The "Western Average." Signals that community supervision is beginning to lose its "Grip," leading to an increased reliance on prison as a short-term risk-management tool.
+
+🔴 Red (> 11.0% of prison pop) — Systemic Failure: This level indicates a "High-Velocity Churn." The volume of recalls is so high that it destabilizes the prison estate, preventing long-term rehabilitation work.`,
 
   street_confidence_index: `This is the "Street Confidence Index." It measures the percentage of the population that feels "Not very safe" or "Not safe at all" walking alone in their local area — effectively capturing the real-time psychological state of the nation. Unlike official crime statistics, which only track reported incidents, this metric reflects the impact of police visibility, street lighting, and the presence of anti-social behaviour on daily life. A lower percentage means more people feel safe.
 

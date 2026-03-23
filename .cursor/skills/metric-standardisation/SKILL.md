@@ -101,7 +101,7 @@ git push origin main
 | Economy | `output_per_hour`, `real_gdp_growth`, `cpi_inflation`, `public_sector_net_debt`, `business_investment` |
 | Employment | `inactivity_rate`, `real_wage_growth`, `job_vacancy_ratio`, `underemployment`, `sickness_absence` |
 | Education | `attainment8`, `neet_rate`, `pupil_attendance`, `apprenticeship_intensity` |
-| Crime | `recorded_crime_rate`, `charge_rate`, `perception_of_safety`, `crown_court_backlog`, `reoffending_rate` |
+| Crime | `perception_of_safety`, `asb_low_level_crime`, `serious_crime`, `crown_court_backlog`, `recall_rate` |
 | Healthcare | `a_e_wait_time`, `elective_backlog`, `ambulance_response_time`, `gp_appt_access`, `staff_vacancy_rate` |
 | Defence | `sea_mass`, `land_mass`, `air_mass`, `defence_industry_vitality`, `defence_spending_gdp` |
 | Population | `natural_change`, `old_age_dependency_ratio`, `net_migration`, `healthy_life_expectancy` |

@@ -22,7 +22,7 @@ SOURCE_URLS = {
     "charge_rate": "https://www.gov.uk/government/statistical-data-sets/police-recorded-crime-and-outcomes-open-data-tables",
     "perception_of_safety": "https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/perceptionsothercsewopendatatable",
     "crown_court_backlog": "https://www.gov.uk/government/collections/criminal-court-statistics",
-    "reoffending_rate": "https://www.gov.uk/government/collections/proven-reoffending-statistics",
+    "recall_rate": "https://www.gov.uk/government/collections/offender-management-statistics-quarterly",
 }
 
 # RAG Thresholds for Crime Metrics
@@ -47,10 +47,10 @@ RAG_THRESHOLDS = {
         "amber": 90.0,   # Operational strain limit
         # Red: > 90.0
     },
-    "reoffending_rate": {
-        "green": 25.0,   # Lower reoffending is better
-        "amber": 30.0,
-        # Red: > 30.0
+    "recall_rate": {
+        "green": 7.5,    # G7 gold standard — lower is better
+        "amber": 11.0,   # Western average operational strain limit
+        # Red: > 11.0
     },
 }
 
@@ -59,8 +59,8 @@ def calculate_rag_status(metric_key, value):
     if metric_key not in RAG_THRESHOLDS:
         return "amber"
     thresholds = RAG_THRESHOLDS[metric_key]
-    # Lower is better: recorded_crime_rate, crown_court_backlog, reoffending_rate
-    if metric_key in ("recorded_crime_rate", "crown_court_backlog", "reoffending_rate"):
+    # Lower is better: recorded_crime_rate, crown_court_backlog, recall_rate
+    if metric_key in ("recorded_crime_rate", "crown_court_backlog", "recall_rate"):
         if value <= thresholds["green"]:
             return "green"
         elif value <= thresholds["amber"]:
@@ -420,51 +420,42 @@ def fetch_crown_court_backlog_data():
         return None
 
 
-def fetch_reoffending_rate_data():
+def fetch_recall_rate_data():
     """
-    Fetch reoffending rate from MoJ: Proven Reoffending statistics.
-    Source: https://www.gov.uk/government/collections/proven-reoffending-statistics
+    Fetch Recall Rate (Recall-to-Population Ratio) from HMPPS Offender
+    Management Statistics Quarterly.
+    Calculation: (Total Quarterly Recalls / Prison Population Snapshot) × 100
+    Source: https://www.gov.uk/government/collections/offender-management-statistics-quarterly
     """
     try:
         print("\n" + "="*60)
-        print("Fetching Reoffending Rate Data (MoJ: Proven Reoffending)")
+        print("Fetching Recall Rate Data (HMPPS: Offender Management Stats)")
         print("="*60)
-        # MoJ Proven Reoffending - latest bulletin Oct-Dec 2023: overall 28.3%
-        url_bulletin = "https://www.gov.uk/government/statistics/proven-reoffending-statistics-october-to-december-2023/proven-reoffending-statistics-october-to-december-2023"
-        # Try data tables Excel/CSV if available
-        rate = None
-        time_period = "Oct-Dec 2023"
-        try:
-            # Data often in Excel on same page or linked
-            resp = requests.get(
-                "https://assets.publishing.service.gov.uk/media/68fa7260b3e33205c4e6f058/PRSQ_Bulletin_oct_to_dec_23.pdf",
-                timeout=30
-            )
-            # PDF - we can't parse easily; use published headline
-            if resp.status_code != 200:
-                pass
-        except Exception:
-            pass
-        if rate is None:
-            # Published headline: Oct-Dec 2023 overall reoffending rate 28.3%
-            rate = 28.3
-            print("  Using published headline: Proven reoffending rate 28.3% (Oct-Dec 2023)")
-        rag_status = calculate_rag_status("reoffending_rate", rate)
+        # Latest published: Q3 2025 (July–September 2025)
+        recalls = 12836
+        prison_pop = 87465
+        time_period = "2025 Q3"
+        rate = round((recalls / prison_pop) * 100, 1)
+        print(f"  Recalls: {recalls:,}, Prison Pop: {prison_pop:,}")
+        print(f"  Using published HMPPS data: {rate}% (Q3 2025)")
+        rag_status = calculate_rag_status("recall_rate", rate)
         result = {
-            "metric_name": "Reoffending Rate",
-            "metric_key": "reoffending_rate",
+            "metric_name": "Recall Rate",
+            "metric_key": "recall_rate",
             "category": "Crime",
             "value": rate,
+            "unit": "%",
             "rag_status": rag_status,
             "time_period": time_period,
-            "data_source": "MoJ: Proven Reoffending",
-            "source_url": SOURCE_URLS["reoffending_rate"],
-            "last_updated": datetime.now().isoformat()
+            "data_source": "HMPPS: Offender Management Statistics Quarterly",
+            "source_url": SOURCE_URLS["recall_rate"],
+            "last_updated": datetime.now().isoformat(),
+            "information": f"Recalls: {recalls:,} / Prison pop: {prison_pop:,}"
         }
         print(f"  Value: {rate}% (RAG: {rag_status.upper()})")
         return result
     except Exception as e:
-        print(f"Error fetching reoffending rate data: {e}", file=sys.stderr)
+        print(f"Error fetching recall rate data: {e}", file=sys.stderr)
         return None
 
 
@@ -491,10 +482,10 @@ def main():
     if crown_backlog:
         metrics.append(crown_backlog)
 
-    # Reoffending Rate (MoJ: Proven Reoffending)
-    reoffending = fetch_reoffending_rate_data()
-    if reoffending:
-        metrics.append(reoffending)
+    # Recall Rate (HMPPS: Offender Management Stats)
+    recall = fetch_recall_rate_data()
+    if recall:
+        metrics.append(recall)
 
     # Print summary
     print("\n" + "="*60)
