@@ -43,9 +43,9 @@ RAG_THRESHOLDS = {
         # Red: < 55.0
     },
     "crown_court_backlog": {
-        "green": 57.6,   # ≈40,000 / 69.487M × 100k — lower is better
-        "amber": 86.3,   # ≈60,000 / 69.487M × 100k
-        # Red: > 86.3
+        "green": 60.0,   # G7 gold standard — lower is better
+        "amber": 90.0,   # Operational strain limit
+        # Red: > 90.0
     },
     "reoffending_rate": {
         "green": 25.0,   # Lower reoffending is better

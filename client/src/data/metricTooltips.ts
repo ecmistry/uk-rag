@@ -392,37 +392,39 @@ export function getEducationTooltip(metricKey: string): string | undefined {
 
 /** Crime section: metricKey -> tooltip text */
 export const CRIME_TOOLTIPS: Record<string, string> = {
-  crown_court_backlog: `Think of this as the "Justice Queue per head of population." It measures outstanding criminal cases waiting to be heard in the Crown Courts of England and Wales—per 100,000 people. The Crown Courts handle the most serious offences: murder, rape, robbery, serious assault, and large-scale fraud. A value of 107.4 means that for every 100,000 residents, roughly 107 defendants are awaiting trial and 107 victims are waiting for their day in court. The per-capita framing makes it comparable across time periods as the population grows and across jurisdictions of different sizes.
+  crown_court_backlog: `This is the "Judicial Traffic Jam." It measures the total number of serious criminal cases currently awaiting trial or sentencing in the Crown Court. By calculating this per 100,000 residents, we create a "Justice Density" index that allows us to compare the UK's performance directly against equivalently developed and sized nations (e.g., France, Germany, Canada).
 
-How it is Calculated
+How is it Measured?
 
-The Ministry of Justice (MoJ) calculates the raw backlog from the Common Platform and XHIBIT case management systems used by Crown Courts across England and Wales. A case enters the backlog when a defendant is sent or committed to the Crown Court for trial and exits when the case reaches a conclusion (conviction, acquittal, or discontinuation). The headline figure is the total "open caseload"—all cases that have entered the system but not yet concluded. We divide that raw count by the mid-year England & Wales population estimate and multiply by 100,000 to produce the per-capita rate shown here. The MoJ also tracks the median age of open cases, the median time from charge to completion, and breakdowns by offence type and court location. Data is published quarterly in the "Criminal Court Statistics Quarterly" bulletin.
+The Calculation: (Total Outstanding Crown Court Cases ÷ National Population) × 100,000.
 
-Real Impact on the Person on the Street
+The Frequency: Updated quarterly using HMCTS (HM Courts & Tribunals Service) management information.
 
-The Crown Court backlog is not an administrative inconvenience—it causes real suffering to real people:
+The Scope: Only includes "Major" cases (Indictable only or Triable-either-way) that have been committed to the Crown Court, representing the most serious harm to the state and citizens.
 
-1. Victims Trapped in Limbo
+Real-World Impact: Why should you care?
 
-The Victims' Commissioner's 2025 report described the backlog's impact as "devastating." Victims of serious crimes—sexual assault, domestic violence, grievous bodily harm—are forced to live in a state of suspended trauma for years while awaiting trial. They cannot move on with their lives, their relationships suffer, and their mental health deteriorates. Many victims withdraw from cases entirely because they simply cannot endure the wait, which means their attacker faces no consequences. Nearly two-thirds (62%) of the backlog comprises violent, sexual, and drug offences—the most traumatic crime types for victims to relive.
+1. The Deterrent Effect
 
-2. Justice Delayed is Justice Denied
+Justice is a perishable commodity. If the delay between a crime and a trial exceeds 12–18 months, the deterrent effect of the law collapses.
 
-As of September 2025, the median time from charge to completion was 179 days—nearly six months. Over 20,000 cases had been open for more than a year, a record. When witnesses are asked to recall events from two or three years ago, their evidence is inherently weaker. CCTV footage may have been overwritten. Co-operating witnesses may have moved away. The quality of justice itself is degraded by delay, making wrongful acquittals and wrongful convictions both more likely.
+2. Witness Attrition
 
-3. The Taxpayer Cost
+High backlog rates lead to victims and witnesses withdrawing from the process due to "trial fatigue." This means criminals walk free not because they are innocent, but because the system was too slow to hear the evidence.
 
-Every day a remand prisoner sits in jail awaiting trial costs the taxpayer approximately £130. With thousands of defendants on remand for months or years, the financial burden is enormous. Meanwhile, judges, court staff, and barristers are paid whether cases proceed or are adjourned. The government has committed a record 110,000 Crown Court sitting days for 2025–26, but even this has not been sufficient to reduce the queue. If defendants exceed their custody time limits due to delays, they must be released—potentially putting dangerous individuals back on the streets.
+3. Prison Overcrowding
 
-Why the RAG Thresholds were chosen
+A high court backlog is the primary driver of the "Remand Crisis," where prisons are filled with people who have not yet been convicted, hollowing out the capacity of the correctional system.
 
-The thresholds are derived from the Crown Court's pre-pandemic operating capacity, converted to per-100,000 population to remain meaningful as the population changes.
+RAG Threshold Logic (G7/Large Economy Gold Standard)
 
-🟢 Green (Below 57.6 per 100k — equivalent to ~40,000 cases): This is the "Functioning Justice" zone. Before the COVID-19 pandemic, the Crown Court backlog sat at approximately 39,000 cases. At this level, most cases are heard within a reasonable timeframe, victims are not subjected to years of waiting, and the quality of evidence remains strong.
+The RAG thresholds are benchmarked against the Gold Standard for G7 and Large European economies. In these peer nations, a "healthy" backlog is defined as a queue that does not exceed 6 months of the court's total annual capacity.
 
-🟡 Amber (57.6 – 86.3 per 100k — equivalent to ~40,000–60,000 cases): This is the "Strained System" zone. Waiting times are noticeably longer, some victims experience delays of over a year, and courts are forced to prioritise the most serious cases at the expense of "lesser" offences.
+🟢 Green (< 60 per 100k) — Elite Velocity: Aligned with Best-in-Class Peers (e.g., Germany). Trials typically occur within 6 months of charge. The system is "in equilibrium," disposing of cases as fast as they arrive.
 
-🔴 Red (Above 86.3 per 100k — equivalent to >60,000 cases): This is the "Justice Crisis" zone. The UK has been firmly in this territory since 2021, with the backlog reaching a record 79,619 cases (≈114.6 per 100k) in September 2025. At this level, the system cannot clear cases faster than they arrive. Victims wait years, witnesses forget, and public confidence in the courts collapses.`,
+🟡 Amber (60 – 90 per 100k) — Operational Strain: The system is "running hot." Delays are beginning to stretch toward 12 months. This is the "Safety Limit"—beyond this point, the quality of justice begins to degrade.
+
+🔴 Red (> 90 per 100k) — Systemic Failure: The current UK status (~117 per 100k). The backlog is so dense that justice is effectively being denied. The system is "underwater," with the queue growing faster than the courts can clear it.`,
   reoffending_rate: `Think of this as the "Revolving Door" metric. It measures the percentage of offenders who commit another crime within one year of being released from prison or starting a community sentence—and where that new offence is subsequently proven by a court conviction or caution. If the rate is 28%, it means that for every 100 offenders who leave prison or begin a community order, 28 of them will be back in the system within a year. It is the most direct measure of whether the criminal justice system is actually rehabilitating people or simply cycling them through a revolving door of offending, punishment, release, and reoffending.
 
 How it is Calculated
