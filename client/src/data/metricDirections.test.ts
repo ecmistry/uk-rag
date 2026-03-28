@@ -63,8 +63,8 @@ describe("getTrendSentiment", () => {
       expect(getTrendSentiment("cpi_inflation", 2.0, 1.8)).toBe("neutral");
     });
 
-    it("net_migration: closer to 0–300k range is positive", () => {
-      expect(getTrendSentiment("net_migration", 350, 500)).toBe("positive");
+    it("returns neutral for metric with no target band entry", () => {
+      expect(getTrendSentiment("net_migration", 350, 500)).toBe("neutral");
     });
   });
 

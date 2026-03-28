@@ -320,7 +320,7 @@ const HEALTHCARE_ALLOWED_METRIC_KEYS = new Set([
   "elective_backlog",
   "ambulance_response_time",
   "gp_appt_access",
-  "staff_vacancy_rate",
+  "old_age_dependency_ratio",
 ]);
 
 function filterHealthcareMetrics(metrics: Metric[], category?: string): Metric[] {

@@ -702,7 +702,7 @@ The thresholds are based on the vacancy levels at which the NHS can safely staff
 };
 
 export function getHealthcareTooltip(metricKey: string): string | undefined {
-  return HEALTHCARE_TOOLTIPS[metricKey];
+  return HEALTHCARE_TOOLTIPS[metricKey] ?? POPULATION_TOOLTIPS[metricKey];
 }
 
 /** Defence section: metricKey -> tooltip text */

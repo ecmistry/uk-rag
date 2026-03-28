@@ -15,9 +15,8 @@ import { toast } from "sonner";
 import { memo, useCallback, useMemo, useState } from 'react';
 import { cn } from "@/lib/utils";
 import type { Metric } from '@shared/types';
-import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip, getPopulationTooltip } from "@/data/metricTooltips";
+import { getEconomyTooltip, getEmploymentTooltip, getEducationTooltip, getCrimeTooltip, getHealthcareTooltip, getDefenceTooltip } from "@/data/metricTooltips";
 import { EXPECTED_METRICS } from "@/data/expectedMetrics";
-import PopulationBreakdownChart from "@/components/PopulationBreakdownChart";
 import TrendIndicator from "@/components/TrendIndicator";
 import { formatValue } from "@/data/formatValue";
 
@@ -89,7 +88,6 @@ function getTooltipForMetric(category: string, metricKey: string): string | unde
     case "Crime": return getCrimeTooltip(metricKey);
     case "Healthcare": return getHealthcareTooltip(metricKey);
     case "Defence": return getDefenceTooltip(metricKey);
-    case "Population": return getPopulationTooltip(metricKey);
     default: return undefined;
   }
 }
@@ -147,7 +145,7 @@ export default function Home() {
     <div className="w-full">
       <div>
         {/* Metrics by category – RAG-of-RAGs style: section label + dense grid of small scorecards */}
-        {['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population'].map((category, index) => {
+        {['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence'].map((category, index) => {
           const categoryMetrics = metricsByCategory[category] || [];
           const metricsByKey = metricsByKeyByCategory[category] ?? {};
           const expectedSlots = EXPECTED_METRICS[category] ?? [];
@@ -156,9 +154,8 @@ export default function Home() {
             'Employment': 'Inactivity Rate, Real Wage Growth, Job Vacancy Ratio, Underemployment, Sickness Absence',
             'Education': 'Attainment 8 Score, NEET Rate (16-24), Unauthorised Pupil Absence, Apprenticeship Intensity',
             'Crime': 'Perception of Safety, ASB & Low-Level Crime per capita, Serious Crime per capita, Crown Court Backlog per 100k, Recall Rate',
-            'Healthcare': 'A&E 4-Hour Wait %, Elective Backlog, Ambulance (Cat 2), GP Appt. Access, Staff Vacancy Rate',
+            'Healthcare': 'A&E 4-Hour Wait %, Elective Backlog, Ambulance (Cat 2), GP Appt. Access, Old-Age Dependency Ratio',
             'Defence': 'Sea Mass, Land Mass, Air Mass, Defence Industry Vitality, Spend as % of GDP',
-            'Population': 'Natural Change (Births vs Deaths), Old-Age Dependency Ratio, Net Migration (Long-term), Healthy Life Expectancy',
           };
           const shouldDefer = index >= 2 && metricsLoading;
           const dataCount = expectedSlots.filter((s) => metricsByKey[s.metricKey]).length;
@@ -205,12 +202,12 @@ export default function Home() {
                     {dataCount} of {expectedSlots.length} metrics have data
                   </Badge>
                 )}
-                {!metricsLoading && (hasNoData || hasPartialData) && isAdmin && ['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population'].includes(category) && (
+                {!metricsLoading && (hasNoData || hasPartialData) && isAdmin && ['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence'].includes(category) && (
                   <Button
                     size="sm"
                     variant="outline"
                     className="h-7 text-[10px]"
-                    onClick={() => refreshMutation.mutate({ category: category as 'Economy' | 'Employment' | 'Education' | 'Crime' | 'Healthcare' | 'Defence' | 'Population' })}
+                    onClick={() => refreshMutation.mutate({ category: category as 'Economy' | 'Employment' | 'Education' | 'Crime' | 'Healthcare' | 'Defence' })}
                     disabled={refreshMutation.isPending}
                   >
                     <RefreshCw className={cn('h-3 w-3 mr-1', refreshMutation.isPending && 'animate-spin')} />
@@ -348,11 +345,6 @@ export default function Home() {
             </section>
           );
         })}
-      </div>
-
-      {/* Population breakdown stacked bar (below Population tiles) */}
-      <div className="container px-4 py-6">
-        <PopulationBreakdownChart />
       </div>
 
       {/* Footer */}

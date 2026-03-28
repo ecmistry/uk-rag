@@ -8,7 +8,6 @@ import {
   getCrimeTooltip,
   getHealthcareTooltip,
   getDefenceTooltip,
-  getPopulationTooltip,
 } from "./metricTooltips";
 
 const tooltipFns: Record<string, (key: string) => string | undefined> = {
@@ -18,7 +17,6 @@ const tooltipFns: Record<string, (key: string) => string | undefined> = {
   Crime: getCrimeTooltip,
   Healthcare: getHealthcareTooltip,
   Defence: getDefenceTooltip,
-  Population: getPopulationTooltip,
 };
 
 describe("EXPECTED_METRICS", () => {
@@ -72,7 +70,6 @@ describe("EXPECTED_METRICS", () => {
     expect(categories).toContain("Crime");
     expect(categories).toContain("Healthcare");
     expect(categories).toContain("Defence");
-    expect(categories).toContain("Population");
   });
 
   it("each category has at least 3 metrics", () => {

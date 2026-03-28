@@ -4,6 +4,23 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.10] - 2026-03-23
+
+### Added
+
+- **Charts page** – New `/charts` route with sidebar navigation entry (BarChart3 icon). Population Breakdown chart relocated here from the main dashboard.
+
+### Changed
+
+- **Old-Age Dependency Ratio moved to Healthcare** – Metric relocated from Population to Healthcare section, including category update in MongoDB, expected metrics, metric directions, server-side allowed keys, and tooltip fallback.
+- **Healthcare description updated** – Category description now lists: A&E 4-Hour Wait %, Elective Backlog, Ambulance (Cat 2), GP Appt. Access, Old-Age Dependency Ratio.
+
+### Removed
+
+- **Population section** – Removed from the dashboard categories array, expected metrics, metric directions, category descriptions, and sidebar. Data and fetchers remain in the database for future use.
+- **Staff Vacancy Rate** (`staff_vacancy_rate`) – Tile hidden from Healthcare section by removing from expected metrics, metric directions, server-side allowed keys, and category description. Data and fetcher remain intact.
+- **Reoffending Rate cron** (`server/reoffending_cron.py`) – Superseded by Recall Rate logic in `crime_data_fetcher.py`.
+
 ## [1.0.9] - 2026-03-20
 
 ### Added

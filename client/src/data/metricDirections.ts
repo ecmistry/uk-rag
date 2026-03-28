@@ -47,7 +47,7 @@ export const METRIC_DIRECTION: Record<string, MetricDirection> = {
   elective_backlog: "lower_better",
   ambulance_response_time: "lower_better",
   gp_appt_access: "higher_better",
-  staff_vacancy_rate: "lower_better",
+  old_age_dependency_ratio: "lower_better",
 
   // Defence
   sea_mass: "higher_better",
@@ -56,11 +56,6 @@ export const METRIC_DIRECTION: Record<string, MetricDirection> = {
   defence_industry_vitality: "higher_better",
   defence_spending_gdp: "higher_better",
 
-  // Population
-  natural_change: "higher_better",
-  old_age_dependency_ratio: "lower_better",
-  net_migration: "target_band",
-  healthy_life_expectancy: "higher_better",
 };
 
 const TARGET_BANDS: Record<string, TargetBand> = {

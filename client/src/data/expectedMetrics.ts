@@ -38,7 +38,7 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
     { metricKey: "elective_backlog", name: "Elective Backlog" },
     { metricKey: "ambulance_response_time", name: "Ambulance (Cat 2)" },
     { metricKey: "gp_appt_access", name: "GP Appt. Access" },
-    { metricKey: "staff_vacancy_rate", name: "Staff Vacancy Rate" },
+    { metricKey: "old_age_dependency_ratio", name: "Old-Age Dependency Ratio" },
   ],
   Defence: [
     { metricKey: "sea_mass", name: "Sea Mass" },
@@ -46,11 +46,5 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
     { metricKey: "air_mass", name: "Air Mass" },
     { metricKey: "defence_industry_vitality", name: "Defence Industry Vitality" },
     { metricKey: "defence_spending_gdp", name: "Spend as % of GDP" },
-  ],
-  Population: [
-    { metricKey: "natural_change", name: "Natural Change (Births vs Deaths)" },
-    { metricKey: "old_age_dependency_ratio", name: "Old-Age Dependency Ratio" },
-    { metricKey: "net_migration", name: "Net Migration (Long-term)" },
-    { metricKey: "healthy_life_expectancy", name: "Healthy Life Expectancy" },
   ],
 };

@@ -11,6 +11,7 @@ import { useHidePreviewBanner } from "./hooks/useHidePreviewBanner";
 
 const MetricDetail = lazy(() => import("./pages/MetricDetail"));
 const DataRefresh = lazy(() => import("./pages/DataRefresh"));
+const Charts = lazy(() => import("./pages/Charts"));
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
         <Switch>
           <Route path={"/"} component={Home} />
           <Route path={"/metric/:metricKey"} component={MetricDetail} />
+          <Route path={"/charts"} component={Charts} />
           <Route path={"/data-refresh"} component={DataRefresh} />
           <Route path={"/404"} component={NotFound} />
           <Route component={NotFound} />

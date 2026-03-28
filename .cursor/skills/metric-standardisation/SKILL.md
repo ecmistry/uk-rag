@@ -1,6 +1,6 @@
 ---
 name: metric-standardisation
-description: Standardise a dashboard metric section (Economy, Employment, Education, Crime, Healthcare, Defence, Population). Use when auditing, cleaning, or standardising metric detail pages, data, tables, charts, or tests.
+description: Standardise a dashboard metric section (Economy, Employment, Education, Crime, Healthcare, Defence). Use when auditing, cleaning, or standardising metric detail pages, data, tables, charts, or tests.
 ---
 
 # Metric Section Standardisation
@@ -102,9 +102,8 @@ git push origin main
 | Employment | `inactivity_rate`, `real_wage_growth`, `job_vacancy_ratio`, `underemployment`, `sickness_absence` |
 | Education | `attainment8`, `neet_rate`, `pupil_attendance`, `apprenticeship_intensity` |
 | Crime | `perception_of_safety`, `asb_low_level_crime`, `serious_crime`, `crown_court_backlog`, `recall_rate` |
-| Healthcare | `a_e_wait_time`, `elective_backlog`, `ambulance_response_time`, `gp_appt_access`, `staff_vacancy_rate` |
+| Healthcare | `a_e_wait_time`, `elective_backlog`, `ambulance_response_time`, `gp_appt_access`, `old_age_dependency_ratio` |
 | Defence | `sea_mass`, `land_mass`, `air_mass`, `defence_industry_vitality`, `defence_spending_gdp` |
-| Population | `natural_change`, `old_age_dependency_ratio`, `net_migration`, `healthy_life_expectancy` |
 
 ## Date format standard: canonical "YYYY QN"
 
