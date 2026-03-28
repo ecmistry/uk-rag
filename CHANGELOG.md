@@ -4,6 +4,39 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.11] - 2026-03-28
+
+### Added
+
+- **Public Sector Receipts chart** – Stacked bar chart on the Charts tab showing UK government revenue broken down by 22 ONS Appendix D categories (Income Tax, VAT, Corporation Tax, etc.), aggregated to calendar quarters. Data sourced live from ONS Public Sector Finances dataset.
+- **Public Sector Receipts fetcher** (`server/public_sector_receipts_fetcher.py`) – Python script with `--chart` mode (JSON to stdout for tRPC) and `--cron` mode (daily MongoDB upsert). Only publishes quarters with all 3 months of data.
+- **Daily cron job** (06:30 UTC) – Fetches fresh ONS Appendix D Excel daily, detects new monthly data, and upserts complete quarters into MongoDB `publicSectorReceipts` collection.
+- **tRPC endpoint** `metrics.getPublicSectorReceipts` – Public procedure with 15-minute server-side cache.
+- **Scorecard consistency tests** (`server/scorecard-consistency.test.ts`, 32 tests) – Cross-checks frontend expectedMetrics, server ALLOWED_METRIC_KEYS, metricDirections, metricTooltips, and Python fetcher categories. Catches the class of bug where a metric moves between sections but only some layers are updated.
+- **Public sector receipts tests** (`server/public-sector-receipts.test.ts`, 10 tests) – Data shape validation, mocked unit tests for error handling, and integration test against live ONS data.
+- **Log rotation** (`config/logrotate-uk-rag-portal.conf`) – Rotates all cron log files at 5MB with 4 compressed backups via `copytruncate`.
+- **Subprocess timeout** – All Python subprocess calls now have a 120s timeout (30s for local-file chart mode) to prevent hangs.
+
+### Changed
+
+- **Old-Age Dependency Ratio category** – Fixed category mismatch: Python fetcher and MongoDB record updated from `"Population"` to `"Healthcare"` so the metric is visible on the dashboard after section move.
+- **Old-Age Dependency Ratio tooltip** – Moved from `POPULATION_TOOLTIPS` into `HEALTHCARE_TOOLTIPS` (no longer needs fallback lookup).
+- **Download validation** – `download_excel()` in the receipts fetcher now validates minimum file size (10KB) and logs structured errors on ONS download failures.
+- **Chart tooltip rendering** – Switched from `.map()` with null returns to `.filter()` then `.map()` for cleaner rendering of non-zero segments.
+
+### Removed
+
+- **Legacy metric references** – Comprehensive cleanup of all stale code from removed metrics and sections:
+  - `staff_vacancy_rate`, `employment_rate`, `unemployment_rate`, `cancer_wait_time`, `recorded_crime_rate`, `charge_rate`, `persistent_absence`, `apprentice_starts`, `teacher_vacancy_rate`, `total_population` removed from DISPLAY_NAME_OVERRIDES, VALIDATION_RANGES, tooltips, source URLs, and alert rules.
+  - `personnel_strength`, `equipment_spend`, `deployability`, `equipment_readiness` removed from DISPLAY_NAME_OVERRIDES.
+  - `Population` removed from tRPC z.enum categories and refresh fetcher.
+  - `net_migration` target band removed from metricDirections.
+  - `total_population` special-case formatting removed from `formatValue.ts`.
+  - Legacy Population subtitle handlers removed from `Home.tsx`.
+  - `POPULATION_TOOLTIPS` emptied (5 tooltip entries totalling ~130 lines removed).
+  - `server/population.test.ts` deleted (tested removed Population category).
+  - Bundle size reduced from 71.9kb to 70.3kb.
+
 ## [1.0.10] - 2026-03-23
 
 ### Added
