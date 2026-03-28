@@ -314,7 +314,7 @@ def _fetch_old_age_dependency_ratio(session: requests.Session) -> Optional[Dict[
         return {
             "metric_name": "Old-Age Dependency Ratio",
             "metric_key": "old_age_dependency_ratio",
-            "category": "Population",
+            "category": "Healthcare",
             "value": round(oadr_val, 1),
             "time_period": time_period or "Latest",
             "unit": " per 1,000",
@@ -407,7 +407,7 @@ def fetch_population_metrics() -> List[Dict[str, Any]]:
         results.append({
             "metric_name": "Old-Age Dependency Ratio",
             "metric_key": "old_age_dependency_ratio",
-            "category": "Population",
+            "category": "Healthcare",
             "value": "placeholder",
             "time_period": period,
             "unit": " per 1,000",

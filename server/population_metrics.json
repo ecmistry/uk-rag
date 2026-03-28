@@ -14,7 +14,7 @@
   {
     "metric_name": "Old-Age Dependency Ratio",
     "metric_key": "old_age_dependency_ratio",
-    "category": "Population",
+    "category": "Healthcare",
     "value": "placeholder",
     "time_period": "2026",
     "unit": "%",

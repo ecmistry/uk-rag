@@ -265,7 +265,7 @@ function filterEconomyMetrics(metrics: Metric[], category?: string): Metric[] {
 }
 
 /** Employment section: only these five cards (and their detail pages). */
-const EMPLOYMENT_ALLOWED_METRIC_KEYS = new Set([
+export const EMPLOYMENT_ALLOWED_METRIC_KEYS = new Set([
   "inactivity_rate",
   "real_wage_growth",
   "job_vacancy_ratio",
@@ -281,7 +281,7 @@ function filterEmploymentMetrics(metrics: Metric[], category?: string): Metric[]
 }
 
 /** Education section: allowed cards (and their detail pages). */
-const EDUCATION_ALLOWED_METRIC_KEYS = new Set([
+export const EDUCATION_ALLOWED_METRIC_KEYS = new Set([
   "attainment8",
   "teacher_vacancy_rate",
   "neet_rate",
@@ -299,7 +299,7 @@ function filterEducationMetrics(metrics: Metric[], category?: string): Metric[] 
 }
 
 /** Crime section: only these five cards (and their detail pages). */
-const CRIME_ALLOWED_METRIC_KEYS = new Set([
+export const CRIME_ALLOWED_METRIC_KEYS = new Set([
   "street_confidence_index",
   "crown_court_backlog",
   "recall_rate",
@@ -315,7 +315,7 @@ function filterCrimeMetrics(metrics: Metric[], category?: string): Metric[] {
 }
 
 /** Healthcare section: only these five cards (and their detail pages). */
-const HEALTHCARE_ALLOWED_METRIC_KEYS = new Set([
+export const HEALTHCARE_ALLOWED_METRIC_KEYS = new Set([
   "a_e_wait_time",
   "elective_backlog",
   "ambulance_response_time",
@@ -331,7 +331,7 @@ function filterHealthcareMetrics(metrics: Metric[], category?: string): Metric[]
 }
 
 /** Defence section: allowed cards (and their detail pages). */
-const DEFENCE_ALLOWED_METRIC_KEYS = new Set([
+export const DEFENCE_ALLOWED_METRIC_KEYS = new Set([
   "defence_spending_gdp",
   "personnel_strength",
   "equipment_spend",
