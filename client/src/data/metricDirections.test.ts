@@ -64,7 +64,7 @@ describe("getTrendSentiment", () => {
     });
 
     it("returns neutral for metric with no target band entry", () => {
-      expect(getTrendSentiment("net_migration", 350, 500)).toBe("neutral");
+      expect(getTrendSentiment("unknown_target_metric", 350, 500)).toBe("neutral");
     });
   });
 

@@ -21,10 +21,6 @@ describe("formatValue", () => {
     expect(formatValue("crown_court_backlog", "86.3")).toBe("86.3");
   });
 
-  it("formats total_population in millions", () => {
-    expect(formatValue("total_population", "69487000")).toBe("69.5m");
-  });
-
   it("returns raw value for non-numeric input", () => {
     expect(formatValue("some_metric", "N/A")).toBe("N/A");
     expect(formatValue("some_metric", "placeholder")).toBe("placeholder");

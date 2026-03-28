@@ -14,7 +14,7 @@ import {
   upsertMetric,
   addMetricHistory,
 } from "./db";
-import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchPopulationMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
+import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 import { cache } from "./cache";
 
@@ -27,20 +27,25 @@ function csvEscape(field: unknown): string {
 const SKIP_METRIC_KEYS = new Set(["perception_of_safety", "recorded_crime_rate", "charge_rate"]);
 
 const VALIDATION_RANGES: Record<string, [number, number]> = {
+  // Economy
   real_gdp_growth: [-30, 30], cpi_inflation: [-5, 30], output_per_hour: [-20, 20],
   public_sector_net_debt: [0, 300], business_investment: [-50, 50],
+  // Employment
   inactivity_rate: [0, 100], real_wage_growth: [-30, 30], job_vacancy_ratio: [0, 10],
-  underemployment: [0, 100], attainment8: [0, 100], persistent_absence: [0, 100],
-  apprentice_starts: [0, 5_000_000], pupil_attendance: [0, 100],
-  street_confidence_index: [0, 100],
-  crown_court_backlog: [0, 500], recall_rate: [0, 100],
+  underemployment: [0, 100], sickness_absence: [0, 100],
+  // Education
+  attainment8: [0, 100], neet_rate: [0, 100], pupil_attendance: [0, 100],
+  apprenticeship_intensity: [0, 100],
+  // Crime
+  street_confidence_index: [0, 100], crown_court_backlog: [0, 500], recall_rate: [0, 100],
   asb_low_level_crime: [0, 10_000], serious_crime: [0, 10_000],
-  a_e_wait_time: [0, 100], cancer_wait_time: [0, 365], ambulance_response_time: [0, 120],
-  nhs_vacancy_rate: [0, 100], sickness_absence: [0, 100],
-  defence_spending_gdp: [0, 20], equipment_plan_risk: [0, 100],
-  recruitment_gap: [-100, 100], morale_index: [0, 100], defence_industry_vitality: [0, 200],
-  total_population: [50_000_000, 100_000_000], net_migration: [-2_000_000, 5_000_000],
-  dependency_ratio: [0, 200], urbanisation_rate: [0, 100], population_density: [0, 2000],
+  // Healthcare
+  a_e_wait_time: [0, 100], ambulance_response_time: [0, 120],
+  elective_backlog: [0, 20_000_000], gp_appt_access: [0, 100],
+  old_age_dependency_ratio: [0, 1000],
+  // Defence
+  defence_spending_gdp: [0, 20], defence_industry_vitality: [0, 200],
+  sea_mass: [0, 100], land_mass: [0, 100], air_mass: [0, 100],
 };
 
 function validateMetricValue(m: MetricData): { valid: boolean; warning?: string } {
@@ -87,7 +92,7 @@ export const appRouter = router({
      */
     list: publicProcedure
       .input(z.object({
-        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population', 'All']).optional(),
+        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'All']).optional(),
       }).optional())
       .query(async ({ input }) => {
         const category = input?.category;
@@ -171,7 +176,7 @@ export const appRouter = router({
      */
     refresh: adminProcedure
       .input(z.object({
-        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population', 'All']).optional().default('All'),
+        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'All']).optional().default('All'),
       }))
       .mutation(async ({ input }) => {
         const results: MetricData[] = [];
@@ -192,8 +197,6 @@ export const appRouter = router({
           fetchers.push({ category: 'Healthcare', fn: () => fetchHealthcareMetrics(true) });
         if (input.category === 'Defence' || input.category === 'All')
           fetchers.push({ category: 'Defence', fn: () => fetchDefenceMetrics() });
-        if (input.category === 'Population' || input.category === 'All')
-          fetchers.push({ category: 'Population', fn: () => fetchPopulationMetrics() });
 
         const fetchResults = await Promise.allSettled(fetchers.map(f => f.fn()));
 
@@ -239,8 +242,8 @@ export const appRouter = router({
         );
 
         const EMPLOYMENT_RAG_KEYS = new Set(['inactivity_rate', 'real_wage_growth', 'job_vacancy_ratio', 'underemployment']);
-        const PCT_KEYS = new Set(['cpi_inflation', 'real_gdp_growth', 'output_per_hour', 'defence_spending_gdp', 'public_sector_net_debt', 'business_investment', 'persistent_absence', 'a_e_wait_time']);
-        const UNIT_MAP: Record<string, string> = { attainment8: 'Score', apprentice_starts: '', cancer_wait_time: ' days', ambulance_response_time: ' minutes' };
+        const PCT_KEYS = new Set(['cpi_inflation', 'real_gdp_growth', 'output_per_hour', 'defence_spending_gdp', 'public_sector_net_debt', 'business_investment', 'a_e_wait_time']);
+        const UNIT_MAP: Record<string, string> = { attainment8: 'Score', ambulance_response_time: ' minutes' };
 
         const upsertPromises: Promise<void>[] = [];
         const historyPromises: Promise<void>[] = [];

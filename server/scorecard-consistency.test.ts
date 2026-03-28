@@ -230,6 +230,8 @@ describe("Scorecard consistency: Python fetcher categories", () => {
     crown_court_backlog: "Crime",
     recall_rate: "Crime",
     street_confidence_index: "Crime",
+    asb_low_level_crime: "Crime",
+    serious_crime: "Crime",
     // Healthcare
     a_e_wait_time: "Healthcare",
     ambulance_response_time: "Healthcare",

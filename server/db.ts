@@ -190,27 +190,23 @@ export async function upsertMetric(metric: InsertMetric): Promise<void> {
  * Applied when returning metrics; DB/fetchers unchanged until Phase 4.
  */
 const DISPLAY_NAME_OVERRIDES: Partial<Record<string, string>> = {
+  // Economy
+  real_gdp_growth: "Real GDP Growth",
+  // Crime
+  street_confidence_index: "Perception of Safety",
+  asb_low_level_crime: "Anti-Social Behaviour and Low Level Crime per capita",
+  serious_crime: "Serious Crime per capita",
+  crown_court_backlog: "Crown Court Backlog per 100k",
+  recall_rate: "Recall Rate",
+  // Healthcare
   a_e_wait_time: "A&E 4-Hour Wait %",
   ambulance_response_time: "Ambulance (Cat 2)",
   elective_backlog: "Elective Backlog",
   gp_appt_access: "GP Appt. Access",
-  staff_vacancy_rate: "Staff Vacancy Rate",
-  street_confidence_index: "Perception of Safety",
-  asb_low_level_crime: "Anti-Social Behaviour and Low Level Crime per capita",
-  serious_crime: "Serious Crime per capita",
-
-  crown_court_backlog: "Crown Court Backlog per 100k",
-  recall_rate: "Recall Rate",
-  teacher_vacancy_rate: "Teacher Vacancies",
+  // Education
   neet_rate: "NEET Rate (16-24)",
+  // Defence
   defence_spending_gdp: "Spend as % of GDP",
-  personnel_strength: "Trained Strength",
-  equipment_spend: "Equipment Spend",
-  deployability: "Deployability %",
-  equipment_readiness: "Force Readiness",
-  real_gdp_growth: "Real GDP Growth",
-  persistent_absence: "Persistent Absence",
-  apprentice_starts: "Apprentice Starts",
 };
 
 function applyDisplayNameOverrides(m: Metric): Metric {
@@ -220,9 +216,7 @@ function applyDisplayNameOverrides(m: Metric): Metric {
 
 /** Output per hour is % change per annum; normalize legacy "Index" unit to "%". */
 function normalizeOutputPerHourUnit(m: Metric): Metric {
-  const isOutputPerHour =
-    m.metricKey === "output_per_hour" || m.metricKey === "productivity";
-  if (isOutputPerHour && m.unit === "Index") {
+  if (m.metricKey === "output_per_hour" && m.unit === "Index") {
     return { ...m, unit: "%" };
   }
   return m;

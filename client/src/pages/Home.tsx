@@ -27,8 +27,6 @@ function formatCardTitle(name: string) {
   if (out.includes(" (16-24)")) out = out.replace(" (16-24)", "\n(16-24)");
   if (out.includes(" (% of GDP)")) out = out.replace(" (% of GDP)", "\n(% of GDP)");
   if (out.includes(" (Cat 2)")) out = out.replace(" (Cat 2)", "\n(Cat 2)");
-  if (out.includes(" (Births vs Deaths)")) out = out.replace(" (Births vs Deaths)", "\n(Births vs Deaths)");
-  if (out.includes(" (Long-term)")) out = out.replace(" (Long-term)", "\n(Long-term)");
   return out;
 }
 

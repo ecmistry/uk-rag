@@ -542,6 +542,38 @@ export function getCrimeTooltip(metricKey: string): string | undefined {
   return CRIME_TOOLTIPS[metricKey];
 }
 
+const OLD_AGE_DEPENDENCY_RATIO_TOOLTIP = `Think of this as the "Shoulder Burden" metric. It measures how many retired people each group of working-age people must financially support. Expressed as the number of people aged 65 and over per 1,000 people of working age (16–64), it answers a brutally simple question: how many shoulders are carrying the load? If the ratio is 278, it means there are 278 retirees for every 1,000 workers—roughly one pensioner for every 3.6 workers. In the 1970s, there were five workers for every retiree. By 2050, projections suggest there could be fewer than 2.5. This is not a distant abstraction—it determines how much of your pay packet goes to taxes that fund state pensions, the NHS, and social care for the elderly. It is the single most important metric for understanding the long-term sustainability of the welfare state.
+
+How it is Calculated
+
+The ONS calculates the Old-Age Dependency Ratio (OADR) from mid-year population estimates and national population projections. The formula is: (Population aged 65 and over ÷ Population aged 16 to 64) × 1,000. This uses the same data sources as the mid-year population estimates—updated annually from Census base counts using births, deaths, and migration data through the cohort component method. The ONS also publishes projections under multiple scenarios (principal projection, high-migration variant, low-migration variant) to show how the ratio changes under different assumptions about fertility, mortality, and migration. The ratio is published for the UK as a whole and broken down by country (England, Scotland, Wales, Northern Ireland) and by local authority. The state pension age is a critical companion variable—as the pension age rises (currently 66, rising to 67 by 2028 and potentially 68 thereafter), the denominator changes, which mechanically lowers the ratio even if the underlying demographics have not improved.
+
+Real Impact on the Person on the Street
+
+This ratio directly determines the financial pressure on every working person in the country:
+
+1. The Tax Squeeze
+
+State pensions are not funded from a savings pot—they are paid from current taxation under a "pay as you go" system. When the ratio rises, fewer workers are paying the taxes that fund more pensioners' retirement income. The state pension currently costs over £130 billion per year and is protected by the "triple lock" (rising each year by the highest of inflation, average earnings growth, or 2.5%). As the ratio worsens, the government faces an impossible trilemma: raise taxes on workers, cut pension entitlements for retirees, or borrow more. The Office for Budget Responsibility has identified the ageing population as the single largest long-term fiscal risk, projecting that age-related spending (pensions, health, social care) will consume an ever-growing share of GDP.
+
+2. The NHS and Social Care Crunch
+
+People aged 65 and over account for approximately 40% of NHS hospital spending despite being roughly 19% of the population. As the ratio rises, demand for healthcare—hip replacements, cataract surgery, cancer treatment, dementia care—increases faster than the tax base that funds it. Social care is even more strained: over 1.5 million older people in England have unmet care needs, and the social care workforce has a vacancy rate above 8%. A rising dependency ratio means more people needing care, fewer working-age people to provide it, and less tax revenue to pay for it.
+
+3. The Intergenerational Contract
+
+The dependency ratio is ultimately a measure of intergenerational fairness. Today's workers fund today's pensioners on the implicit promise that future workers will fund their retirement in turn. When the ratio deteriorates, each successive generation of workers bears a heavier burden. Younger generations already face higher housing costs, larger student debts, and lower rates of home ownership than their parents. Adding significantly higher taxes to fund a growing elderly population risks a breakdown in the social contract between generations—a political and social tension that is already visible in debates about the triple lock, inheritance tax, and intergenerational wealth transfer.
+
+Why the RAG Thresholds were chosen
+
+The thresholds are based on the levels at which the dependency ratio remains manageable, becomes strained, or creates unsustainable fiscal pressure, informed by ONS projections and OBR fiscal sustainability analysis.
+
+🟢 Green (Below 300 per 1,000): This is the "Sustainable Balance" zone. At this level, there are more than 3.3 workers per retiree. The tax base is broad enough to fund pensions, healthcare, and social care without imposing excessive burdens on workers. The UK currently sits just within this zone at approximately 278 per 1,000, but the trajectory is upward.
+
+🟡 Amber (300 – 350 per 1,000): This is the "Growing Pressure" zone. At this level, there are between 2.9 and 3.3 workers per retiree. The fiscal burden on working-age people is noticeably higher. Governments are forced into difficult trade-offs: raising the pension age, means-testing benefits, or increasing National Insurance contributions. Public services for the elderly begin to show visible strain.
+
+🔴 Red (Above 350 per 1,000): This is the "Fiscal Crisis" zone. At this level, there are fewer than 2.9 workers per retiree. The tax base cannot sustainably fund existing commitments to pensions, health, and social care without either radical reforms or significant borrowing. ONS projections suggest the UK could approach this level by the 2040s under some scenarios, particularly if net migration falls significantly. Countries like Japan, which already have ratios above 500, provide a warning of what this looks like in practice: a society where the working population is visibly overwhelmed by the cost of supporting the elderly.`;
+
 /** Healthcare section: metricKey -> tooltip text */
 export const HEALTHCARE_TOOLTIPS: Record<string, string> = {
   a_e_wait_time: `Think of this as the "NHS Front Door" metric. It measures the percentage of patients who arrive at an Accident & Emergency department and are admitted to a ward, transferred, or discharged within 4 hours. If the figure is 75%, it means that one in four patients waited longer than 4 hours—some for 8, 10, or even 12+ hours. This single number is widely regarded as the best overall indicator of how well the entire NHS is functioning, because A&E performance is not just about the emergency department itself. When hospital wards are full, patients cannot be admitted from A&E. When social care is overwhelmed, patients who are medically fit cannot be discharged. The bottleneck backs up through the entire system and manifests as queues in A&E. When this metric is red, it means the NHS is in crisis.
@@ -668,41 +700,11 @@ The thresholds are based on the NHS's stated ambition for primary care access an
 🟡 Amber (55% – 70%): This is the "Access Gap" zone. The UK currently sits in this bracket. While the majority of appointments happen within 14 days, a substantial minority of patients—particularly those with non-urgent but important conditions—face unacceptable waits. The "8am scramble" is the daily norm, patient satisfaction is declining, and the overflow into A&E is measurable. The system is coping but not delivering the access that patients expect and need.
 
 🔴 Red (Below 55%): This is the "Primary Care Collapse" zone. At this level, nearly half of appointments are booked more than two weeks out. Patients routinely give up trying to access their GP, conditions deteriorate without oversight, and A&E becomes the de facto primary care provider for a significant proportion of the population. This level would indicate a fundamental breakdown in the GP workforce, capacity, or both.`,
-  staff_vacancy_rate: `Think of this as the "Workforce Hole" metric. It measures the percentage of funded NHS positions that are currently unfilled—posts that the NHS has the budget to fill but cannot recruit anyone into. If the vacancy rate is 7%, it means that for every 100 positions the NHS needs, 7 are empty. With a workforce of 1.37 million, that translates to approximately 100,000 unfilled posts across England. These are not hypothetical positions; they are real gaps on real wards, in real clinics, and in real ambulance stations. Every vacancy means the remaining staff have to work harder, patients receive less attention, and the risk of errors rises.
-
-How it is Calculated
-
-NHS England Digital publishes quarterly NHS Vacancy Statistics using data from every NHS trust in England. Each trust reports its "funded establishment"—the total number of full-time equivalent (FTE) positions it has budget approval for—and the number of those positions that are currently vacant and being actively recruited to. The vacancy rate is then: (vacant FTE posts ÷ total funded establishment) × 100. Data is broken down by staff group (nursing and midwifery, medical, allied health professionals, ambulance, administrative, scientific and technical, etc.), by trust, by region, and by specialty. A "vacancy" specifically means a funded post that the trust is trying to fill; it does not include posts that have been deliberately frozen or removed from the establishment.
-
-Real Impact on the Person on the Street
-
-NHS vacancies are not a human resources problem—they directly determine the quality and safety of the care you receive:
-
-1. The "Doing More With Less" Burnout Spiral
-
-When a ward has 20 funded nursing posts but only 17 are filled, the 17 remaining nurses must cover the work of 20. Shifts become longer, breaks are skipped, patient observations are delayed, and the cumulative exhaustion leads to clinical errors—wrong medication doses, missed deterioration signs, falls that could have been prevented. Research consistently links higher nurse vacancy rates to increased patient mortality, longer hospital stays, and higher rates of hospital-acquired infections. The nurses who remain become burned out, which drives more of them to leave, deepening the vacancy problem in a vicious cycle.
-
-2. The £10 Billion Agency Bill
-
-When permanent staff cannot be recruited, trusts turn to agency and bank (temporary) staff to fill the gaps. Agency nurses and doctors cost significantly more per shift than permanent staff—sometimes two or three times as much—and they are less familiar with local protocols, systems, and patients. The NHS has spent billions on agency staff in recent years. The government has targeted a 40% reduction in agency spending by 2026, but achieving this without filling underlying vacancies would simply mean more unfilled shifts and less care.
-
-3. The Specialty Desert
-
-Vacancy rates are not evenly distributed. Mental health nursing, learning disability services, community nursing, and certain medical specialties (psychiatry, emergency medicine, radiology) have persistently higher vacancies than average. This creates "specialty deserts" where entire services are understaffed, leading to longer waits, reduced opening hours, or services being withdrawn from certain areas altogether. If your local trust cannot recruit a dermatologist or a paediatric consultant, you face a longer journey to a different hospital—or a longer wait for a telephone consultation from an overstretched clinician elsewhere.
-
-Why the RAG Thresholds were chosen
-
-The thresholds are based on the vacancy levels at which the NHS can safely staff its services and the point at which patient care begins to be systematically compromised.
-
-🟢 Green (Below 5%): This is the "Healthy Workforce" zone. A vacancy rate below 5% is considered operationally manageable—trusts can cover short-term gaps through internal bank staff without relying heavily on expensive agencies, and the workload on permanent staff remains sustainable. Pre-2018 vacancy rates were in this range, and the best-staffed comparable healthcare systems (Germany, Scandinavia) maintain rates below 5%.
-
-🟡 Amber (5% – 8%): This is the "Workforce Strain" zone. The NHS currently sits in this bracket at approximately 6.7%, down from 7.4% the previous year. At this level, trusts are managing but relying significantly on temporary staff, staff workload is above sustainable levels, and specific specialties and regions face acute shortages. Patient care is being delivered, but the margin for error is thin and staff wellbeing is under pressure.
-
-🔴 Red (Above 8%): This is the "Staffing Crisis" zone. At this level, the NHS cannot safely staff a significant proportion of its services with permanent employees. Agency dependency soars, costs spiral, and patient safety incidents increase. Entire services may need to be temporarily closed or consolidated. At the peak of the post-pandemic workforce crisis, overall vacancy rates exceeded 9%, with nursing vacancies above 11% and some trusts reporting specialty vacancy rates above 20%.`,
+  old_age_dependency_ratio: OLD_AGE_DEPENDENCY_RATIO_TOOLTIP,
 };
 
 export function getHealthcareTooltip(metricKey: string): string | undefined {
-  return HEALTHCARE_TOOLTIPS[metricKey] ?? POPULATION_TOOLTIPS[metricKey];
+  return HEALTHCARE_TOOLTIPS[metricKey];
 }
 
 /** Defence section: metricKey -> tooltip text */
@@ -916,138 +918,8 @@ export function getDefenceTooltip(metricKey: string): string | undefined {
   return DEFENCE_TOOLTIPS[metricKey];
 }
 
-/** Population section: metricKey -> tooltip text */
-export const POPULATION_TOOLTIPS: Record<string, string> = {
-  natural_change: `Think of this as the "Demographic Pulse." It measures the difference between the number of babies born and the number of people who die in the UK each year—the most fundamental indicator of whether a population is sustaining itself or slowly fading. If the figure is +27,200, it means 27,200 more people were born than died. If it turns negative, the population is shrinking from within, regardless of migration. This metric strips away the political noise around immigration and asks the simplest possible question: is the country producing enough children to replace the people who die? For most of the post-war period, the answer was comfortably yes. Today, the answer is barely—and the trajectory is heading towards no.
-
-How it is Calculated
-
-The ONS calculates Natural Change from civil registration data—every birth and death in the UK must be legally registered. The formula is straightforward: Natural Change = Live Births − Deaths. Data is drawn from the ONS Vital Statistics series (VVHM) and published in the mid-year population estimates. For the year to mid-2024, there were approximately 662,100 births and 645,900 deaths in the UK, producing a natural change of just +16,200—a vanishingly small positive figure for a population of 69 million. The Total Fertility Rate (TFR) for England and Wales fell to 1.41 children per woman in 2024, the lowest on record for the third consecutive year and far below the 2.1 "replacement level" needed to maintain a stable population without migration. The TFR has been in continuous decline since 2010. Meanwhile, the number of deaths is rising as the large post-war baby-boom generation ages. The collision of falling births and rising deaths is steadily compressing natural change towards zero.
-
-Real Impact on the Person on the Street
-
-Natural change might sound like an abstract demographic statistic, but it shapes the country you live in:
-
-1. The Vanishing Community
-
-When natural change turns negative in a local area—when more people die than are born—the effects are tangible and irreversible without intervention. Schools close because there are not enough children to fill them. GP surgeries and maternity units are consolidated or shut. Shops, pubs, and post offices lose customers and close. The local tax base shrinks, meaning fewer resources for roads, parks, and libraries. Several regions and local authorities in the UK already experience natural decrease, and the trend is spreading. For communities in rural and coastal areas, negative natural change accelerates a spiral of decline that is extremely difficult to reverse.
-
-2. The Workforce Pipeline
-
-Every baby born today is a future worker, taxpayer, soldier, nurse, or engineer in 20 years' time. When the birth rate falls persistently below replacement, the pipeline of young people entering the labour force narrows. This creates a structural dependency on immigration to fill essential roles—from NHS staff to care workers to construction labourers. If immigration is also restricted, the result is labour shortages, wage inflation in some sectors, and an economy that cannot grow because there are simply not enough people to do the work.
-
-3. The Fiscal Time Bomb
-
-Natural change is directly linked to the old-age dependency ratio. When births fall and life expectancy remains high, the ratio of working-age people to retirees deteriorates. Fewer workers must fund the pensions, healthcare, and social care of a growing elderly population through taxation. The Office for Budget Responsibility has identified this demographic shift as one of the most significant long-term fiscal risks facing the UK. A sustained period of negative natural change would intensify this pressure dramatically, requiring either significant tax rises, benefit cuts, or a fundamental redesign of the welfare state.
-
-Why the RAG Thresholds were chosen
-
-The thresholds are based on the demographic reality that positive natural change indicates a self-sustaining population, while negative natural change signals structural decline.
-
-🟢 Green (Positive — above zero): This indicates that births exceed deaths—the population is at least partially sustaining itself through natural reproduction. The UK currently sits just in this zone, but only barely. A positive natural change, even a small one, provides a demographic buffer and reduces total dependence on migration for population maintenance.
-
-🟡 Amber (At or near zero): This is the "Demographic Stall" zone. When natural change hovers around zero, the population has effectively stopped reproducing itself. Any small fluctuation—a bad flu season, a further dip in fertility—can tip the balance into natural decrease. The country is entirely dependent on net migration for any population growth. Planning for public services becomes more difficult because the underlying population trajectory is uncertain.
-
-🔴 Red (Negative — below zero): This is the "Population Decline" zone. More people are dying than being born. Without significant net migration, the population shrinks. Communities hollow out, the workforce contracts, and the fiscal burden on remaining workers intensifies. Several European countries (Italy, Greece, Japan) have been in this zone for years, and the consequences—depopulating villages, strained pension systems, economic stagnation—are well documented.`,
-  old_age_dependency_ratio: `Think of this as the "Shoulder Burden" metric. It measures how many retired people each group of working-age people must financially support. Expressed as the number of people aged 65 and over per 1,000 people of working age (16–64), it answers a brutally simple question: how many shoulders are carrying the load? If the ratio is 278, it means there are 278 retirees for every 1,000 workers—roughly one pensioner for every 3.6 workers. In the 1970s, there were five workers for every retiree. By 2050, projections suggest there could be fewer than 2.5. This is not a distant abstraction—it determines how much of your pay packet goes to taxes that fund state pensions, the NHS, and social care for the elderly. It is the single most important metric for understanding the long-term sustainability of the welfare state.
-
-How it is Calculated
-
-The ONS calculates the Old-Age Dependency Ratio (OADR) from mid-year population estimates and national population projections. The formula is: (Population aged 65 and over ÷ Population aged 16 to 64) × 1,000. This uses the same data sources as the mid-year population estimates—updated annually from Census base counts using births, deaths, and migration data through the cohort component method. The ONS also publishes projections under multiple scenarios (principal projection, high-migration variant, low-migration variant) to show how the ratio changes under different assumptions about fertility, mortality, and migration. The ratio is published for the UK as a whole and broken down by country (England, Scotland, Wales, Northern Ireland) and by local authority. The state pension age is a critical companion variable—as the pension age rises (currently 66, rising to 67 by 2028 and potentially 68 thereafter), the denominator changes, which mechanically lowers the ratio even if the underlying demographics have not improved.
-
-Real Impact on the Person on the Street
-
-This ratio directly determines the financial pressure on every working person in the country:
-
-1. The Tax Squeeze
-
-State pensions are not funded from a savings pot—they are paid from current taxation under a "pay as you go" system. When the ratio rises, fewer workers are paying the taxes that fund more pensioners' retirement income. The state pension currently costs over £130 billion per year and is protected by the "triple lock" (rising each year by the highest of inflation, average earnings growth, or 2.5%). As the ratio worsens, the government faces an impossible trilemma: raise taxes on workers, cut pension entitlements for retirees, or borrow more. The Office for Budget Responsibility has identified the ageing population as the single largest long-term fiscal risk, projecting that age-related spending (pensions, health, social care) will consume an ever-growing share of GDP.
-
-2. The NHS and Social Care Crunch
-
-People aged 65 and over account for approximately 40% of NHS hospital spending despite being roughly 19% of the population. As the ratio rises, demand for healthcare—hip replacements, cataract surgery, cancer treatment, dementia care—increases faster than the tax base that funds it. Social care is even more strained: over 1.5 million older people in England have unmet care needs, and the social care workforce has a vacancy rate above 8%. A rising dependency ratio means more people needing care, fewer working-age people to provide it, and less tax revenue to pay for it.
-
-3. The Intergenerational Contract
-
-The dependency ratio is ultimately a measure of intergenerational fairness. Today's workers fund today's pensioners on the implicit promise that future workers will fund their retirement in turn. When the ratio deteriorates, each successive generation of workers bears a heavier burden. Younger generations already face higher housing costs, larger student debts, and lower rates of home ownership than their parents. Adding significantly higher taxes to fund a growing elderly population risks a breakdown in the social contract between generations—a political and social tension that is already visible in debates about the triple lock, inheritance tax, and intergenerational wealth transfer.
-
-Why the RAG Thresholds were chosen
-
-The thresholds are based on the levels at which the dependency ratio remains manageable, becomes strained, or creates unsustainable fiscal pressure, informed by ONS projections and OBR fiscal sustainability analysis.
-
-🟢 Green (Below 300 per 1,000): This is the "Sustainable Balance" zone. At this level, there are more than 3.3 workers per retiree. The tax base is broad enough to fund pensions, healthcare, and social care without imposing excessive burdens on workers. The UK currently sits just within this zone at approximately 278 per 1,000, but the trajectory is upward.
-
-🟡 Amber (300 – 350 per 1,000): This is the "Growing Pressure" zone. At this level, there are between 2.9 and 3.3 workers per retiree. The fiscal burden on working-age people is noticeably higher. Governments are forced into difficult trade-offs: raising the pension age, means-testing benefits, or increasing National Insurance contributions. Public services for the elderly begin to show visible strain.
-
-🔴 Red (Above 350 per 1,000): This is the "Fiscal Crisis" zone. At this level, there are fewer than 2.9 workers per retiree. The tax base cannot sustainably fund existing commitments to pensions, health, and social care without either radical reforms or significant borrowing. ONS projections suggest the UK could approach this level by the 2040s under some scenarios, particularly if net migration falls significantly. Countries like Japan, which already have ratios above 500, provide a warning of what this looks like in practice: a society where the working population is visibly overwhelmed by the cost of supporting the elderly.`,
-  net_migration: `Think of this as the "Population Tap." It measures the difference between the number of people moving to the UK for the long term (12 months or more) and the number leaving—the single largest driver of UK population change in the 21st century. If the figure is +204,000, it means 204,000 more people arrived than left. Unlike natural change, which moves slowly over decades, net migration can shift dramatically from year to year in response to policy changes, global crises, and economic conditions. It swung from approximately 150,000 in 2012 to over 860,000 in the year ending December 2023, then fell back to 204,000 by mid-2025. No other demographic variable has the power to reshape the size, age structure, and skill mix of the population so rapidly. It is simultaneously the most economically significant and the most politically contested statistic in the UK.
-
-How it is Calculated
-
-The ONS calculates Long-Term International Migration (LTIM) net migration primarily from administrative data sources—Home Office visa records, the Department for Work and Pensions National Insurance number registrations, and NHS GP registration data—supplemented by the International Passenger Survey where gaps remain. The formula is: Net Migration = Immigration − Emigration, where both terms count only people intending to stay or leave for 12 months or more. For the year ending June 2025, total immigration was approximately 898,000 and total emigration was approximately 693,000, giving a net figure of 204,000. The ONS breaks the data down by nationality group (British, EU, non-EU), reason for migration (work, study, family, humanitarian), and country of origin. Methodology has changed significantly in recent years—the ONS moved from survey-based to administrative-data-based estimation after the 2021 Census revealed the International Passenger Survey had been undercounting both immigration and emigration. This means historical comparisons must be made with caution, as the improved methodology has revised some past figures substantially.
-
-Real Impact on the Person on the Street
-
-Net migration is not an abstract number—it shapes the country you live in, the services you use, and the economy you work in:
-
-1. The Workforce Engine
-
-The UK economy depends heavily on migrant labour to fill roles that the domestic population cannot or will not fill. The NHS employs over 200,000 staff who trained overseas—roughly one in six of its workforce. Social care relies on migrant workers for approximately 30% of its staff. Construction, hospitality, agriculture, and logistics all have significant dependence on international labour. When net migration falls sharply, these sectors face acute staffages that cannot be filled quickly from domestic sources, because training a doctor takes a decade and retraining a workforce takes years. The sharp fall from 860,000 to 204,000 in just 18 months is already creating visible pressures in care homes and seasonal agriculture.
-
-2. The Housing and Infrastructure Squeeze
-
-Every additional person needs somewhere to live, a GP, a school place, and transport. When net migration is high, demand for housing—already in chronic undersupply—intensifies. The UK has consistently built fewer than 250,000 homes per year against a need estimated at 300,000–380,000. High net migration accelerates the shortfall, pushing up rents and house prices, particularly in London and the South East. GP patient lists grow, school class sizes increase, and transport networks become more congested. The infrastructure was not built for the population the UK now has, let alone the one it is gaining.
-
-3. The Fiscal and Cultural Balance
-
-The fiscal impact of migration is hotly debated but well studied. Working-age migrants—particularly those in skilled employment—are net fiscal contributors, paying more in taxes than they consume in public services. However, the fiscal balance depends heavily on the age, skill level, and employment status of migrants. Large numbers of dependants, students who do not enter the workforce, or migrants who work in low-wage sectors contribute less. Beyond economics, rapid population change in local areas can strain social cohesion, particularly when housing, school places, and GP appointments are already scarce. Managing migration at a level that maximises economic benefit while maintaining public consent and infrastructure capacity is one of the most difficult policy challenges any government faces.
-
-Why the RAG Thresholds were chosen
-
-The thresholds are based on the range within which net migration provides economic benefit without overwhelming infrastructure and public services, informed by ONS data, OBR fiscal analysis, and the government's own stated policy ambitions.
-
-🟢 Green (0 – 300,000): This is the "Managed Migration" zone. At this level, net migration supplements the domestic workforce, helps offset the ageing population, and is broadly absorbable by housing and public service infrastructure—provided investment keeps pace. The UK currently sits in this zone at approximately 204,000 following significant policy tightening on dependant visas and student routes.
-
-🟡 Amber (300,000 – 500,000): This is the "Pressure Building" zone. At this level, net migration is generating significant additional demand for housing, healthcare, and school places that infrastructure investment is struggling to match. The economic benefits remain substantial, but public concern about pace of change and service pressure is elevated. Governments in this zone face growing political pressure to tighten controls.
-
-🔴 Red (Above 500,000): This is the "Unsustainable Pace" zone. The UK experienced net migration above this level in 2022–2024, driven by post-pandemic recovery, the Ukraine and Hong Kong humanitarian schemes, and a surge in student and health-worker visas. At this level, housing demand far outstrips supply, GP and school capacity is overwhelmed in high-immigration areas, and the pace of population change exceeds the capacity of local communities and infrastructure to adapt. The sharp policy corrections that followed demonstrate that this level is not politically or practically sustainable over the medium term.`,
-  healthy_life_expectancy: `Think of this as the "Quality Years Clock." It measures the average number of years a person born today can expect to live in "good" or "very good" health—not just alive, but genuinely well. If the figure is 61.7 years, it means the average person will enjoy roughly 62 years of good health before chronic illness, disability, or frailty takes hold, even though they may live to 80 or beyond. The gap between healthy life expectancy and total life expectancy—currently around 17–19 years—represents the years spent in poor health: years of pain, dependency, restricted mobility, and declining quality of life. This metric matters more than life expectancy alone because living longer is only a success if those extra years are healthy ones. The UK has been adding years of life but not years of health, and this gap is widening—particularly for women and for people living in the most deprived communities.
-
-How it is Calculated
-
-The ONS calculates Healthy Life Expectancy (HLE) using the Sullivan method, which combines two data sources. First, period life tables—derived from registered death data—provide the probability of surviving from one age to the next. Second, health prevalence data from the Annual Population Survey (APS) provides the proportion of people at each age who report their general health as "very good" or "good" (as opposed to "fair," "bad," or "very bad"). By multiplying the person-years lived at each age by the proportion in good health, the Sullivan method partitions total life expectancy into years in good health and years in poor health. HLE is published for males and females separately, at birth and at age 65, and broken down by UK country, English region, and local authority. For 2022–2024, UK male HLE at birth was 60.7 years and female HLE was 60.9 years—both the lowest since the series began in 2011–2013, and representing declines of 1.8 and 2.5 years respectively compared with the pre-pandemic period.
-
-Real Impact on the Person on the Street
-
-Healthy Life Expectancy affects your life more directly and personally than almost any other metric on this dashboard:
-
-1. The "Years in Misery" Gap
-
-The difference between total life expectancy (~80 years) and healthy life expectancy (~61 years) represents roughly 17–19 years that the average person will spend in poor health. These are years of chronic pain, limited mobility, heart disease, diabetes, respiratory conditions, arthritis, or cognitive decline. For many people, they are years of dependency—on family carers, on the NHS, on social care services that are chronically underfunded and overstretched. The gap is not distributed equally: men in the most deprived areas of England spend only 70% of their lives in good health, compared with 85% in the least deprived areas. For women in deprived areas, the figure is just 65%. The postcode you are born in can determine whether you get 20 years of healthy retirement or 20 years of illness.
-
-2. The Working-Life Squeeze
-
-The state pension age is 66 and rising to 67 by 2028, with further increases to 68 under consideration. If healthy life expectancy is 61 years, millions of people are being asked to work for five or more years after their health has deteriorated significantly. This creates a cruel gap: too ill to work effectively but too young to retire. Employers face higher sickness absence, reduced productivity, and the human cost of people struggling to do physically or mentally demanding jobs when their bodies are failing. The economy loses output, the benefits system picks up the cost of incapacity, and individuals lose the retirement years they had hoped to enjoy in good health.
-
-3. The NHS and Social Care Avalanche
-
-Every year of poor health generates demand for NHS services—GP appointments, hospital admissions, prescriptions, physiotherapy, mental health support—and for social care services like home visits, residential care, and supported living. When HLE falls while total life expectancy stays roughly flat, the number of years per person requiring intensive health and care support increases. Multiply that by a population of 69 million and an ageing demographic, and the result is a tidal wave of demand that the NHS and social care system are visibly failing to meet. The 7.5-million-strong NHS waiting list, the crisis in adult social care funding, and the collapse of dentistry in many areas are all symptoms of a population that is living longer but not living healthier.
-
-Why the RAG Thresholds were chosen
-
-The thresholds are based on the levels at which healthy life expectancy supports a functioning economy and welfare state, informed by ONS historical data, international comparisons, and the relationship between HLE and the state pension age.
-
-🟢 Green (63 years and above): This is the "Healthy Working Life" zone. At this level, the average person can expect to remain in good health until at least two or three years before the state pension age. Most people can work productively throughout their career, enjoy a period of healthy retirement, and place manageable demands on health and social care services. The least deprived areas of England (South East, South West) currently achieve this level.
-
-🟡 Amber (60 – 63 years): This is the "Health Deficit" zone. The UK currently sits in this bracket at approximately 61 years. At this level, many people experience the onset of poor health several years before they can retire, creating a painful gap between health reality and pension policy. Demand on the NHS and social care is elevated, and significant regional and socioeconomic inequalities in healthy ageing are visible. The decline from 63+ to below 61 since the pandemic represents a genuine deterioration, not just statistical noise.
-
-🔴 Red (Below 60 years): This is the "Premature Decline" zone. At this level, the average person loses good health before the age of 60—potentially a full decade before they can access the state pension. The implications are severe: widespread incapacity in the workforce, soaring demand for disability benefits, and an NHS and social care system overwhelmed by a population that is ageing badly. The most deprived areas of England—parts of the North East, North West, and Midlands—already have HLE below 57 years, meaning residents of these areas are effectively living in a "red" zone while the national average masks their reality.`,
-  total_population: `Total Population measures the number of usual residents in the UK at a given point, typically reported as mid-year estimates (30 June). The ONS calculates this by starting with the most recent Census count, then annually updating using the 'cohort component method': adding births and inward migration, subtracting deaths and outward migration. Estimates are produced for the UK total and broken down by country (England, Scotland, Wales, Northern Ireland), local authority, age, and sex. Population projections extend these trends into the future under various assumptions. The UK population is approximately 67 million and growing slowly, primarily through net migration. Population distribution matters as much as total—some areas grow rapidly while others decline.
-
-Data Source: ONS: Total Population
-
-Why it matters to you if it gets worse: (Note: A shrinking population slows economic growth, while a rapidly growing population strains housing and infrastructure.)`,
-};
+/** @deprecated Population section removed from dashboard. */
+export const POPULATION_TOOLTIPS: Record<string, string> = {};
 
 export function getPopulationTooltip(metricKey: string): string | undefined {
   return POPULATION_TOOLTIPS[metricKey];

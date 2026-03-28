@@ -539,17 +539,12 @@ export function getDataSourceUrl(metricKey: string): string {
     real_gdp_growth: 'https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ihyp/qna',
     cpi_inflation: 'https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23',
     output_per_hour: 'https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity/timeseries/lzvd/prdy',
-    employment_rate: 'https://www.resolutionfoundation.org/our-work/estimates-of-uk-employment/',
-    employment_rate_16_64: 'https://www.resolutionfoundation.org/our-work/estimates-of-uk-employment/',
-    unemployment_rate: 'https://www.resolutionfoundation.org/our-work/estimates-of-uk-employment/',
     inactivity_rate: 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2s/lms',
     real_wage_growth: 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/kab9/emp',
     job_vacancy_ratio: 'https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ap2z/unem',
     attainment8: 'https://explore-education-statistics.service.gov.uk/find-statistics/key-stage-4-performance',
-    teacher_vacancy_rate: 'https://explore-education-statistics.service.gov.uk/find-statistics/school-workforce-in-england',
     neet_rate: 'https://explore-education-statistics.service.gov.uk/find-statistics/neet-statistics-annual-brief',
-    persistent_absence: 'https://explore-education-statistics.service.gov.uk/find-statistics/pupil-absence-in-schools-in-england',
-    apprentice_starts: 'https://explore-education-statistics.service.gov.uk/find-statistics/apprenticeships',
+    pupil_attendance: 'https://explore-education-statistics.service.gov.uk/find-statistics/pupil-absence-in-schools-in-england',
   };
   return sources[metricKey] || '';
 }

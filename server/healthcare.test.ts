@@ -86,7 +86,7 @@ const HEALTHCARE_KEYS = [
   "elective_backlog",
   "ambulance_response_time",
   "gp_appt_access",
-  "staff_vacancy_rate",
+  "old_age_dependency_ratio",
 ];
 
 describe("Healthcare Metrics", () => {
@@ -170,7 +170,7 @@ describe("Healthcare Metrics", () => {
       { key: "elective_backlog", value: "4186974", rag: "amber" as const },
       { key: "ambulance_response_time", value: "8.5", rag: "amber" as const },
       { key: "gp_appt_access", value: "65", rag: "amber" as const },
-      { key: "staff_vacancy_rate", value: "6.7", rag: "amber" as const },
+      { key: "old_age_dependency_ratio", value: "277.9", rag: "green" as const },
     ];
     for (const d of testData) {
       await upsertMetric({

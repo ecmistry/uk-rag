@@ -27,9 +27,8 @@ export async function checkAndSendAlerts(): Promise<void> {
       { metricKey: 'cpi_inflation', threshold: 'red', notifyOn: 'breach' },
       { metricKey: 'output_per_hour', threshold: 'red', notifyOn: 'breach' },
       { metricKey: 'attainment8', threshold: 'red', notifyOn: 'breach' },
-      { metricKey: 'recorded_crime_rate', threshold: 'red', notifyOn: 'breach' },
+      { metricKey: 'crown_court_backlog', threshold: 'red', notifyOn: 'breach' },
       { metricKey: 'a_e_wait_time', threshold: 'red', notifyOn: 'breach' },
-      { metricKey: 'cancer_wait_time', threshold: 'red', notifyOn: 'breach' },
       { metricKey: 'ambulance_response_time', threshold: 'red', notifyOn: 'breach' },
       { metricKey: 'defence_spending_gdp', threshold: 'red', notifyOn: 'breach' },
     ];

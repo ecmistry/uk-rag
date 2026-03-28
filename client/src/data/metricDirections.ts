@@ -60,7 +60,6 @@ export const METRIC_DIRECTION: Record<string, MetricDirection> = {
 
 const TARGET_BANDS: Record<string, TargetBand> = {
   cpi_inflation: { lo: 1.5, hi: 2.5 },
-  net_migration: { lo: 0, hi: 300 },
 };
 
 /**
