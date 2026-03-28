@@ -14,7 +14,7 @@ import {
   upsertMetric,
   addMetricHistory,
 } from "./db";
-import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchPopulationMetrics, fetchRegionalEducationData, getPopulationBreakdown, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
+import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchPopulationMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 import { cache } from "./cache";
 
@@ -127,6 +127,15 @@ export const appRouter = router({
       const cached = cache.get<Awaited<ReturnType<typeof getPopulationBreakdown>>>(cacheKey);
       if (cached) return cached;
       const result = await getPopulationBreakdown();
+      cache.set(cacheKey, result, 15 * 60 * 1000);
+      return result;
+    }),
+
+    getPublicSectorReceipts: publicProcedure.query(async () => {
+      const cacheKey = "publicSectorReceipts";
+      const cached = cache.get<Awaited<ReturnType<typeof getPublicSectorReceipts>>>(cacheKey);
+      if (cached) return cached;
+      const result = await getPublicSectorReceipts();
       cache.set(cacheKey, result, 15 * 60 * 1000);
       return result;
     }),

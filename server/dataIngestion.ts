@@ -4,7 +4,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const MAX_BUFFER = 10 * 1024 * 1024; // 10 MB
-const execAsync = (cmd: string) => promisify(exec)(cmd, { maxBuffer: MAX_BUFFER });
+const DEFAULT_EXEC_TIMEOUT_MS = 120_000; // 2 minutes — generous for network-calling Python scripts
+const execAsync = (cmd: string, opts?: { timeout?: number }) =>
+  promisify(exec)(cmd, { maxBuffer: MAX_BUFFER, timeout: opts?.timeout ?? DEFAULT_EXEC_TIMEOUT_MS });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -377,6 +379,55 @@ export async function getPopulationBreakdown(): Promise<PopulationBreakdown | nu
     const trimmed = stdout.trim();
     if (!trimmed || trimmed === '{}') return null;
     const data = JSON.parse(trimmed) as PopulationBreakdown;
+    if (!data.periods || !Array.isArray(data.periods) || data.periods.length === 0) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export interface PublicSectorReceiptsPeriod {
+  period: string;
+  vat: number;
+  fuel_duties: number;
+  business_rates: number;
+  stamp_duty_land_tax: number;
+  stamp_taxes_on_shares: number;
+  tobacco_duties: number;
+  alcohol_duties: number;
+  customs_duties: number;
+  vehicle_excise_business: number;
+  other_taxes_on_production: number;
+  income_tax: number;
+  corporation_tax: number;
+  petroleum_revenue_tax: number;
+  misc_taxes_income_wealth: number;
+  vehicle_excise_households: number;
+  bank_levy: number;
+  tv_licence_fee: number;
+  misc_other_taxes: number;
+  social_contributions: number;
+  interest_and_dividends: number;
+  gross_operating_surplus: number;
+  other_receipts: number;
+}
+
+export interface PublicSectorReceipts {
+  periods: PublicSectorReceiptsPeriod[];
+}
+
+/**
+ * Fetch public sector current receipts (ONS Appendix D).
+ * Runs public_sector_receipts_fetcher.py --chart, returns quarterly aggregated data.
+ */
+export async function getPublicSectorReceipts(): Promise<PublicSectorReceipts | null> {
+  try {
+    const projectRoot = getProjectRoot();
+    const scriptPath = path.join(projectRoot, 'server', 'public_sector_receipts_fetcher.py');
+    const { stdout } = await execAsync(`python3 ${scriptPath} --chart`, { timeout: 30_000 });
+    const trimmed = stdout.trim();
+    if (!trimmed || trimmed === '{}') return null;
+    const data = JSON.parse(trimmed) as PublicSectorReceipts;
     if (!data.periods || !Array.isArray(data.periods) || data.periods.length === 0) return null;
     return data;
   } catch {
