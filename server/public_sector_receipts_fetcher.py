@@ -268,21 +268,7 @@ def main():
 
     mode = sys.argv[1]
 
-    if mode == "--cron":
-        # Always download fresh from ONS to detect new monthly data
-        excel_path = download_excel()
-        should_cleanup = True
-    else:
-        # --chart mode: prefer local file for speed (cron keeps MongoDB current)
-        local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                  "..", "publicsectorcurrentreceiptsappendixdfinal.xlsx")
-        if os.path.exists(local_path):
-            log(f"Using local Excel file: {local_path}")
-            excel_path = local_path
-            should_cleanup = False
-        else:
-            excel_path = download_excel()
-            should_cleanup = True
+    excel_path = download_excel()
 
     try:
         if mode == "--chart":
@@ -290,8 +276,7 @@ def main():
         elif mode == "--cron":
             run_cron_mode(excel_path)
     finally:
-        if should_cleanup:
-            os.unlink(excel_path)
+        os.unlink(excel_path)
 
 
 if __name__ == "__main__":

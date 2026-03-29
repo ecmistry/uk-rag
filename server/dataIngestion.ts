@@ -394,7 +394,7 @@ export async function getPublicSectorReceipts(): Promise<PublicSectorReceipts | 
   try {
     const projectRoot = getProjectRoot();
     const scriptPath = path.join(projectRoot, 'server', 'public_sector_receipts_fetcher.py');
-    const { stdout } = await execAsync(`python3 ${scriptPath} --chart`, { timeout: 30_000 });
+    const { stdout } = await execAsync(`python3 ${scriptPath} --chart`);
     const trimmed = stdout.trim();
     if (!trimmed || trimmed === '{}') return null;
     const data = JSON.parse(trimmed) as PublicSectorReceipts;
@@ -431,14 +431,14 @@ export interface PublicSectorExpenditure {
 }
 
 /**
- * Fetch public sector expenditure on services (HMT PSS Table 10a).
+ * Fetch public sector expenditure on services (HMT PSS Table 10, nominal).
  * Runs public_expenditure_fetcher.py --chart, returns fiscal year data.
  */
 export async function getPublicSectorExpenditure(): Promise<PublicSectorExpenditure | null> {
   try {
     const projectRoot = getProjectRoot();
     const scriptPath = path.join(projectRoot, 'server', 'public_expenditure_fetcher.py');
-    const { stdout } = await execAsync(`python3 ${scriptPath} --chart`, { timeout: 30_000 });
+    const { stdout } = await execAsync(`python3 ${scriptPath} --chart`);
     const trimmed = stdout.trim();
     if (!trimmed || trimmed === '{}') return null;
     const data = JSON.parse(trimmed) as PublicSectorExpenditure;

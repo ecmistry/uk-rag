@@ -185,8 +185,7 @@ export default function FiscalOverviewChart() {
   }, [receiptsQuery.data]);
 
   const officialFYTotals = useMemo(() => {
-    return (receiptsQuery.data as { fiscalYearTotals?: Record<string, number> } | null | undefined)
-      ?.fiscalYearTotals ?? {};
+    return receiptsQuery.data?.fiscalYearTotals ?? {};
   }, [receiptsQuery.data]);
 
   const expenditurePeriods = useMemo(() => {

@@ -4,6 +4,20 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.14] - 2026-03-29
+
+### Changed
+
+- **Fiscal data always fetched live** – Both `public_expenditure_fetcher.py` and `public_sector_receipts_fetcher.py` now always download fresh Excel data from gov.uk/ONS in `--chart` mode instead of falling back to stale local files. Combined with 15-minute server-side caching and 120s subprocess timeout (was 30s), this ensures the charts show the latest published data.
+- **Population breakdown chart simplified** – Removed linear trend overlay lines and switched from `ComposedChart` to `BarChart`.
+
+### Fixed
+
+- **Stale data in production** – Removed three development xlsx files left in the project root (`PSS_Feb_2026_TES.xlsx`, `PSS_Feb_2026_TES (1).xlsx`, `publicsectorcurrentreceiptsappendixdfinal.xlsx`) that were being served instead of live downloads.
+- **Subprocess timeout too short** – Increased fiscal fetcher timeout from 30s to the standard 120s, preventing timeouts during live xlsx downloads from ONS and gov.uk.
+- **Stale docstrings** – Fixed references to "Table_10a" in `public_expenditure_fetcher.py` and `dataIngestion.ts` (code correctly reads Table_10 nominal data).
+- **Redundant type cast** – Removed unnecessary `as` cast for `officialFYTotals` in `FiscalOverviewChart.tsx`; the `PublicSectorReceipts` interface already defines the field.
+
 ## [1.0.13] - 2026-03-29
 
 ### Added
@@ -15,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Year selector** – Dropdown (top-right) listing fiscal years from 2002-03 to 2024-25, defaulting to the latest year with data on both sides.
 - **Interest payments toggle** – "Include interest payments" checkbox adds/removes Public Sector Debt Interest (£126.5bn in 2024-25) from the expenditure pie and deficit calculation, showing primary vs overall fiscal position.
 - **Surplus/Deficit summary boxes** – Two boxes to the right of the pie charts: absolute amount (green for surplus, red for deficit) and as a percentage of income, updating live with year/toggle changes.
+- **Live ONS ANBT totals** – Income total in deficit boxes uses the live ONS ANBT time series (aggregated to fiscal years) for accuracy, falling back to summing 24 Appendix D categories if the API is unavailable.
 - **8 new expenditure tests** – `public-expenditure.test.ts` covering data shape, mocked subprocess, and integration (all 198 tests pass).
 
 ### Fixed

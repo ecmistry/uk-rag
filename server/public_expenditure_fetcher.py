@@ -3,7 +3,7 @@
 Fetch UK public sector expenditure on services from HM Treasury PSS Excel.
 
 Source: https://www.gov.uk/government/collections/national-statistics-release
-File:   "Expenditure on Services" (PSS_*_TES.xlsx), sheet Table_10a
+File:   "Expenditure on Services" (PSS_*_TES.xlsx), sheet Table_10 (nominal)
 
 Usage:
   python3 server/public_expenditure_fetcher.py --chart   # JSON to stdout for tRPC
@@ -162,7 +162,7 @@ def extract_expenditure_data(excel_path):
 
     if not fiscal_years:
         wb.close()
-        raise RuntimeError("No fiscal year headers found in Table_10a row 5")
+        raise RuntimeError("No fiscal year headers found in Table_10 row 5")
 
     log(f"Found {len(fiscal_years)} fiscal years: {list(fiscal_years.values())[0]} to {list(fiscal_years.values())[-1]}")
 
@@ -231,35 +231,13 @@ def run_cron_mode(excel_path):
     client.close()
 
 
-def find_local_file():
-    """Look for a local PSS TES xlsx in the project root."""
-    project_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-    for name in sorted(os.listdir(project_root), reverse=True):
-        if name.startswith("PSS_") and name.endswith(".xlsx") and "TES" in name.upper():
-            path = os.path.join(project_root, name)
-            log(f"Using local file: {path}")
-            return path
-    return None
-
-
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in ("--chart", "--cron"):
         print("Usage: python3 public_expenditure_fetcher.py [--chart|--cron]", file=sys.stderr)
         sys.exit(1)
 
     mode = sys.argv[1]
-
-    if mode == "--cron":
-        excel_path = download_excel()
-        should_cleanup = True
-    else:
-        local = find_local_file()
-        if local:
-            excel_path = local
-            should_cleanup = False
-        else:
-            excel_path = download_excel()
-            should_cleanup = True
+    excel_path = download_excel()
 
     try:
         if mode == "--chart":
@@ -267,8 +245,7 @@ def main():
         elif mode == "--cron":
             run_cron_mode(excel_path)
     finally:
-        if should_cleanup:
-            os.unlink(excel_path)
+        os.unlink(excel_path)
 
 
 if __name__ == "__main__":
