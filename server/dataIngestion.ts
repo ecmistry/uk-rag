@@ -374,6 +374,8 @@ export interface PublicSectorReceiptsPeriod {
   tv_licence_fee: number;
   misc_other_taxes: number;
   social_contributions: number;
+  council_tax: number;
+  other_local_govt_taxes: number;
   interest_and_dividends: number;
   gross_operating_surplus: number;
   other_receipts: number;

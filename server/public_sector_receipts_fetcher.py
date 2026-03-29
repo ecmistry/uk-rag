@@ -50,6 +50,8 @@ YELLOW_COLUMNS = {
     "BK": "tv_licence_fee",
     "BL": "misc_other_taxes",
     "BP": "social_contributions",
+    "BR": "council_tax",
+    "BS": "other_local_govt_taxes",
     "BU": "interest_and_dividends",
     "BW": "gross_operating_surplus",
     "BX": "other_receipts",

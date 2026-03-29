@@ -21,6 +21,8 @@ const EXPECTED_FIELDS: (keyof Omit<PublicSectorReceiptsPeriod, "period">)[] = [
   "tv_licence_fee",
   "misc_other_taxes",
   "social_contributions",
+  "council_tax",
+  "other_local_govt_taxes",
   "interest_and_dividends",
   "gross_operating_surplus",
   "other_receipts",
@@ -48,6 +50,8 @@ function makePeriod(overrides?: Partial<PublicSectorReceiptsPeriod>): PublicSect
     tv_licence_fee: 1000,
     misc_other_taxes: 400,
     social_contributions: 42100,
+    council_tax: 11800,
+    other_local_govt_taxes: -200,
     interest_and_dividends: 4100,
     gross_operating_surplus: 12400,
     other_receipts: 7500,
@@ -56,8 +60,8 @@ function makePeriod(overrides?: Partial<PublicSectorReceiptsPeriod>): PublicSect
 }
 
 describe("PublicSectorReceipts data shape", () => {
-  it("should define exactly 22 revenue fields", () => {
-    expect(EXPECTED_FIELDS).toHaveLength(22);
+  it("should define exactly 24 revenue fields", () => {
+    expect(EXPECTED_FIELDS).toHaveLength(24);
   });
 
   it("makePeriod helper has all expected fields", () => {

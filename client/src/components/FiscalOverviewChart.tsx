@@ -29,7 +29,9 @@ const INCOME_SEGMENTS = [
   { key: "vehicle_excise_households", label: "Vehicle Excise (Households)", color: "hsl(145, 50%, 55%)" },
   { key: "misc_taxes_income_wealth", label: "Misc Income/Wealth Taxes", color: "hsl(280, 45%, 55%)" },
   { key: "misc_other_taxes", label: "Misc Other Taxes", color: "hsl(200, 45%, 55%)" },
-  { key: "interest_and_dividends", label: "Interest & Dividends", color: "hsl(350, 60%, 50%)" },
+  { key: "council_tax", label: "Council Tax", color: "hsl(350, 60%, 50%)" },
+  { key: "other_local_govt_taxes", label: "Other Local Govt Taxes", color: "hsl(25, 55%, 50%)" },
+  { key: "interest_and_dividends", label: "Interest & Dividends", color: "hsl(300, 45%, 50%)" },
   { key: "gross_operating_surplus", label: "Gross Operating Surplus", color: "hsl(95, 50%, 45%)" },
   { key: "other_receipts", label: "Other Receipts", color: "hsl(30, 50%, 50%)" },
   { key: "petroleum_revenue_tax", label: "Petroleum Revenue Tax", color: "hsl(45, 80%, 40%)" },
@@ -104,6 +106,19 @@ interface PieSlice {
   value: number;
   color: string;
   key: string;
+}
+
+function computeTotal(
+  period: Record<string, number | string>,
+  segments: ReadonlyArray<{ key: string; label: string; color: string }>,
+  convertTobn?: boolean,
+): number {
+  let sum = 0;
+  for (const seg of segments) {
+    const raw = Number(period[seg.key] || 0);
+    sum += convertTobn ? raw / 1000 : raw;
+  }
+  return Math.round(sum * 10) / 10;
 }
 
 function buildPieData(
@@ -228,8 +243,12 @@ export default function FiscalOverviewChart() {
     : EXPENDITURE_SEGMENTS;
   const expendData = expendPeriod ? buildPieData(expendPeriod, expSegments) : [];
 
-  const incomeTotal = incomeData.reduce((s, d) => s + d.value, 0);
-  const expendTotal = expendData.reduce((s, d) => s + d.value, 0);
+  const incomeTotal = incomePeriod
+    ? computeTotal(incomePeriod, INCOME_SEGMENTS, true)
+    : 0;
+  const expendTotal = expendPeriod
+    ? computeTotal(expendPeriod, expSegments)
+    : 0;
   const surplus = Math.round((incomeTotal - expendTotal) * 10) / 10;
   const ratio = incomeTotal ? ((surplus / incomeTotal) * 100).toFixed(1) : "0";
   const isSurplus = surplus >= 0;
