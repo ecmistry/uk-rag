@@ -379,175 +379,70 @@ def fetch_cancer_wait_time():
 
 def fetch_ambulance_response_time():
     """
-    Fetch ambulance response times from NHS England spreadsheet downloads
-    Returns average response time in minutes (Category 1 target is 7 minutes)
+    Fetch Category-2 mean ambulance response time from the NHS England
+    AmbSYS time-series CSV.  Scrapes the Ambulance Quality Indicators
+    landing page to find the current CSV URL, downloads it, and reads the
+    latest England row's A25 column (Cat-2 mean in seconds).
     """
+    LANDING = "https://www.england.nhs.uk/statistics/statistical-work-areas/ambulance-quality-indicators/"
     try:
         print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
-        print("[Healthcare] Fetching Ambulance Response Time Data", file=sys.stderr, flush=True)
+        print("[Healthcare] Fetching Ambulance Response Time (AmbSYS CSV)", file=sys.stderr, flush=True)
         print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
-        
-        # NHS England publishes monthly ambulance quality indicators
-        # Time series CSV is available on the landing page
-        # Latest: https://www.england.nhs.uk/statistics/statistical-work-areas/ambulance-quality-indicators/
-        
-        # Try to get the time series CSV which has all historical data
-        time_series_url = "https://www.england.nhs.uk/statistics/statistical-work-areas/ambulance-quality-indicators/"
-        
-        # The time series CSV is typically named "AmbSYS Time Series.csv" or similar
-        # For now, try to get latest month's data from individual month pages
-        base_url = "https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/"
-        
-        today = datetime.now()
-        
-        # Try to find latest month's spreadsheet
-        # Format varies, but try common patterns
-        excel_url = None
-        month_names = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November', 'December']
-        
-        # Try last 3 months
-        for months_back in range(3):
-            check_date = today - timedelta(days=30 * months_back)
-            month_name = month_names[check_date.month - 1]
-            year = check_date.year
-            
-            # Try different URL patterns for Excel files
-            url_patterns = [
-                f"{year}/{check_date.month:02d}/AmbSYS-{month_name}-{year}.xlsx",
-                f"{year}/{check_date.month:02d}/AmbSYS-{month_name}-{year}.xls",
-                f"{year}/{check_date.month:02d}/AQI-{month_name}-{year}.xlsx",
-            ]
-            
-            for pattern in url_patterns:
-                test_url = base_url + pattern
-                try:
-                    response = requests.get(test_url, timeout=30, allow_redirects=True)
-                    if response.status_code == 200 and len(response.content) > 1000:
-                        excel_url = test_url
-                        print(f"[Healthcare] Found Excel at: {test_url}", file=sys.stderr, flush=True)
-                        break
-                except Exception:
-                    continue
-            
-            if excel_url:
-                break
-        
-        # If Excel not found, try to parse from time series CSV if available
-        # Or use a known recent file
-        if not excel_url:
-            # Try to get time series CSV from landing page
-            # For now, use a fallback approach
-            print("[Healthcare] Note: Individual month Excel not found, using time series data", file=sys.stderr, flush=True)
-            # The time series CSV would have Category 1 response times
-            # For now, we'll parse from a known structure
-        
-        # If we have Excel URL, parse it
-        if excel_url:
-            print(f"[Healthcare] Downloading from: {excel_url}", file=sys.stderr, flush=True)
-            response = requests.get(excel_url, timeout=60)
-            response.raise_for_status()
-            
-            # Read Excel file
-            excel_file = pd.ExcelFile(io.BytesIO(response.content))
-            print(f"[Healthcare] Available sheets: {excel_file.sheet_names[:5]}", file=sys.stderr, flush=True)
-            
-            # Look for sheet with Category 1 response times
-            # Typical sheet names: "Category 1", "C1", "Response Times", etc.
-            target_sheet = None
-            for sheet in excel_file.sheet_names:
-                if 'category' in sheet.lower() and '1' in sheet.lower():
-                    target_sheet = sheet
-                    break
-                elif 'c1' in sheet.lower() or 'response' in sheet.lower():
-                    target_sheet = sheet
-                    break
-            
-            if not target_sheet:
-                target_sheet = excel_file.sheet_names[0]  # Use first sheet
-            
-            print(f"[Healthcare] Using sheet: {target_sheet}", file=sys.stderr, flush=True)
-            df = pd.read_excel(excel_file, sheet_name=target_sheet)
-            
-            print(f"[Healthcare] Sheet dimensions: {df.shape}", file=sys.stderr, flush=True)
-            print(f"[Healthcare] Columns: {df.columns.tolist()}", file=sys.stderr, flush=True)
-            
-            # Find England total or average Category 1 response time
-            # Look for column with "Category 1" or "C1" and "Mean" or "Average"
-            response_col = None
-            for col in df.columns:
-                col_lower = str(col).lower()
-                if ('category' in col_lower and '1' in col_lower) or 'c1' in col_lower:
-                    if 'mean' in col_lower or 'average' in col_lower or 'response' in col_lower:
-                        response_col = col
-                        break
-            
-            if not response_col:
-                # Try to find any numeric column that looks like response time
-                for col in df.columns:
-                    if pd.api.types.is_numeric_dtype(df[col]):
-                        sample_val = df[col].dropna().iloc[0] if len(df[col].dropna()) > 0 else None
-                        if sample_val and 5 <= sample_val <= 15:  # Response times are typically 5-15 minutes
-                            response_col = col
-                            break
-            
-            if response_col:
-                # Find England row or calculate average
-                england_row = None
-                for idx, row in df.iterrows():
-                    first_col = str(row.iloc[0] if len(row) > 0 else '').lower()
-                    if 'england' in first_col or 'total' in first_col:
-                        england_row = row
-                        break
-                
-                if england_row is not None:
-                    avg_response_time = pd.to_numeric(england_row[response_col], errors='coerce')
-                    if pd.notna(avg_response_time):
-                        avg_response_time = float(avg_response_time)
-                    else:
-                        avg_response_time = None
-                else:
-                    # Calculate average of all services
-                    avg_response_time = df[response_col].apply(pd.to_numeric, errors='coerce').mean()
-                    if pd.notna(avg_response_time):
-                        avg_response_time = float(avg_response_time)
-                    else:
-                        avg_response_time = None
-            else:
-                avg_response_time = None
-        else:
-            # Fallback: Use typical NHS performance
-            avg_response_time = None
-        
-        # Fallback if parsing failed
-        if avg_response_time is None or avg_response_time <= 0:
-            # Typical NHS Category 1 performance: 7-9 minutes
-            avg_response_time = 8.5
-            print("[Healthcare]   Note: Using estimated value - Excel structure may have changed", file=sys.stderr, flush=True)
-        else:
-            print(f"[Healthcare]   Parsed from Excel: {avg_response_time:.1f} minutes", file=sys.stderr, flush=True)
-        
-        time_period = f"{today.year} Q{((today.month - 1) // 3) + 1}"
-        
+
+        resp = requests.get(LANDING, timeout=30)
+        resp.raise_for_status()
+        csv_match = re.search(
+            r'href="(https://www\.england\.nhs\.uk/statistics/wp-content/uploads/sites/2/[^"]*AmbSYS[^"]*\.csv)"',
+            resp.text, re.IGNORECASE,
+        )
+        if not csv_match:
+            raise RuntimeError("AmbSYS CSV link not found on landing page")
+        csv_url = csv_match.group(1)
+        print(f"[Healthcare]   CSV URL: {csv_url}", file=sys.stderr, flush=True)
+
+        csv_resp = requests.get(csv_url, timeout=60)
+        csv_resp.raise_for_status()
+
+        import csv as csv_mod
+        reader = csv_mod.DictReader(io.StringIO(csv_resp.text))
+        england_rows = [r for r in reader if r.get("Org Code") == "Eng"]
+        if not england_rows:
+            raise RuntimeError("No England rows found in AmbSYS CSV")
+
+        latest = england_rows[-1]
+        a25_raw = latest.get("A25", "").strip()
+        if not a25_raw or a25_raw == ".":
+            raise RuntimeError("A25 (Cat-2 mean) is empty for latest England row")
+        cat2_seconds = float(a25_raw)
+        cat2_minutes = round(cat2_seconds / 60, 1)
+
+        year = int(latest["Year"])
+        month = int(latest["Month"])
+        quarter = (month - 1) // 3 + 1
+        time_period = f"{year} Q{quarter}"
+
+        print(f"[Healthcare]   Cat-2 mean: {cat2_seconds}s = {cat2_minutes} min ({year}-{month:02d})", file=sys.stderr, flush=True)
+
+        rag_status = calculate_rag_status("ambulance_response_time", cat2_minutes)
         metric = {
             "metric_name": "Ambulance Response Time",
             "metric_key": "ambulance_response_time",
             "category": "Healthcare",
-            "value": round(avg_response_time, 1),
-            "rag_status": calculate_rag_status("ambulance_response_time", avg_response_time),
+            "value": cat2_minutes,
+            "rag_status": rag_status,
             "time_period": time_period,
-            "data_source": "NHS England: Ambulance Quality",
-            "source_url": excel_url or "https://www.england.nhs.uk/statistics/statistical-work-areas/ambulance-quality-indicators/",
-            "last_updated": datetime.now().isoformat()
+            "data_source": "NHS England: Ambulance Quality Indicators (AmbSYS)",
+            "source_url": LANDING,
+            "last_updated": datetime.now().isoformat(),
         }
-        
-        print(f"[Healthcare]   Ambulance Response Time: {avg_response_time:.1f} minutes ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
+        print(f"[Healthcare]   Ambulance Response Time: {cat2_minutes} min ({rag_status.upper()})", file=sys.stderr, flush=True)
         return metric
-        
+
     except Exception as e:
         print(f"[Healthcare] Error fetching ambulance response time: {e}", file=sys.stderr, flush=True)
         import traceback
-        traceback.print_exc()
+        traceback.print_exc(file=sys.stderr)
         return None
 
 
@@ -623,17 +518,78 @@ def fetch_elective_backlog():
 
 def fetch_gp_appt_access():
     """
-    Fetch GP appointment access from NHS Digital: Appointments in GP.
-    Source: https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice
+    Fetch GP appointment access (% within 14 days) from the NHS England
+    GP Appointments Summary xlsx.  We scrape the publications index page
+    to discover the latest month, download its summary xlsx, and read the
+    "Time between Booking Date and Appointment Date" block in Table 1a.
     """
+    PUB_INDEX = "https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice"
     try:
         print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)
         print("[Healthcare] Fetching GP Appt. Access Data (NHS Digital: Appointments in GP)", file=sys.stderr, flush=True)
         print("[Healthcare] " + "="*60, file=sys.stderr, flush=True)
-        # NHS Digital publishes monthly; no direct CSV in standard format. Use headline until API/CSV available.
-        # Latest typically: % appointments within 2 weeks or similar. Placeholder from published summary.
-        value_pct = 65.0  # Placeholder: typical "within 2 weeks" share from reports
-        time_period = f"{datetime.now().year} Q{(datetime.now().month - 1) // 3 + 1}"
+
+        resp = requests.get(PUB_INDEX, timeout=30)
+        resp.raise_for_status()
+        month_links = re.findall(
+            r'href="(/data-and-information/publications/statistical/appointments-in-general-practice/(\w+-\d{4}))"',
+            resp.text,
+        )
+        if not month_links:
+            raise RuntimeError("No monthly publication links found on index page")
+
+        latest_path, latest_slug = month_links[0]
+        latest_url = f"https://digital.nhs.uk{latest_path}"
+        print(f"[Healthcare]   Latest publication: {latest_slug}", file=sys.stderr, flush=True)
+
+        pub_resp = requests.get(latest_url, timeout=30)
+        pub_resp.raise_for_status()
+        xlsx_match = re.search(r'href="(https://files\.digital\.nhs\.uk/[^"]*Summary[^"]*\.xlsx)"', pub_resp.text, re.IGNORECASE)
+        if not xlsx_match:
+            raise RuntimeError(f"No Summary xlsx found on {latest_url}")
+        xlsx_url = xlsx_match.group(1)
+        print(f"[Healthcare]   Downloading summary xlsx", file=sys.stderr, flush=True)
+
+        xlsx_resp = requests.get(xlsx_url, timeout=60)
+        xlsx_resp.raise_for_status()
+
+        import openpyxl
+        wb = openpyxl.load_workbook(io.BytesIO(xlsx_resp.content), data_only=True)
+        ws = wb["Table 1a"]
+
+        within_14 = 0
+        total_appts = 0
+        for row_idx in range(10, ws.max_row + 1):
+            label = str(ws.cell(row=row_idx, column=2).value or "")
+            val = ws.cell(row=row_idx, column=3).value
+            if not val:
+                continue
+            try:
+                num = int(val)
+            except (ValueError, TypeError):
+                continue
+            if label in ("Same Day", "1 Day", "2 to 7 Days", "8  to 14 Days"):
+                within_14 += num
+            if label in ("Same Day", "1 Day", "2 to 7 Days", "8  to 14 Days",
+                         "15  to 21 Days", "22  to 28 Days", "More than 28 Days",
+                         "Unknown / Data Quality"):
+                total_appts += num
+        wb.close()
+
+        if total_appts == 0:
+            raise RuntimeError("Could not find time-between-booking rows in Table 1a")
+
+        value_pct = round((within_14 / total_appts) * 100, 1)
+        month_parts = latest_slug.split("-")
+        month_name, year_str = month_parts[0].capitalize(), month_parts[1]
+        month_map = {"january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
+                     "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12}
+        month_num = month_map.get(month_name.lower(), 1)
+        quarter = (month_num - 1) // 3 + 1
+        time_period = f"{year_str} Q{quarter}"
+
+        print(f"[Healthcare]   Within 14 days: {within_14:,} / {total_appts:,} = {value_pct}%", file=sys.stderr, flush=True)
+
         rag_status = calculate_rag_status("gp_appt_access", value_pct)
         metric = {
             "metric_name": "GP Appt. Access",
@@ -643,13 +599,15 @@ def fetch_gp_appt_access():
             "rag_status": rag_status,
             "time_period": time_period,
             "data_source": "NHS Digital: Appointments in GP",
-            "source_url": "https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice",
+            "source_url": latest_url,
             "last_updated": datetime.now().isoformat(),
         }
         print(f"[Healthcare]   GP Appt. Access: {value_pct}% ({metric['rag_status'].upper()})", file=sys.stderr, flush=True)
         return metric
     except Exception as e:
-        print(f"Error fetching GP appt access: {e}", file=sys.stderr)
+        print(f"[Healthcare] Error fetching GP appt access: {e}", file=sys.stderr, flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         return None
 
 

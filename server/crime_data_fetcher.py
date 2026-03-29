@@ -9,6 +9,7 @@ Reoffending Rate: MoJ Proven Reoffending
 
 import io
 import json
+import re
 import sys
 import zipfile
 from datetime import datetime
@@ -422,22 +423,91 @@ def fetch_crown_court_backlog_data():
 
 def fetch_recall_rate_data():
     """
-    Fetch Recall Rate (Recall-to-Population Ratio) from HMPPS Offender
-    Management Statistics Quarterly.
-    Calculation: (Total Quarterly Recalls / Prison Population Snapshot) × 100
-    Source: https://www.gov.uk/government/collections/offender-management-statistics-quarterly
+    Fetch Recall Rate from HMPPS Offender Management Statistics Quarterly.
+    Scrapes the GOV.UK collection page to find the latest quarterly release,
+    downloads the licence-recalls ODS and prison-population ODS, and computes:
+        (total recalls in quarter / prison population snapshot) × 100
     """
+    COLLECTION_URL = "https://www.gov.uk/government/collections/offender-management-statistics-quarterly"
     try:
         print("\n" + "="*60)
         print("Fetching Recall Rate Data (HMPPS: Offender Management Stats)")
         print("="*60)
-        # Latest published: Q3 2025 (July–September 2025)
-        recalls = 12836
-        prison_pop = 87465
-        time_period = "2025 Q3"
-        rate = round((recalls / prison_pop) * 100, 1)
-        print(f"  Recalls: {recalls:,}, Prison Pop: {prison_pop:,}")
-        print(f"  Using published HMPPS data: {rate}% (Q3 2025)")
+
+        resp = requests.get(COLLECTION_URL, timeout=30)
+        resp.raise_for_status()
+
+        release_match = re.search(
+            r'href="(/government/statistics/offender-management-statistics-quarterly-[^"]+)"',
+            resp.text,
+        )
+        if not release_match:
+            raise RuntimeError("Could not find latest OMSQ release on collection page")
+        release_url = "https://www.gov.uk" + release_match.group(1)
+        print(f"  Latest release: {release_url}")
+
+        rel_resp = requests.get(release_url, timeout=30)
+        rel_resp.raise_for_status()
+
+        recalls_match = re.search(
+            r'href="(https://assets\.publishing\.service\.gov\.uk/[^"]*licence-recalls[^"]*\.ods)"',
+            rel_resp.text, re.IGNORECASE,
+        )
+        pop_match = re.search(
+            r'href="(https://assets\.publishing\.service\.gov\.uk/[^"]*prison-population[^"]*\.ods)"',
+            rel_resp.text, re.IGNORECASE,
+        )
+        if not recalls_match or not pop_match:
+            raise RuntimeError("Could not find recalls/population ODS links on release page")
+
+        print(f"  Downloading recalls ODS...")
+        recalls_resp = requests.get(recalls_match.group(1), timeout=60)
+        recalls_resp.raise_for_status()
+
+        print(f"  Downloading prison population ODS...")
+        pop_resp = requests.get(pop_match.group(1), timeout=60)
+        pop_resp.raise_for_status()
+
+        recalls_df = pd.read_excel(
+            io.BytesIO(recalls_resp.content),
+            sheet_name="Table_5_Q_1", engine="odf", header=None,
+        )
+        total_recalls = None
+        for idx, row in recalls_df.iterrows():
+            label = str(row.iloc[0]).strip().lower()
+            if "total recalls in recall period" in label:
+                total_recalls = int(float(row.iloc[-1]))
+                break
+        if total_recalls is None:
+            raise RuntimeError("Could not find 'Total recalls in recall period' row")
+
+        pop_df = pd.read_excel(
+            io.BytesIO(pop_resp.content),
+            sheet_name="Table_1_Q_1", engine="odf", header=None,
+        )
+        prison_pop = None
+        for idx, row in pop_df.iterrows():
+            label_parts = [str(c).strip().lower() for c in row.iloc[:3] if pd.notna(c)]
+            combined = " ".join(label_parts)
+            if "male and female" in combined and "all ages" in combined and "all custody" in combined:
+                prison_pop = int(float(row.iloc[-2]))
+                break
+        if prison_pop is None:
+            raise RuntimeError("Could not find total prison population row")
+
+        rate = round((total_recalls / prison_pop) * 100, 1)
+
+        quarter_match = re.search(r'(january|april|july|october)[- ]+to[- ]+\w+[- ]+(\d{4})', release_url, re.IGNORECASE)
+        if quarter_match:
+            q_map = {"january": "Q1", "april": "Q2", "july": "Q3", "october": "Q4"}
+            quarter = q_map.get(quarter_match.group(1).lower(), "Q3")
+            year = quarter_match.group(2)
+            time_period = f"{year} {quarter}"
+        else:
+            time_period = f"{datetime.now().year} Q{((datetime.now().month - 1) // 3) + 1}"
+
+        print(f"  Recalls: {total_recalls:,}, Prison Pop: {prison_pop:,}")
+        print(f"  Rate: {rate}% ({time_period})")
         rag_status = calculate_rag_status("recall_rate", rate)
         result = {
             "metric_name": "Recall Rate",
@@ -448,14 +518,16 @@ def fetch_recall_rate_data():
             "rag_status": rag_status,
             "time_period": time_period,
             "data_source": "HMPPS: Offender Management Statistics Quarterly",
-            "source_url": SOURCE_URLS["recall_rate"],
+            "source_url": release_url,
             "last_updated": datetime.now().isoformat(),
-            "information": f"Recalls: {recalls:,} / Prison pop: {prison_pop:,}"
+            "information": f"Recalls: {total_recalls:,} / Prison pop: {prison_pop:,}",
         }
         print(f"  Value: {rate}% (RAG: {rag_status.upper()})")
         return result
     except Exception as e:
         print(f"Error fetching recall rate data: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
         return None
 
 
