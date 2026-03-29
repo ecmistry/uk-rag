@@ -82,11 +82,17 @@ async function startServer() {
     : await findAvailablePort(preferredPort);
 
   if (isProduction) {
-    const available = await isPortAvailable(port);
-    if (!available) {
-      throw new Error(
-        `Port ${port} is in use. Stop the process using it or set PORT to a different value. Nginx expects the app on port ${port}.`
-      );
+    const MAX_RETRIES = 10;
+    const RETRY_DELAY_MS = 2000;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      if (await isPortAvailable(port)) break;
+      if (attempt === MAX_RETRIES) {
+        throw new Error(
+          `Port ${port} still in use after ${MAX_RETRIES} retries (${MAX_RETRIES * RETRY_DELAY_MS / 1000}s). Nginx expects the app on port ${port}.`
+        );
+      }
+      console.log(`Port ${port} in use, retrying in ${RETRY_DELAY_MS / 1000}s (attempt ${attempt}/${MAX_RETRIES})...`);
+      await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
     }
   } else if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
