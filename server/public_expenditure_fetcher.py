@@ -146,11 +146,13 @@ def safe_float(val):
 
 def extract_expenditure_data(excel_path):
     """
-    Read Table_10a, extract the 17 category rows for all fiscal years.
+    Read Table_10 (nominal/cash terms), extract the 17 category rows for all
+    fiscal years.  We use nominal rather than Table_10a (real terms) because
+    the ONS receipts data we compare against is also in nominal terms.
     Returns list of period dicts sorted chronologically.
     """
     wb = openpyxl.load_workbook(excel_path, data_only=True)
-    ws = wb["Table_10a"]
+    ws = wb["Table_10"]
 
     header_row = list(ws.iter_rows(min_row=5, max_row=5))[0]
     fiscal_years = {}
