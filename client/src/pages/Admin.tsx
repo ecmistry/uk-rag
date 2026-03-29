@@ -34,6 +34,8 @@ import {
   HelpCircle,
   Loader2,
   CalendarClock,
+  ScrollText,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -561,6 +563,149 @@ function AdminDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Recent Logs */}
+      <RecentLogsSection logs={data.recentLogs ?? []} />
     </div>
+  );
+}
+
+const LOG_LEVEL_CONFIG = {
+  error: {
+    icon: XCircle,
+    label: "Error",
+    className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    rowClass: "bg-red-50/50 dark:bg-red-950/20",
+  },
+  warning: {
+    icon: AlertTriangle,
+    label: "Warning",
+    className:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+    rowClass: "bg-amber-50/50 dark:bg-amber-950/20",
+  },
+  info: {
+    icon: Info,
+    label: "Info",
+    className:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    rowClass: "",
+  },
+} as const;
+
+type LogEntry = {
+  timestamp: string;
+  level: "error" | "warning" | "info";
+  source: string;
+  message: string;
+};
+
+function LogLevelBadge({ level }: { level: string }) {
+  const config =
+    LOG_LEVEL_CONFIG[level as keyof typeof LOG_LEVEL_CONFIG] ??
+    LOG_LEVEL_CONFIG.info;
+  const Icon = config.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.className}`}
+    >
+      <Icon className="h-3 w-3" />
+      {config.label}
+    </span>
+  );
+}
+
+function RecentLogsSection({ logs }: { logs: LogEntry[] }) {
+  const [filter, setFilter] = useState<"all" | "error" | "warning">("all");
+
+  const filtered =
+    filter === "all"
+      ? logs
+      : logs.filter((l) => l.level === filter);
+
+  const errorCount = logs.filter((l) => l.level === "error").length;
+  const warningCount = logs.filter((l) => l.level === "warning").length;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ScrollText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Recent Logs</CardTitle>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {(["all", "error", "warning"] as const).map((f) => (
+              <Button
+                key={f}
+                variant={filter === f ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs px-2.5"
+                onClick={() => setFilter(f)}
+              >
+                {f === "all"
+                  ? `All (${logs.length})`
+                  : f === "error"
+                    ? `Errors (${errorCount})`
+                    : `Warnings (${warningCount})`}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <CardDescription>
+          Errors, warnings, and notable events from cron jobs and the Node.js
+          service
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {filtered.length === 0 ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            {filter === "all"
+              ? "No recent errors or warnings — everything looks healthy"
+              : `No recent ${filter}s`}
+          </div>
+        ) : (
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[140px]">Time</TableHead>
+                  <TableHead className="w-[80px]">Level</TableHead>
+                  <TableHead className="w-[160px]">Source</TableHead>
+                  <TableHead>Message</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((entry, i) => {
+                  const config =
+                    LOG_LEVEL_CONFIG[
+                      entry.level as keyof typeof LOG_LEVEL_CONFIG
+                    ] ?? LOG_LEVEL_CONFIG.info;
+                  return (
+                    <TableRow key={i} className={config.rowClass}>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">
+                        {entry.timestamp
+                          ? formatRelativeTime(entry.timestamp)
+                          : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <LogLevelBadge level={entry.level} />
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {entry.source}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[400px]">
+                        <span className="line-clamp-2">{entry.message}</span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

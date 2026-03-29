@@ -516,7 +516,85 @@ export const appRouter = router({
         return { name, schedule: scheduleLabel, lastRun, lastStatus, lastMessage, raw: line };
       });
 
-      return { disk, mem, load, uptimeSeconds, appMem, mongo, logsBytes, cronJobs };
+      const LOG_SOURCES: Record<string, string> = {
+        'daily_data_refresh_cron.log': 'Daily Refresh',
+        'watchdog.log': 'Watchdog',
+        'public_sector_receipts.log': 'Public Sector Receipts',
+        'crime_per_capita_cron.log': 'Crime Per-Capita',
+        'apprenticeship_intensity_cron.log': 'Apprenticeship Intensity',
+        'sickness_absence_cron.log': 'Sickness Absence',
+      };
+
+      type LogEntry = { timestamp: string; level: 'error' | 'warning' | 'info'; source: string; message: string };
+      const recentLogs: LogEntry[] = [];
+      const LOGS_DIR = '/home/ec2-user/uk-rag-portal/logs';
+
+      for (const [file, source] of Object.entries(LOG_SOURCES)) {
+        try {
+          const tail = execSync(`tail -100 ${LOGS_DIR}/${file} 2>/dev/null`, { encoding: 'utf-8', timeout: 3000 });
+          for (const line of tail.split('\n').filter(Boolean)) {
+            const tsMatch = line.match(/^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})/);
+            const ts = tsMatch?.[1]?.replace('T', ' ') ?? '';
+
+            const stripped = line
+              .replace(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}\+?\d*:?\d*\s*/, '')
+              .replace(/^UTC\s*/, '')
+              .replace(/^\[\w+\]\s*/, '')
+              .trim();
+
+            if (!stripped || /^[─═]+$/.test(stripped)) continue;
+            if (!ts) continue;
+            if (/^(VALIDATION )?WARNINGS?:\s*$/i.test(stripped)) continue;
+            if (/^\w+:\s+\d+$/.test(stripped)) continue;
+
+            const isError = /\berror\b|exception|traceback|failed|✗/i.test(line) && !/errors?:\s*0\b/i.test(line);
+            const isWarning = /⚠|outside expected range/i.test(line);
+            const isRestart = /restarting|not responding/i.test(line);
+
+            if (isError) {
+              recentLogs.push({ timestamp: ts, level: 'error', source, message: stripped });
+            } else if (isWarning) {
+              recentLogs.push({ timestamp: ts, level: 'warning', source, message: stripped });
+            } else if (isRestart) {
+              recentLogs.push({ timestamp: ts, level: 'error', source, message: stripped });
+            }
+          }
+        } catch { /* log file unreadable */ }
+      }
+
+      try {
+        const journal = execSync(
+          "sudo journalctl -u uk-rag-portal --no-pager -n 100 --output=short-iso 2>/dev/null || journalctl -u uk-rag-portal --no-pager -n 100 --output=short-iso 2>/dev/null",
+          { encoding: 'utf-8', timeout: 5000 }
+        );
+        for (const line of journal.split('\n').filter(Boolean)) {
+          const tsMatch = line.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/);
+          const ts = tsMatch?.[1]?.replace('T', ' ') ?? '';
+          const msg = line.replace(/^\S+\s+\S+\s+\S+\s+/, '').trim();
+
+          if (/crontab|LIST\b/.test(line)) continue;
+          if (/\berror\b/i.test(line) && !/errors?:\s*0/i.test(line)) {
+            recentLogs.push({ timestamp: ts, level: 'error', source: 'Node.js Service', message: msg });
+          } else if (/Started.*uk-rag-portal/i.test(line)) {
+            recentLogs.push({ timestamp: ts, level: 'info', source: 'Node.js Service', message: 'Service restarted' });
+          }
+        }
+      } catch { /* journal unreadable */ }
+
+      recentLogs.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+      const seen = new Set<string>();
+      const dedupedLogs = recentLogs.filter(entry => {
+        const normMsg = entry.message.replace(/^⚠\s*(WARNING:\s*)?/i, '').slice(0, 60);
+        const day = entry.timestamp.slice(0, 10);
+        const key = `${day}|${entry.level}|${normMsg}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const trimmedLogs = dedupedLogs.slice(0, 50);
+
+      return { disk, mem, load, uptimeSeconds, appMem, mongo, logsBytes, cronJobs, recentLogs: trimmedLogs };
     }),
 
     /**
