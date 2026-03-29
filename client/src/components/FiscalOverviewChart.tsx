@@ -184,6 +184,11 @@ export default function FiscalOverviewChart() {
     return aggregateReceiptsToFiscalYears(receiptsQuery.data.periods);
   }, [receiptsQuery.data]);
 
+  const officialFYTotals = useMemo(() => {
+    return (receiptsQuery.data as { fiscalYearTotals?: Record<string, number> } | null | undefined)
+      ?.fiscalYearTotals ?? {};
+  }, [receiptsQuery.data]);
+
   const expenditurePeriods = useMemo(() => {
     if (!expenditureQuery.data?.periods) return {};
     const map: Record<string, ExpenditurePeriod> = {};
@@ -243,9 +248,12 @@ export default function FiscalOverviewChart() {
     : EXPENDITURE_SEGMENTS;
   const expendData = expendPeriod ? buildPieData(expendPeriod, expSegments) : [];
 
-  const incomeTotal = incomePeriod
-    ? computeTotal(incomePeriod, INCOME_SEGMENTS, true)
-    : 0;
+  const officialIncomeM = officialFYTotals[activeYear];
+  const incomeTotal = officialIncomeM != null
+    ? Math.round((officialIncomeM / 1000) * 10) / 10
+    : incomePeriod
+      ? computeTotal(incomePeriod, INCOME_SEGMENTS, true)
+      : 0;
   const expendTotal = expendPeriod
     ? computeTotal(expendPeriod, expSegments)
     : 0;

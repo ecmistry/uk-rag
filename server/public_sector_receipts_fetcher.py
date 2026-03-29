@@ -169,10 +169,59 @@ def extract_quarterly_data(excel_path):
     return results
 
 
+ANBT_URL = "https://www.ons.gov.uk/economy/governmentpublicsectorandtaxes/publicsectorfinance/timeseries/anbt/pusf/data"
+
+
+def fetch_anbt_fiscal_year_totals():
+    """
+    Fetch official PS total current receipts from the live ONS ANBT time
+    series and aggregate to fiscal years.  Returns dict like
+    {"2024-25": 1144778, ...} in £ millions.  Returns empty dict on failure.
+    """
+    try:
+        resp = requests.get(
+            ANBT_URL,
+            headers={"User-Agent": "UK-RAG-Dashboard/1.0"},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        log(f"WARNING: Could not fetch ANBT time series: {e}")
+        return {}
+
+    fy_totals = defaultdict(float)
+    fy_quarter_count = defaultdict(int)
+    for q in data.get("quarters", []):
+        m = re.match(r"(\d{4})\s*Q(\d)", q.get("date", ""))
+        if not m:
+            continue
+        try:
+            val = float(q["value"])
+        except (ValueError, TypeError, KeyError):
+            continue
+        year, quarter = int(m.group(1)), int(m.group(2))
+        if quarter >= 2:
+            fy = f"{year}-{str(year + 1)[-2:]}"
+        else:
+            fy = f"{year - 1}-{str(year)[-2:]}"
+        fy_totals[fy] += val
+        fy_quarter_count[fy] += 1
+
+    # Only keep fiscal years with all 4 quarters
+    result = {fy: round(total) for fy, total in fy_totals.items()
+              if fy_quarter_count[fy] == 4}
+    if result:
+        latest = max(result.keys())
+        log(f"ANBT fiscal year totals: {len(result)} years, latest {latest} = £{result[latest]:,}m")
+    return result
+
+
 def run_chart_mode(excel_path):
     """Output JSON to stdout for tRPC consumption."""
     data = extract_quarterly_data(excel_path)
-    output = {"periods": data}
+    anbt = fetch_anbt_fiscal_year_totals()
+    output = {"periods": data, "fiscalYearTotals": anbt}
     print(json.dumps(output))
 
 

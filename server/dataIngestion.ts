@@ -383,6 +383,7 @@ export interface PublicSectorReceiptsPeriod {
 
 export interface PublicSectorReceipts {
   periods: PublicSectorReceiptsPeriod[];
+  fiscalYearTotals?: Record<string, number>;
 }
 
 /**
