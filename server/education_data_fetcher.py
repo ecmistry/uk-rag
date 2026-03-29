@@ -11,8 +11,11 @@ import pandas as pd
 import gzip
 import io
 import re
+import os
+import tempfile
 from datetime import datetime
 import json
+import openpyxl
 
 # RAG Thresholds for Education Metrics
 RAG_THRESHOLDS = {
@@ -27,9 +30,9 @@ RAG_THRESHOLDS = {
         # Red: > 2.0
     },
     "neet_rate": {
-        "green": 3.0,   # Low NEET rate
-        "amber": 5.0,   # Moderate NEET rate
-        # Red: > 5.0
+        "green": 8.0,   # Below 8% — "High-Aspiration" standard
+        "amber": 12.0,  # 8%–12% — "Fractured" zone
+        # Red: > 12% — "Scarring" zone
     },
     "persistent_absence": {
         "green": 10.0,  # Low % missing 10%+ days
@@ -196,30 +199,92 @@ def fetch_teacher_vacancy_data():
         "last_updated": datetime.now().isoformat()
     }
 
+NEET_QUARTER_MAP = {
+    "Jan-Mar": "Q1", "Apr-Jun": "Q2", "Jul-Sep": "Q3", "Oct-Dec": "Q4",
+}
+
+def _download_neet_xlsx():
+    """Scrape the ONS NEET dataset page for the .xlsx download link and fetch it."""
+    dataset_url = "https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/datasets/youngpeoplenotineducationemploymentortrainingneettable1"
+    resp = requests.get(dataset_url, timeout=30)
+    resp.raise_for_status()
+    match = re.search(r'href="(/file\?uri=[^"]*\.xlsx[^"]*)"', resp.text, re.IGNORECASE)
+    if not match:
+        raise RuntimeError("Could not find xlsx download link on ONS NEET dataset page")
+    xlsx_url = "https://www.ons.gov.uk" + match.group(1)
+    print(f"  Downloading NEET xlsx from {xlsx_url}")
+    xlsx_resp = requests.get(xlsx_url, timeout=60)
+    xlsx_resp.raise_for_status()
+    tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+    tmp.write(xlsx_resp.content)
+    tmp.close()
+    return tmp.name
+
+def _parse_neet_xlsx(path):
+    """
+    Parse the 'People - SA' sheet for the NEET % column (col F, 16-24 age band).
+    Returns list of dicts sorted chronologically.
+    """
+    wb = openpyxl.load_workbook(path, data_only=True)
+    ws = wb["People - SA"]
+    results = []
+    for row in range(10, ws.max_row + 1):
+        period_raw = ws.cell(row=row, column=1).value
+        pct_raw = ws.cell(row=row, column=6).value
+        if not period_raw or not pct_raw or str(pct_raw).strip() == "..":
+            continue
+        try:
+            val = round(float(pct_raw), 1)
+        except (ValueError, TypeError):
+            continue
+        period_str = str(period_raw).strip()
+        q_match = re.match(r"(Jan-Mar|Apr-Jun|Jul-Sep|Oct-Dec)\s+(\d{4})", period_str)
+        if not q_match:
+            continue
+        quarter = NEET_QUARTER_MAP[q_match.group(1)]
+        year = q_match.group(2)
+        results.append({
+            "period": f"{year} {quarter}",
+            "value": val,
+            "year": int(year),
+        })
+    wb.close()
+    return results
+
 def fetch_neet_data():
     """
-    Fetch NEET rate (16-24) from ONS: Young People NEET.
-    Data Source & Location per UK RAG spec: ONS: Young People NEET.
+    Fetch NEET rate (16-24) from ONS NEET dataset (Excel).
+    Downloads the latest xlsx, parses the seasonally-adjusted People sheet,
+    and returns the most recent quarterly percentage.
     """
-    # ONS dataset: Young people not in education, employment or training (NEET)
-    url = "https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/datasets/youngpeoplenotineducationemploymentortrainingneettable1/current"
+    dataset_page = "https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/datasets/youngpeoplenotineducationemploymentortrainingneettable1/current"
+    xlsx_path = None
     try:
-        # ONS publishes Excel; placeholder until we parse the xlsx
-        print("\\nFetching NEET (ONS: Young People NEET)...")
+        print("\nFetching NEET (ONS: Young People NEET)...")
+        xlsx_path = _download_neet_xlsx()
+        entries = _parse_neet_xlsx(xlsx_path)
+        if not entries:
+            print("  WARNING: No NEET data found in xlsx")
+            return None
+        latest = entries[-1]
+        print(f"  Latest NEET: {latest['period']} = {latest['value']}%")
         return {
             "metric_name": "NEET Rate (16-24)",
             "metric_key": "neet_rate",
             "category": "Education",
-            "value": 4.2,  # Placeholder until ONS Excel parsed
-            "rag_status": "amber",
-            "time_period": "2024",
+            "value": latest["value"],
+            "rag_status": calculate_rag_status("neet_rate", latest["value"]),
+            "time_period": latest["period"],
             "data_source": "ONS: Young People NEET",
-            "source_url": url,
-            "last_updated": datetime.now().isoformat()
+            "source_url": dataset_page,
+            "last_updated": datetime.now().isoformat(),
         }
     except Exception as e:
         print(f"  NEET fetch error: {e}")
         return None
+    finally:
+        if xlsx_path and os.path.exists(xlsx_path):
+            os.unlink(xlsx_path)
 
 def fetch_persistent_absence_data():
     """
