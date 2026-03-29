@@ -1,9 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import {
-  ComposedChart,
+  BarChart,
   Bar,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -26,22 +25,6 @@ function formatThousands(n: number): string {
   if (n >= 1e6) return `${(n / 1e6).toFixed(2)}m`;
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`;
   return String(Math.round(n));
-}
-
-/** Simple linear regression: returns trend values (a + b*i) for each index i */
-function linearTrend(values: number[]): number[] {
-  const n = values.length;
-  if (n < 2) return values.slice();
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-  for (let i = 0; i < n; i++) {
-    sumX += i;
-    sumY += values[i];
-    sumXY += i * values[i];
-    sumX2 += i * i;
-  }
-  const b = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX) || 0;
-  const a = (sumY - b * sumX) / n;
-  return Array.from({ length: n }, (_, i) => a + b * i);
 }
 
 export default function PopulationBreakdownChart() {
@@ -81,17 +64,9 @@ export default function PopulationBreakdownChart() {
   }
 
   const periods = data.periods.slice(-QUARTERS_TO_SHOW);
-  const totalValues = periods.map((p) => p.total);
-  const trendTotal = linearTrend(totalValues);
-  const trendByKey: Record<string, number[]> = {};
-  for (const seg of SEGMENTS) {
-    trendByKey[seg.key] = linearTrend(periods.map((p) => (p as Record<string, number>)[seg.key] ?? 0));
-  }
-  const chartData = periods.map((p, i) => ({
+  const chartData = periods.map((p) => ({
     name: p.period,
     ...p,
-    trendTotal: trendTotal[i],
-    ...Object.fromEntries(SEGMENTS.map((s) => [`trend_${s.key}`, trendByKey[s.key][i]])),
   }));
 
   const customTooltip = ({
@@ -130,13 +105,13 @@ export default function PopulationBreakdownChart() {
       <CardHeader>
         <CardTitle>Population breakdown</CardTitle>
         <CardDescription>
-          UKPOP, MGRZ (working), LF2M (inactive), MGSX (unemployed); Under 16 & over 64 = Total − (working + inactive + unemployed). Dashed lines show linear trends. Last {QUARTERS_TO_SHOW} quarters.
+          UKPOP, MGRZ (working), LF2M (inactive), MGSX (unemployed); Under 16 & over 64 = Total − (working + inactive + unemployed). Last {QUARTERS_TO_SHOW} quarters.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
+            <BarChart
               data={chartData}
               margin={{ top: 8, right: 8, left: 8, bottom: 24 }}
             >
@@ -154,30 +129,7 @@ export default function PopulationBreakdownChart() {
                   barSize={24}
                 />
               ))}
-              <Line
-                type="monotone"
-                dataKey="trendTotal"
-                name="Total (trend)"
-                stroke="hsl(0, 0%, 30%)"
-                strokeWidth={2}
-                strokeDasharray="6 4"
-                dot={false}
-                connectNulls
-              />
-              {SEGMENTS.map((seg) => (
-                <Line
-                  key={`trend-${seg.key}`}
-                  type="monotone"
-                  dataKey={`trend_${seg.key}`}
-                  name={`${seg.label} (trend)`}
-                  stroke={seg.color}
-                  strokeWidth={1.5}
-                  strokeDasharray="4 3"
-                  dot={false}
-                  connectNulls
-                />
-              ))}
-            </ComposedChart>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
