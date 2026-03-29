@@ -4,6 +4,25 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.13] - 2026-03-29
+
+### Added
+
+- **Fiscal Overview chart** – Replaced the quarterly stacked-bar Public Sector Receipts chart with a new "UK Public Finances" section on the Charts page showing two side-by-side pie charts (Income and Expenditure) aligned to fiscal years.
+- **Expenditure data pipeline** – New `public_expenditure_fetcher.py` parses HMT PSS Table 10 (nominal, 17 categories: 16 yellow + 1 blue debt interest cell) with `--chart` and `--cron` modes, matching the existing receipts fetcher pattern.
+- **Expenditure tRPC endpoint** – `metrics.getPublicSectorExpenditure` procedure with 15-minute cache; new `PublicSectorExpenditurePeriod` TypeScript interface.
+- **Expenditure cron job** – Daily at 07:00 UTC with 512 MB memory cap; auto-discovers latest PSS release from gov.uk collection page.
+- **Year selector** – Dropdown (top-right) listing fiscal years from 2002-03 to 2024-25, defaulting to the latest year with data on both sides.
+- **Interest payments toggle** – "Include interest payments" checkbox adds/removes Public Sector Debt Interest (£126.5bn in 2024-25) from the expenditure pie and deficit calculation, showing primary vs overall fiscal position.
+- **Surplus/Deficit summary boxes** – Two boxes to the right of the pie charts: absolute amount (green for surplus, red for deficit) and as a percentage of income, updating live with year/toggle changes.
+- **8 new expenditure tests** – `public-expenditure.test.ts` covering data shape, mocked subprocess, and integration (all 198 tests pass).
+
+### Fixed
+
+- **Missing Council Tax in receipts** – Added Council Tax (col BR, £47.4bn/yr) and Other Local Govt Taxes (col BS) to ONS Appendix D extraction. Income total went from £1,092bn to £1,139bn, now matching the official ONS total (column BY). This corrected the apparent deficit from £74bn to £27bn.
+- **Nominal vs real terms mismatch** – Switched expenditure source from Table_10a (real terms, inflation-adjusted to 2024-25 prices) to Table_10 (nominal/cash terms), matching the nominal ONS receipts data. Fixes historical year comparisons where real-terms inflated values by up to 77%.
+- **Negative categories excluded from deficit** – The surplus/deficit calculation now includes all categories (including negative values like petroleum revenue tax and EU transactions) rather than only positive pie-chart slices.
+
 ## [1.0.12] - 2026-03-29
 
 ### Added
