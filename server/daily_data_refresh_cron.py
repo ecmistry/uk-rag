@@ -75,15 +75,10 @@ CATEGORIES: List[Dict[str, Any]] = [
         "script": "defence_data_fetcher.py",
         "output_mode": "stdout",
     },
-    {
-        "name": "Population",
-        "script": "population_data_fetcher.py",
-        "output_mode": "stdout",
-    },
 ]
 
 # Metric keys to skip during ingestion (superseded or removed)
-SKIP_METRIC_KEYS = {"perception_of_safety"}
+SKIP_METRIC_KEYS: set = set()
 
 REQUIRED_FIELDS = {"metric_name", "metric_key", "value", "time_period", "rag_status"}
 VALID_RAG = {"red", "amber", "green"}
@@ -104,13 +99,14 @@ VALIDATION_RANGES: Dict[str, Tuple[float, float]] = {
     "real_wage_growth":         (-30.0, 30.0),
     "job_vacancy_ratio":        (0.0, 10.0),
     "underemployment":          (0.0, 100.0),
+    "sickness_absence":         (0.0, 100.0),
     # Education
     "attainment8":              (0.0, 100.0),
+    "neet_rate":                (0.0, 100.0),
     "persistent_absence":       (0.0, 100.0),
-    "apprentice_starts":        (0.0, 5_000_000.0),
+    "apprentice_starts":        (0.0, 1_000_000.0),
     "pupil_attendance":         (0.0, 100.0),
     "apprenticeship_intensity": (0.0, 200.0),
-    "sea_mass":                 (0.0, 200.0),
     # Crime
     "street_confidence_index":  (0.0, 100.0),
     "crown_court_backlog":      (0.0, 500.0),
@@ -121,21 +117,16 @@ VALIDATION_RANGES: Dict[str, Tuple[float, float]] = {
     "a_e_wait_time":            (0.0, 100.0),
     "cancer_wait_time":         (0.0, 365.0),
     "ambulance_response_time":  (0.0, 120.0),
-    "nhs_vacancy_rate":         (0.0, 100.0),
-    "diagnostic_wait_time":     (0.0, 100.0),
-    "sickness_absence":         (0.0, 100.0),
+    "elective_backlog":         (0.0, 20_000_000.0),
+    "gp_appt_access":           (0.0, 100.0),
+    "staff_vacancy_rate":       (0.0, 100.0),
+    "old_age_dependency_ratio": (0.0, 1000.0),
     # Defence
     "defence_spending_gdp":     (0.0, 20.0),
-    "equipment_plan_risk":      (0.0, 100.0),
-    "recruitment_gap":          (-100.0, 100.0),
-    "morale_index":             (0.0, 100.0),
+    "sea_mass":                 (0.0, 200.0),
+    "land_mass":                (0.0, 200.0),
+    "air_mass":                 (0.0, 200.0),
     "defence_industry_vitality":(0.0, 200.0),
-    # Population
-    "total_population":         (50_000_000.0, 100_000_000.0),
-    "net_migration":            (-2_000_000.0, 5_000_000.0),
-    "dependency_ratio":         (0.0, 200.0),
-    "urbanisation_rate":        (0.0, 100.0),
-    "population_density":       (0.0, 2000.0),
 }
 DEFAULT_RANGE = (-1_000_000.0, 100_000_000.0)
 
@@ -146,20 +137,17 @@ UNIT_OVERRIDES: Dict[str, str] = {
     "cancer_wait_time": " days",
     "ambulance_response_time": " minutes",
     "crown_court_backlog": "per 100k",
-    "total_population": "",
-    "net_migration": "",
-    "population_density": "per km²",
+    "old_age_dependency_ratio": " per 1,000",
 }
 PERCENTAGE_KEYS = {
     "cpi_inflation", "real_gdp_growth", "output_per_hour",
     "public_sector_net_debt", "business_investment",
     "inactivity_rate", "real_wage_growth", "job_vacancy_ratio",
     "underemployment", "persistent_absence", "pupil_attendance",
-    "charge_rate", "reoffending_rate", "recorded_crime_rate",
-    "a_e_wait_time", "nhs_vacancy_rate", "diagnostic_wait_time",
-    "sickness_absence", "defence_spending_gdp", "equipment_plan_risk",
-    "recruitment_gap", "morale_index", "urbanisation_rate",
-    "dependency_ratio", "defence_industry_vitality",
+    "recall_rate", "neet_rate",
+    "a_e_wait_time", "staff_vacancy_rate", "gp_appt_access",
+    "sickness_absence", "defence_spending_gdp",
+    "defence_industry_vitality",
     "street_confidence_index", "apprenticeship_intensity",
 }
 
@@ -571,8 +559,9 @@ def run(only_category: Optional[str] = None) -> None:
                 unit = infer_unit(key, row.get("unit"))
                 info = row.get("information")
 
-                # Upsert the live tile metric
-                upsert_metric(db, key, name, cat["name"], val, unit, rag, period, source)
+                # Use the metric's own category if provided, otherwise fall back to the parent category
+                metric_category = row.get("category", cat["name"])
+                upsert_metric(db, key, name, metric_category, val, unit, rag, period, source)
                 cat_updated += 1
 
                 # Insert history if this period doesn't exist yet
@@ -586,6 +575,54 @@ def run(only_category: Optional[str] = None) -> None:
             total_inserted += cat_inserted
             total_updated += cat_updated
             log(f"  {cat['name']}: {cat_updated} tiles updated, {cat_inserted} new history entries")
+
+        # ── Supplementary scripts (manage their own DB connections) ──
+        SUPPLEMENTARY_SCRIPTS = [
+            {"name": "Sickness Absence", "script": "sickness_absence_cron.py"},
+            {"name": "Apprenticeship Intensity", "script": "apprenticeship_intensity_cron.py"},
+            {"name": "Crime Per Capita", "script": "crime_per_capita_cron.py"},
+            {"name": "Defence Industry Vitality", "script": "defence_industry_vitality_cron.py"},
+        ]
+        supplement_errors: List[str] = []
+
+        if not only_category:
+            log(f"\n{'─' * 50}")
+            log("Running supplementary metric scripts")
+            log(f"{'─' * 50}")
+
+            for sup in SUPPLEMENTARY_SCRIPTS:
+                script_path = os.path.join(SCRIPT_DIR, sup["script"])
+                if not os.path.isfile(script_path):
+                    msg = f"{sup['name']}: script not found: {script_path}"
+                    log_error(msg)
+                    supplement_errors.append(msg)
+                    continue
+
+                cmd = ["python3", script_path]
+                log(f"  Running {sup['name']}: {' '.join(cmd)}")
+                try:
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True, text=True, timeout=300,
+                        cwd=os.path.dirname(SCRIPT_DIR) or ".",
+                    )
+                    if result.returncode == 0:
+                        log(f"  ✓ {sup['name']} completed successfully")
+                    else:
+                        snippet = (result.stderr or result.stdout or "")[-200:]
+                        msg = f"{sup['name']}: exit code {result.returncode}. {snippet}"
+                        log_error(msg)
+                        supplement_errors.append(msg)
+                except subprocess.TimeoutExpired:
+                    msg = f"{sup['name']}: timed out after 300s"
+                    log_error(msg)
+                    supplement_errors.append(msg)
+                except Exception as e:
+                    msg = f"{sup['name']}: {e}"
+                    log_error(msg)
+                    supplement_errors.append(msg)
+
+            category_errors.extend(supplement_errors)
 
         # Summary
         log(f"\n{'=' * 70}")

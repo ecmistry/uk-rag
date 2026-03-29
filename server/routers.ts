@@ -24,7 +24,7 @@ function csvEscape(field: unknown): string {
   return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-const SKIP_METRIC_KEYS = new Set(["perception_of_safety", "recorded_crime_rate", "charge_rate"]);
+const SKIP_METRIC_KEYS = new Set(["recorded_crime_rate", "charge_rate"]);
 
 const VALIDATION_RANGES: Record<string, [number, number]> = {
   // Economy
@@ -35,7 +35,7 @@ const VALIDATION_RANGES: Record<string, [number, number]> = {
   underemployment: [0, 100], sickness_absence: [0, 100],
   // Education
   attainment8: [0, 100], neet_rate: [0, 100], pupil_attendance: [0, 100],
-  apprenticeship_intensity: [0, 100],
+  apprenticeship_intensity: [0, 200],
   // Crime
   street_confidence_index: [0, 100], crown_court_backlog: [0, 500], recall_rate: [0, 100],
   asb_low_level_crime: [0, 10_000], serious_crime: [0, 10_000],
@@ -305,7 +305,7 @@ export const appRouter = router({
      */
     exportCsv: publicProcedure
       .input(z.object({
-        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'Population', 'All']).optional(),
+        category: z.enum(['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence', 'All']).optional(),
         metricKey: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_]+$/).optional(),
       }).optional())
       .query(async ({ input }) => {
@@ -329,7 +329,8 @@ export const appRouter = router({
           const safeMetricKey = input.metricKey.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64) || 'metric';
           return { csv, filename: `${safeMetricKey}_history.csv` };
         } else {
-          metrics = await getMetrics(input?.category);
+          const cat = input?.category === 'All' ? undefined : input?.category;
+          metrics = await getMetrics(cat);
           const safeCategory = (input?.category ?? 'all').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 32) || 'all';
           const csv = [
             ['Name', 'Category', 'Value', 'Unit', 'Status', 'Data Date', 'Last Updated'].join(','),
@@ -360,6 +361,162 @@ export const appRouter = router({
     checkAlerts: adminProcedure.mutation(async () => {
       await checkAndSendAlerts();
       return { success: true, message: 'Alert check completed' };
+    }),
+
+    serverHealth: adminProcedure.query(async () => {
+      const { execSync } = await import('child_process');
+      const run = (cmd: string) => execSync(cmd, { encoding: 'utf-8', timeout: 5000 }).trim();
+
+      const diskRaw = run("df -h / | tail -1");
+      const diskParts = diskRaw.split(/\s+/);
+      const disk = { total: diskParts[1], used: diskParts[2], available: diskParts[3], percent: diskParts[4] };
+
+      const memRaw = run("free -b | grep Mem");
+      const memParts = memRaw.split(/\s+/);
+      const mem = { total: Number(memParts[1]), used: Number(memParts[2]), available: Number(memParts[6]) };
+
+      const loadRaw = run("cat /proc/loadavg");
+      const loadParts = loadRaw.split(/\s+/);
+      const cpuCount = Number(run("nproc"));
+      const load = { avg1: loadParts[0], avg5: loadParts[1], avg15: loadParts[2], cpuCount };
+
+      let uptimeSeconds = 0;
+      try {
+        const activeTs = run("systemctl show uk-rag-portal --property=ActiveEnterTimestamp").replace('ActiveEnterTimestamp=', '').trim();
+        if (activeTs) {
+          uptimeSeconds = Math.floor((Date.now() - new Date(activeTs).getTime()) / 1000);
+        }
+      } catch {
+        uptimeSeconds = Number(run("cat /proc/uptime").split(" ")[0]);
+      }
+
+      const appPidLine = run("pgrep -f 'node dist/index.js' | head -1");
+      let appMem = 0;
+      if (appPidLine) {
+        try { appMem = Number(run(`ps -o rss= -p ${appPidLine}`)) * 1024; } catch { /* */ }
+      }
+
+      let mongo = { dataSize: 0, storageSize: 0, indexSize: 0, collections: 0, documents: 0, collectionDetails: [] as { name: string; documents: number; sizeKB: number }[] };
+      try {
+        const mongoJson = run(`mongosh --quiet uk_rag_portal --eval '
+          const s = db.stats();
+          const cols = db.getCollectionNames().map(c => {
+            const cs = db[c].stats();
+            return { name: c, documents: db[c].countDocuments(), sizeKB: Math.round(cs.size / 1024 * 10) / 10 };
+          });
+          print(JSON.stringify({ dataSize: s.dataSize, storageSize: s.storageSize, indexSize: s.indexSize, collections: Number(s.collections), collectionDetails: cols }));
+        '`);
+        const parsed = JSON.parse(mongoJson);
+        mongo = { ...parsed, documents: parsed.collectionDetails.reduce((s: number, c: { documents: number }) => s + c.documents, 0) };
+      } catch { /* */ }
+
+      const logsRaw = run("du -sb /home/ec2-user/uk-rag-portal/logs/ 2>/dev/null || echo '0'");
+      const logsBytes = Number(logsRaw.split(/\s/)[0]);
+
+      const cronLines = run("crontab -l 2>/dev/null || echo ''").split("\n").filter(l => l.trim() && !l.startsWith("#"));
+
+      const CRON_LABELS: Record<string, string> = {
+        'ensure-uk-rag-portal-up': 'Service Watchdog',
+        'daily_data_refresh_cron': 'Dashboard Data Refresh',
+        'public_sector_receipts_fetcher': 'Charts Data (Public Sector Receipts)',
+      };
+
+      const CRON_SCHEDULE_LABELS: Record<string, string> = {
+        '*/5 * * * *': 'Every 5 min',
+        '0 6 * * *': 'Daily at 06:00',
+        '30 6 * * *': 'Daily at 06:30',
+        '0 7 * * *': 'Daily at 07:00',
+        '30 7 * * *': 'Daily at 07:30',
+        '0 8 * * *': 'Daily at 08:00',
+      };
+
+      const { statSync } = await import('fs');
+      const cronJobs = cronLines.map(line => {
+        const schedParts = line.match(/^([*/0-9,\-\s]{9,})\s+(.*)$/);
+        const schedule = schedParts?.[1]?.trim() ?? '';
+        const command = schedParts?.[2]?.trim() ?? line;
+        const scheduleLabel = CRON_SCHEDULE_LABELS[schedule] ?? schedule;
+
+        let name = 'Unknown Job';
+        for (const [key, label] of Object.entries(CRON_LABELS)) {
+          if (command.includes(key)) { name = label; break; }
+        }
+
+        const logMatch = command.match(/>> (.+\.log)/);
+        const logFile = logMatch?.[1] ?? null;
+
+        let lastRun: string | null = null;
+        let lastStatus: 'success' | 'warning' | 'error' | 'unknown' = 'unknown';
+        let lastMessage = '';
+
+        if (logFile) {
+          try {
+            const tail = execSync(`tail -30 ${logFile} 2>/dev/null`, { encoding: 'utf-8', timeout: 3000 });
+            const lines = tail.split('\n').filter(Boolean);
+            const stripPrefix = (l: string) => l.replace(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC \[\w+\]\s*/, '').replace(/^\[[\w]+\]\s*/, '').trim();
+
+            const timestampLines = lines.filter(l => /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(l));
+            if (timestampLines.length > 0) {
+              const lastLine = timestampLines[timestampLines.length - 1];
+              const tsMatch = lastLine.match(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
+              lastRun = tsMatch?.[1] ?? null;
+            } else {
+              try {
+                const mtime = statSync(logFile).mtime;
+                lastRun = mtime.toISOString().replace('T', ' ').slice(0, 19);
+              } catch { /* */ }
+            }
+
+            const tailStr = lines.slice(-15).join('\n');
+
+            const isRealError = (line: string) => {
+              if (/errors?:\s*0\b/i.test(line)) return false;
+              return /\berror\b|exception|traceback|failed|✗/i.test(line);
+            };
+
+            const hasRealErrors = lines.slice(-15).some(isRealError);
+
+            if (hasRealErrors) {
+              lastStatus = 'error';
+              const errLine = lines.filter(isRealError).pop();
+              lastMessage = errLine ? stripPrefix(errLine) : 'Error detected';
+            } else if (/warning|⚠/i.test(tailStr)) {
+              lastStatus = 'warning';
+              const warnLine = lines.filter(l => /warning|⚠/i.test(l)).pop();
+              lastMessage = warnLine ? stripPrefix(warnLine) : 'Completed with warnings';
+            } else if (timestampLines.length > 0 || lines.length > 0) {
+              lastStatus = 'success';
+              const statusLine = lines[lines.length - 1];
+              lastMessage = statusLine ? stripPrefix(statusLine) : 'Completed';
+            }
+          } catch { /* log file unreadable */ }
+        } else {
+          try {
+            const scriptSnippet = command.split('/').pop()?.split(' ')[0] ?? '';
+            if (scriptSnippet) {
+              const journalLine = execSync(
+                `journalctl -t CROND --no-pager -n 50 2>/dev/null | grep '${scriptSnippet}' | grep 'CMDEND\\|CMD ' | tail -1`,
+                { encoding: 'utf-8', timeout: 3000 }
+              ).trim();
+              if (journalLine) {
+                const tsMatch = journalLine.match(/^(\w+\s+\d+\s+\d+:\d+:\d+)/);
+                if (tsMatch) {
+                  const parsed = new Date(`${tsMatch[1]} ${new Date().getFullYear()}`);
+                  if (!isNaN(parsed.getTime())) {
+                    lastRun = parsed.toISOString().replace('T', ' ').slice(0, 19);
+                  }
+                }
+                lastStatus = 'success';
+                lastMessage = 'Health check';
+              }
+            }
+          } catch { /* */ }
+        }
+
+        return { name, schedule: scheduleLabel, lastRun, lastStatus, lastMessage, raw: line };
+      });
+
+      return { disk, mem, load, uptimeSeconds, appMem, mongo, logsBytes, cronJobs };
     }),
 
     /**

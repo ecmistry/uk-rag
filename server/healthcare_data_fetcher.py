@@ -797,6 +797,71 @@ def fetch_a_e_wait_time_historical(months: int = 12):
     print(f"[Healthcare]\nFetched {len(historical)} months of A&E historical data", file=sys.stderr, flush=True)
     return historical
 
+OADR_EXCEL_URL = (
+    "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/"
+    "populationprojections/datasets/comparisonofoldagedependencyratioestimatesandprojectionsukandconstituentcountries/"
+    "current/oldagedependencyratiosprojectionsandestimatesuk.xlsx"
+)
+OADR_SOURCE_URL = (
+    "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationprojections/"
+    "datasets/comparisonofoldagedependencyratioestimatesandprojectionsukandconstituentcountries"
+)
+
+
+def fetch_old_age_dependency_ratio() -> Optional[Dict[str, Any]]:
+    """
+    Fetch UK old-age dependency ratio from ONS Population Projections (OADR dataset).
+    Sheet 'UK': row 3 = header (Year, OADR estimate), row 4+ = data; OADR = per 1,000 working-age.
+    """
+    try:
+        r = requests.get(OADR_EXCEL_URL, timeout=60,
+                         headers={"User-Agent": "UK-RAG-Dashboard/1.0"})
+        r.raise_for_status()
+        from io import BytesIO
+        excel_file = pd.ExcelFile(BytesIO(r.content))
+        if "UK" not in excel_file.sheet_names:
+            return None
+        df = pd.read_excel(excel_file, sheet_name="UK", header=None)
+        time_period: Optional[str] = None
+        oadr_val: Optional[float] = None
+        for row_idx in range(4, len(df)):
+            try:
+                year_cell = df.iloc[row_idx, 0]
+                est_cell = df.iloc[row_idx, 1]
+                if pd.isna(est_cell):
+                    continue
+                year_val = int(float(year_cell)) if pd.notna(year_cell) and str(year_cell).replace(".0", "").isdigit() else None
+                val = float(str(est_cell).replace(",", ""))
+                if year_val and 1970 <= year_val <= 2030 and 200 <= val <= 500:
+                    time_period = str(year_val)
+                    oadr_val = val
+            except (ValueError, TypeError, IndexError):
+                continue
+        if oadr_val is None:
+            return None
+        if oadr_val < 300:
+            rag = "green"
+        elif oadr_val < 350:
+            rag = "amber"
+        else:
+            rag = "red"
+        return {
+            "metric_name": "Old-Age Dependency Ratio",
+            "metric_key": "old_age_dependency_ratio",
+            "category": "Healthcare",
+            "value": round(oadr_val, 1),
+            "time_period": time_period or "Latest",
+            "unit": " per 1,000",
+            "rag_status": rag,
+            "data_source": "ONS Population Projections",
+            "source_url": OADR_SOURCE_URL,
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        print(f"[Healthcare] Error fetching old-age dependency ratio: {e}", file=sys.stderr)
+        return None
+
+
 def main():
     """Main function to fetch all Healthcare metrics"""
     # Check if historical mode is requested
@@ -817,6 +882,10 @@ def main():
         print("[Healthcare]\nFetching historical A&E data...", file=sys.stderr, flush=True)
         a_e_historical = fetch_a_e_wait_time_historical(12)
         metrics.extend(a_e_historical)
+        # Always fetch current A&E as well (historical URLs often 404)
+        a_e_current = fetch_a_e_wait_time()
+        if a_e_current:
+            metrics.append(a_e_current)
         
         cancer_metric = fetch_cancer_wait_time()
         if cancer_metric:
@@ -833,6 +902,9 @@ def main():
         vacancy_metric = fetch_staff_vacancy_rate()
         if vacancy_metric:
             metrics.append(vacancy_metric)
+        oadr_metric = fetch_old_age_dependency_ratio()
+        if oadr_metric:
+            metrics.append(oadr_metric)
     else:
         # Fetch A&E wait time (uses real CSV)
         a_e_metric = fetch_a_e_wait_time()
@@ -863,6 +935,11 @@ def main():
         vacancy_metric = fetch_staff_vacancy_rate()
         if vacancy_metric:
             metrics.append(vacancy_metric)
+
+        # Old-Age Dependency Ratio (ONS Population Projections)
+        oadr_metric = fetch_old_age_dependency_ratio()
+        if oadr_metric:
+            metrics.append(oadr_metric)
     
     # Print summary
     print(f"[Healthcare]\n" + "="*60, file=sys.stderr, flush=True)

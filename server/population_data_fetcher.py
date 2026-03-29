@@ -399,24 +399,6 @@ def fetch_population_metrics() -> List[Dict[str, Any]]:
             "last_updated": now.isoformat(),
         })
 
-    # Old-Age Dependency Ratio (ONS Population Projections)
-    oadr = _fetch_old_age_dependency_ratio(session)
-    if oadr:
-        results.append(oadr)
-    else:
-        results.append({
-            "metric_name": "Old-Age Dependency Ratio",
-            "metric_key": "old_age_dependency_ratio",
-            "category": "Healthcare",
-            "value": "placeholder",
-            "time_period": period,
-            "unit": " per 1,000",
-            "rag_status": "amber",
-            "data_source": "Placeholder",
-            "source_url": OADR_SOURCE_URL,
-            "last_updated": now.isoformat(),
-        })
-
     # Net Migration Long-term (ONS Series BBGM)
     net_mig = _fetch_net_migration(session)
     if net_mig:

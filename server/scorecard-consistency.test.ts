@@ -272,4 +272,114 @@ describe("Scorecard consistency: Python fetcher categories", () => {
       "At least 20 dashboard metrics should be covered by Python fetchers",
     ).toBeGreaterThanOrEqual(20);
   });
+
+});
+
+// ─── Cron CATEGORIES alignment ──────────────────────────────────────────────
+
+describe("Scorecard consistency: cron CATEGORIES vs dashboard sections", () => {
+  const DASHBOARD_SECTIONS = Object.keys(EXPECTED_METRICS);
+
+  it("daily_data_refresh_cron CATEGORIES only contains active dashboard sections", () => {
+    const fs = require("fs");
+    const path = require("path");
+    const cronPath = path.join(__dirname, "daily_data_refresh_cron.py");
+    const cronSource = fs.readFileSync(cronPath, "utf-8");
+
+    // Extract only the main CATEGORIES block (ends at the closing ])
+    const catBlockMatch = cronSource.match(/^CATEGORIES[^=]*=\s*\[[\s\S]*?\n\]/m);
+    if (!catBlockMatch) {
+      throw new Error("Could not find CATEGORIES block in daily_data_refresh_cron.py");
+    }
+    const catBlock = catBlockMatch[0];
+
+    const categoryNames: string[] = [];
+    const nameRegex = /"name":\s*"([^"]+)"/g;
+    let match: RegExpExecArray | null;
+    while ((match = nameRegex.exec(catBlock)) !== null) {
+      categoryNames.push(match[1]);
+    }
+
+    const staleCategories = categoryNames.filter(
+      (name) => !DASHBOARD_SECTIONS.includes(name),
+    );
+    expect(
+      staleCategories,
+      `Cron CATEGORIES includes sections not on the dashboard: ${staleCategories.join(", ")}. ` +
+      "Remove them from CATEGORIES in daily_data_refresh_cron.py — " +
+      "metrics from removed sections will be written with the wrong category.",
+    ).toEqual([]);
+  });
+
+  it("every dashboard section has a matching cron category or supplementary script", () => {
+    const fs = require("fs");
+    const path = require("path");
+    const cronPath = path.join(__dirname, "daily_data_refresh_cron.py");
+    const cronSource = fs.readFileSync(cronPath, "utf-8");
+
+    for (const section of DASHBOARD_SECTIONS) {
+      const hasCategory = cronSource.includes(`"name": "${section}"`);
+      expect(
+        hasCategory,
+        `Dashboard section "${section}" has no matching CATEGORIES entry in daily_data_refresh_cron.py — ` +
+        "its metrics won't be refreshed by the daily cron.",
+      ).toBe(true);
+    }
+  });
+
+  it("no dashboard metric is fetched by a script running under a different category name", () => {
+    const fs = require("fs");
+    const path = require("path");
+    const cronPath = path.join(__dirname, "daily_data_refresh_cron.py");
+    const cronSource = fs.readFileSync(cronPath, "utf-8");
+
+    const categoryScriptPairs: Array<{ name: string; script: string }> = [];
+    const blockRegex = /\{\s*"name":\s*"([^"]+)"[^}]*"script":\s*"([^"]+)"/g;
+    let m: RegExpExecArray | null;
+    while ((m = blockRegex.exec(cronSource)) !== null) {
+      categoryScriptPairs.push({ name: m[1], script: m[2] });
+    }
+
+    const dashboardKeysByCategory = new Map<string, Set<string>>();
+    for (const { category, slot } of allExpectedKeys()) {
+      if (!dashboardKeysByCategory.has(category)) {
+        dashboardKeysByCategory.set(category, new Set());
+      }
+      dashboardKeysByCategory.get(category)!.add(slot.metricKey);
+    }
+
+    const mismatches: string[] = [];
+    for (const { name, script } of categoryScriptPairs) {
+      const scriptPath = path.join(__dirname, script);
+      if (!fs.existsSync(scriptPath)) continue;
+      const scriptSource = fs.readFileSync(scriptPath, "utf-8");
+
+      const categoryRegex = /"category":\s*"([^"]+)"/g;
+      let cm: RegExpExecArray | null;
+      while ((cm = categoryRegex.exec(scriptSource)) !== null) {
+        const outputCategory = cm[1];
+        if (outputCategory !== name) {
+          const context = scriptSource.slice(Math.max(0, cm.index - 100), cm.index + cm[0].length + 100);
+          const keyMatch = context.match(/"metric_key":\s*"([^"]+)"/);
+          const metricKey = keyMatch?.[1] ?? "unknown";
+
+          const isOnDashboard = [...dashboardKeysByCategory.values()].some((keys) =>
+            keys.has(metricKey),
+          );
+          if (isOnDashboard) {
+            mismatches.push(
+              `${script} runs under cron category "${name}" but outputs "${metricKey}" with category "${outputCategory}". ` +
+              `Move the fetch function to the correct category's fetcher script.`,
+            );
+          }
+        }
+      }
+    }
+
+    expect(
+      mismatches,
+      "Metrics are fetched by a script running under the wrong cron category. " +
+      "This will cause the cron to overwrite the category incorrectly.",
+    ).toEqual([]);
+  });
 });

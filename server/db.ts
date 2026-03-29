@@ -251,12 +251,6 @@ function dropLegacyGdpGrowthLabel(metrics: Metric[]): Metric[] {
   });
 }
 
-/** Exclude only productivity (duplicate of output_per_hour); keep Output per Hour in Economy. Dedupe so only one GDP Growth card shows. */
-function filterEconomyMetrics(metrics: Metric[], category?: string): Metric[] {
-  if (category && category !== "Economy") return metrics;
-  const filtered = metrics.filter((m) => m.metricKey !== "productivity");
-  return dedupeByMetricKey(filtered);
-}
 
 /** Employment section: only these five cards (and their detail pages). */
 export const EMPLOYMENT_ALLOWED_METRIC_KEYS = new Set([
@@ -274,7 +268,7 @@ function filterEmploymentMetrics(metrics: Metric[], category?: string): Metric[]
   );
 }
 
-/** Education section: allowed cards (and their detail pages). */
+/** Education section: allowed metric keys (dashboard cards + detail pages). */
 export const EDUCATION_ALLOWED_METRIC_KEYS = new Set([
   "attainment8",
   "teacher_vacancy_rate",
@@ -324,7 +318,7 @@ function filterHealthcareMetrics(metrics: Metric[], category?: string): Metric[]
   );
 }
 
-/** Defence section: allowed cards (and their detail pages). */
+/** Defence section: allowed metric keys (dashboard cards + detail pages). */
 export const DEFENCE_ALLOWED_METRIC_KEYS = new Set([
   "defence_spending_gdp",
   "personnel_strength",
@@ -451,7 +445,6 @@ export async function getMetricByKey(metricKey: string): Promise<Metric | undefi
   if (metric.category === "Employment" && !EMPLOYMENT_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
     return undefined;
   }
-  // Education: only the five allowed metrics have detail pages; others 404
   if (metric.category === "Education" && !EDUCATION_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
     return undefined;
   }
@@ -463,7 +456,6 @@ export async function getMetricByKey(metricKey: string): Promise<Metric | undefi
   if (metric.category === "Healthcare" && !HEALTHCARE_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
     return undefined;
   }
-  // Defence: only the five allowed metrics have detail pages; others 404
   if (metric.category === "Defence" && !DEFENCE_ALLOWED_METRIC_KEYS.has(metric.metricKey)) {
     return undefined;
   }

@@ -10,6 +10,7 @@ import requests
 import pandas as pd
 import gzip
 import io
+import re
 from datetime import datetime
 import json
 
@@ -39,7 +40,12 @@ RAG_THRESHOLDS = {
         "green": 250000,  # Healthy pipeline (higher is better)
         "amber": 200000,
         # Red: < 200000
-    }
+    },
+    "pupil_attendance": {
+        "green": 1.5,   # Low unauthorised absence (lower is better)
+        "amber": 2.5,
+        # Red: > 2.5
+    },
 }
 
 def calculate_rag_status(metric_name, value):
@@ -271,9 +277,18 @@ def fetch_apprentice_starts_data():
             return None
         latest_period = national["time_period"].max()
         latest = national[national["time_period"] == latest_period]
-        total_starts = latest["starts"].replace("low", 0).apply(lambda x: int(x) if str(x).isdigit() else 0).sum()
-        if total_starts == 0:
-            total_starts = latest["starts"].apply(lambda x: int(x) if str(x).replace(".", "").isdigit() else 0).sum()
+        grand_total = latest[
+            (latest.get("age_summary", pd.Series(["Total"])) == "Total") &
+            (latest.get("std_fwk_flag", pd.Series(["Total"])) == "Total") &
+            (latest.get("apps_level", pd.Series(["Total"])) == "Total") &
+            (latest.get("funding_type", pd.Series(["Total"])) == "Total") &
+            (latest.get("start_month", pd.Series(["Total"])) == "Total")
+        ]
+        if not grand_total.empty:
+            raw = grand_total.iloc[0]["starts"]
+            total_starts = int(raw) if str(raw).isdigit() else 0
+        else:
+            total_starts = latest["starts"].replace("low", 0).apply(lambda x: int(x) if str(x).isdigit() else 0).sum()
         value = int(total_starts)
         rag_status = calculate_rag_status("apprentice_starts", value)
         return {
@@ -290,6 +305,52 @@ def fetch_apprentice_starts_data():
     except Exception as e:
         print(f"  Error fetching apprentice starts: {e}")
         return None
+
+def fetch_pupil_attendance_data():
+    """
+    Fetch Unauthorised Pupil Absence rate from DfE: Pupil Absence in Schools.
+    Scrapes the headline figure from the publication page.
+    """
+    url = "https://explore-education-statistics.service.gov.uk/find-statistics/pupil-absence-in-schools-in-england"
+    try:
+        print("\nFetching Unauthorised Pupil Absence (DfE)...")
+        response = requests.get(url, timeout=30, headers={"User-Agent": "Mozilla/5.0"})
+        response.raise_for_status()
+        text = response.text
+
+        matches = re.findall(
+            r'unauthorised\s+absence\s+decreased\s+by\s+[\d.]+\s+percentage\s+points?\s+to\s+(\d+\.\d+)%',
+            text, re.I,
+        )
+        if not matches:
+            matches = re.findall(
+                r'unauthorised\s+(?:absence\s+)?(?:decreased\s+)?(?:by\s+[\d.]+\s+percentage\s+points?\s+to\s+)?(\d+\.\d+)%',
+                text, re.I,
+            )
+        if not matches:
+            print("  Could not find unauthorised absence rate on DfE page")
+            return None
+
+        value = float(matches[0])
+        year_match = re.search(r'Academic year (\d{4}/\d{2})', text)
+        time_period = year_match.group(1) if year_match else "unknown"
+
+        rag_status = calculate_rag_status("pupil_attendance", value)
+        return {
+            "metric_name": "Unauthorised Pupil Absence",
+            "metric_key": "pupil_attendance",
+            "category": "Education",
+            "value": value,
+            "rag_status": rag_status,
+            "time_period": time_period,
+            "data_source": "DfE: Pupil Absence in Schools",
+            "source_url": url,
+            "last_updated": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        print(f"  Error fetching pupil attendance: {e}")
+        return None
+
 
 def fetch_all_education_metrics():
     """Fetch all education metrics"""
@@ -319,6 +380,11 @@ def fetch_all_education_metrics():
     apprentice_starts = fetch_apprentice_starts_data()
     if apprentice_starts:
         metrics.append(apprentice_starts)
+
+    # Fetch Unauthorised Pupil Absence (DfE: Pupil Absence in Schools)
+    pupil_attendance = fetch_pupil_attendance_data()
+    if pupil_attendance:
+        metrics.append(pupil_attendance)
     
     return metrics
 

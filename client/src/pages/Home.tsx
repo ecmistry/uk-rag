@@ -181,7 +181,7 @@ export default function Home() {
                       Last refreshed {formatDistanceToNow(lastRefreshedAt, { addSuffix: true })}
                     </span>
                     <Link
-                      href="/data-refresh"
+                      href="/admin"
                       className="text-xs text-primary hover:underline"
                     >
                       Refresh data

@@ -4,6 +4,35 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.12] - 2026-03-29
+
+### Added
+
+- **Consolidated Admin page** – Merged the separate "Data Refresh" and "Server Health" pages into a single "Admin" page at `/admin`. Shows login form, data refresh controls, system resources (disk/memory/CPU), MongoDB stats, and cron job status in one view.
+- **Service uptime** – Admin page now shows service uptime (time since last Node.js restart) instead of system uptime (EC2 instance uptime).
+- **Cron schedule indicator** – Data Refresh card shows "Automatic: Daily at 06:00" pulled from actual cron configuration, replacing the misleading client-side "Auto refresh: Off" dropdown.
+- **Defence Industry Vitality in daily refresh** – Added `defence_industry_vitality_cron.py` to supplementary scripts so it runs as part of the daily orchestrator.
+- **3 new scorecard consistency tests** (35 total) – Guards against cron-category mismatches: validates CATEGORIES only contains active dashboard sections, every dashboard section has a cron entry, and no fetcher outputs a metric with a mismatched category.
+
+### Changed
+
+- **Old-Age Dependency Ratio fetch moved to healthcare** – `fetch_old_age_dependency_ratio()` moved from `population_data_fetcher.py` into `healthcare_data_fetcher.py` where it belongs. Eliminates the recurring category mismatch bug at the source.
+- **Population category removed from cron** – The "Population" dashboard section was removed previously but its cron entry remained, causing `old_age_dependency_ratio` to be overwritten with `category: "Population"`. Now removed from CATEGORIES list entirely.
+- **Cron respects per-metric categories** – `daily_data_refresh_cron.py` now uses `row.get("category", cat["name"])` as a safety net, so metrics that specify their own category are never overwritten.
+- **VALIDATION_RANGES aligned** – Removed 10 stale keys (legacy defence/population metrics), added 7 missing keys (`neet_rate`, `elective_backlog`, `gp_appt_access`, `staff_vacancy_rate`, `old_age_dependency_ratio`, `land_mass`, `air_mass`). Fixed `nhs_vacancy_rate` → `staff_vacancy_rate` key mismatch. Aligned `apprenticeship_intensity` range to [0, 200] across TS and Python.
+- **PERCENTAGE_KEYS cleaned** – Removed stale keys (`charge_rate`, `recorded_crime_rate`, `nhs_vacancy_rate`, `diagnostic_wait_time`, `equipment_plan_risk`, `recruitment_gap`, `morale_index`, `urbanisation_rate`, `dependency_ratio`). Added correct keys (`neet_rate`, `staff_vacancy_rate`, `gp_appt_access`). Fixed `reoffending_rate` → `recall_rate`.
+- **exportCsv bug fix** – `category: 'All'` now correctly maps to all categories instead of matching nothing in MongoDB.
+- **Test assertions fixed** – 6 test files were asserting `result.metrics` on the refresh response which doesn't exist; corrected to assert `result.count`.
+
+### Removed
+
+- **Unused UI components** – Deleted `RegionalEducationChart.tsx`, `LoginDialog.tsx`, `AIChatBox.tsx`, `Map.tsx` (none were imported anywhere).
+- **Unused npm packages** – Removed `@hookform/resolvers`, `framer-motion`, `add`, `@types/google.maps` from package.json.
+- **Dead code** – Removed `fetchPopulationMetrics()` export from `dataIngestion.ts`, `filterEconomyMetrics()` from `db.ts`, `sickness_absence_fetcher.py` (superseded by `sickness_absence_cron.py`), `DataRefresh.tsx`, `DataRefreshPanel.tsx`.
+- **Stale markdown files** – Deleted 15 outdated documentation files (implementation notes, old code reviews, tooltip backups, completed plan docs).
+- **Empty MongoDB collections** – Dropped unused `commentary` and `fileMetadata` collections.
+- **Unused `activeMenuItem` variable** from `DashboardLayout.tsx`.
+
 ## [1.0.11] - 2026-03-28
 
 ### Added

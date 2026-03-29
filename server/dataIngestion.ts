@@ -274,39 +274,6 @@ export async function fetchEmploymentMetrics(historical: boolean = false): Promi
   }
 }
 
-/**
- * Fetch Population metrics (Phase 4). Runs population_data_fetcher.py; outputs 5 metrics (placeholder until ONS wired).
- */
-export async function fetchPopulationMetrics(): Promise<DataIngestionResult> {
-  try {
-    const projectRoot = getProjectRoot();
-    const scriptPath = path.join(projectRoot, 'server', 'population_data_fetcher.py');
-
-    const { stdout, stderr } = await execAsync(`python3 ${scriptPath}`);
-
-    if (stderr) {
-      console.warn('[Data Ingestion] Population script stderr:', stderr);
-    }
-
-    const jsonMatch = stdout.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if (!jsonMatch) {
-      throw new Error('Failed to parse JSON output from population script');
-    }
-
-    const data: MetricData[] = JSON.parse(jsonMatch[0]);
-
-    return {
-      success: true,
-      data,
-    };
-  } catch (error) {
-    console.error('[Data Ingestion] Failed to fetch population metrics:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
 
 /**
  * Fetch regional education data for visualization

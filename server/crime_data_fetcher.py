@@ -20,7 +20,7 @@ import requests
 SOURCE_URLS = {
     "recorded_crime_rate": "https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/crimeinenglandandwalesquarterlydatatables",
     "charge_rate": "https://www.gov.uk/government/statistical-data-sets/police-recorded-crime-and-outcomes-open-data-tables",
-    "perception_of_safety": "https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/perceptionsothercsewopendatatable",
+    "street_confidence_index": "https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/perceptionsothercsewopendatatable",
     "crown_court_backlog": "https://www.gov.uk/government/collections/criminal-court-statistics",
     "recall_rate": "https://www.gov.uk/government/collections/offender-management-statistics-quarterly",
 }
@@ -37,7 +37,7 @@ RAG_THRESHOLDS = {
         "amber": 7.0,    # Moderate charge rate
         # Red: < 7.0
     },
-    "perception_of_safety": {
+    "street_confidence_index": {
         "green": 70.0,   # High % feeling safe
         "amber": 55.0,
         # Red: < 55.0
@@ -66,8 +66,8 @@ def calculate_rag_status(metric_key, value):
         elif value <= thresholds["amber"]:
             return "amber"
         return "red"
-    # Higher is better: charge_rate, perception_of_safety
-    if metric_key in ("charge_rate", "perception_of_safety"):
+    # Higher is better: charge_rate, street_confidence_index
+    if metric_key in ("charge_rate", "street_confidence_index"):
         if value >= thresholds["green"]:
             return "green"
         elif value >= thresholds["amber"]:
@@ -332,16 +332,16 @@ def fetch_perception_of_safety_data():
         if value_pct is None:
             print("  Could not parse CSEW perceptions; returning None")
             return None
-        rag_status = calculate_rag_status("perception_of_safety", value_pct)
+        rag_status = calculate_rag_status("street_confidence_index", value_pct)
         result = {
             "metric_name": "Perception of Safety",
-            "metric_key": "perception_of_safety",
+            "metric_key": "street_confidence_index",
             "category": "Crime",
             "value": value_pct,
             "rag_status": rag_status,
             "time_period": time_period,
             "data_source": "ONS: Crime Survey (CSEW)",
-            "source_url": SOURCE_URLS["perception_of_safety"],
+            "source_url": SOURCE_URLS["street_confidence_index"],
             "last_updated": datetime.now().isoformat()
         }
         print(f"  Value: {value_pct}% (RAG: {rag_status.upper()})")
@@ -486,6 +486,11 @@ def main():
     recall = fetch_recall_rate_data()
     if recall:
         metrics.append(recall)
+
+    # Perception of Safety (ONS: Crime Survey CSEW)
+    perception = fetch_perception_of_safety_data()
+    if perception:
+        metrics.append(perception)
 
     # Print summary
     print("\n" + "="*60)
