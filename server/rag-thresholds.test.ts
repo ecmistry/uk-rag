@@ -20,6 +20,10 @@ const ALL_TOOLTIPS: Record<string, string> = {
   ...DEFENCE_TOOLTIPS,
 };
 
+// ────────────────────────────────────────────────────────────
+//  Coverage & cross-reference checks
+// ────────────────────────────────────────────────────────────
+
 describe("RAG_THRESHOLDS coverage", () => {
   it("every metric with a tooltip containing RAG thresholds has an entry in RAG_THRESHOLDS", () => {
     const missing: string[] = [];
@@ -43,27 +47,55 @@ describe("RAG_THRESHOLDS coverage", () => {
 
   it("direction in RAG_THRESHOLDS matches METRIC_DIRECTION for every metric", () => {
     const mismatched: string[] = [];
+    const missingDirection: string[] = [];
     for (const [key, threshold] of Object.entries(RAG_THRESHOLDS)) {
       const dir = METRIC_DIRECTION[key];
-      if (!dir) continue;
+      if (!dir) {
+        missingDirection.push(key);
+        continue;
+      }
       if (threshold.direction !== dir) {
         mismatched.push(`${key}: threshold=${threshold.direction}, metricDirections=${dir}`);
       }
     }
+    expect(missingDirection, `RAG_THRESHOLDS keys missing from METRIC_DIRECTION: ${missingDirection.join(", ")}`).toEqual([]);
     expect(mismatched, `Direction mismatches:\n${mismatched.join("\n")}`).toEqual([]);
+  });
+
+  it("threshold values are ordered correctly (amberMin < greenMin for higher_better, greenMax < amberMax for lower_better)", () => {
+    const invalid: string[] = [];
+    for (const [key, t] of Object.entries(RAG_THRESHOLDS)) {
+      if (t.direction === "higher_better" && t.amberMin >= t.greenMin) {
+        invalid.push(`${key}: amberMin (${t.amberMin}) >= greenMin (${t.greenMin})`);
+      }
+      if (t.direction === "lower_better" && t.greenMax >= t.amberMax) {
+        invalid.push(`${key}: greenMax (${t.greenMax}) >= amberMax (${t.amberMax})`);
+      }
+      if (t.direction === "target_band") {
+        if (t.greenMin >= t.greenMax) invalid.push(`${key}: greenMin >= greenMax`);
+        if (t.amberMin >= t.amberMax) invalid.push(`${key}: amberMin >= amberMax`);
+        if (t.amberMin > t.greenMin) invalid.push(`${key}: amberMin > greenMin`);
+        if (t.amberMax < t.greenMax) invalid.push(`${key}: amberMax < greenMax`);
+      }
+    }
+    expect(invalid, `Invalid threshold ordering:\n${invalid.join("\n")}`).toEqual([]);
   });
 });
 
+// ────────────────────────────────────────────────────────────
+//  Economy
+// ────────────────────────────────────────────────────────────
+
 describe("calculateRAGStatus — Economy", () => {
-  describe("output_per_hour (higher_better: green >= 1.5, amber >= 0.5)", () => {
+  describe("output_per_hour (higher_better: green > 1.5, amber >= 0.5)", () => {
     it("green", () => {
-      expect(calculateRAGStatus("output_per_hour", 1.5)).toBe("green");
+      expect(calculateRAGStatus("output_per_hour", 1.6)).toBe("green");
       expect(calculateRAGStatus("output_per_hour", 3.0)).toBe("green");
     });
-    it("amber", () => {
+    it("amber (boundary: exactly 1.5 is amber per tooltip '0.5% – 1.5%')", () => {
+      expect(calculateRAGStatus("output_per_hour", 1.5)).toBe("amber");
       expect(calculateRAGStatus("output_per_hour", 0.5)).toBe("amber");
       expect(calculateRAGStatus("output_per_hour", 1.1)).toBe("amber");
-      expect(calculateRAGStatus("output_per_hour", 1.49)).toBe("amber");
     });
     it("red", () => {
       expect(calculateRAGStatus("output_per_hour", 0.4)).toBe("red");
@@ -71,12 +103,13 @@ describe("calculateRAGStatus — Economy", () => {
     });
   });
 
-  describe("real_gdp_growth (higher_better: green >= 2.0, amber >= 0.5)", () => {
+  describe("real_gdp_growth (higher_better: green > 2.0, amber >= 0.5)", () => {
     it("green", () => {
-      expect(calculateRAGStatus("real_gdp_growth", 2.0)).toBe("green");
+      expect(calculateRAGStatus("real_gdp_growth", 2.1)).toBe("green");
       expect(calculateRAGStatus("real_gdp_growth", 3.5)).toBe("green");
     });
-    it("amber", () => {
+    it("amber (boundary: exactly 2.0 is amber per tooltip 'Above 2.0%')", () => {
+      expect(calculateRAGStatus("real_gdp_growth", 2.0)).toBe("amber");
       expect(calculateRAGStatus("real_gdp_growth", 0.5)).toBe("amber");
       expect(calculateRAGStatus("real_gdp_growth", 0.97)).toBe("amber");
       expect(calculateRAGStatus("real_gdp_growth", 1.5)).toBe("amber");
@@ -93,14 +126,20 @@ describe("calculateRAGStatus — Economy", () => {
       expect(calculateRAGStatus("cpi_inflation", 1.5)).toBe("green");
       expect(calculateRAGStatus("cpi_inflation", 2.5)).toBe("green");
     });
-    it("amber", () => {
+    it("amber (below green)", () => {
       expect(calculateRAGStatus("cpi_inflation", 1.2)).toBe("amber");
+      expect(calculateRAGStatus("cpi_inflation", 0.0)).toBe("amber");
+    });
+    it("amber (above green)", () => {
       expect(calculateRAGStatus("cpi_inflation", 3.0)).toBe("amber");
       expect(calculateRAGStatus("cpi_inflation", 3.9)).toBe("amber");
       expect(calculateRAGStatus("cpi_inflation", 4.0)).toBe("amber");
     });
-    it("red", () => {
+    it("red (deflation)", () => {
       expect(calculateRAGStatus("cpi_inflation", -0.1)).toBe("red");
+      expect(calculateRAGStatus("cpi_inflation", -2.0)).toBe("red");
+    });
+    it("red (high inflation)", () => {
       expect(calculateRAGStatus("cpi_inflation", 4.1)).toBe("red");
       expect(calculateRAGStatus("cpi_inflation", 10.0)).toBe("red");
     });
@@ -121,32 +160,45 @@ describe("calculateRAGStatus — Economy", () => {
     });
   });
 
-  describe("business_investment (higher_better: green >= 12, amber >= 10)", () => {
-    it("green", () => { expect(calculateRAGStatus("business_investment", 12)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("business_investment", 10.74)).toBe("amber"); });
+  describe("business_investment (higher_better: green > 12, amber >= 10)", () => {
+    it("green", () => { expect(calculateRAGStatus("business_investment", 12.1)).toBe("green"); });
+    it("amber (boundary: exactly 12 is amber per tooltip '10% – 12%')", () => {
+      expect(calculateRAGStatus("business_investment", 12)).toBe("amber");
+      expect(calculateRAGStatus("business_investment", 10.74)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("business_investment", 9.9)).toBe("red"); });
   });
 });
 
+// ────────────────────────────────────────────────────────────
+//  Employment
+// ────────────────────────────────────────────────────────────
+
 describe("calculateRAGStatus — Employment", () => {
   describe("inactivity_rate (lower_better: green < 14, amber <= 20)", () => {
     it("green", () => { expect(calculateRAGStatus("inactivity_rate", 13.9)).toBe("green"); });
-    it("amber", () => {
+    it("amber (boundary: exactly 14 is amber per tooltip '14% – 20%')", () => {
       expect(calculateRAGStatus("inactivity_rate", 14.0)).toBe("amber");
       expect(calculateRAGStatus("inactivity_rate", 20.0)).toBe("amber");
     });
     it("red", () => { expect(calculateRAGStatus("inactivity_rate", 20.8)).toBe("red"); });
   });
 
-  describe("real_wage_growth (higher_better: green >= 2.0, amber >= 1.0)", () => {
-    it("green", () => { expect(calculateRAGStatus("real_wage_growth", 2.0)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("real_wage_growth", 1.5)).toBe("amber"); });
+  describe("real_wage_growth (higher_better: green > 2.0, amber >= 1.0)", () => {
+    it("green", () => { expect(calculateRAGStatus("real_wage_growth", 2.1)).toBe("green"); });
+    it("amber (boundary: exactly 2.0 is amber per tooltip '1.0% – 2.0%')", () => {
+      expect(calculateRAGStatus("real_wage_growth", 2.0)).toBe("amber");
+      expect(calculateRAGStatus("real_wage_growth", 1.5)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("real_wage_growth", 0.84)).toBe("red"); });
   });
 
-  describe("job_vacancy_ratio (higher_better: green >= 3.5, amber >= 2.5)", () => {
-    it("green", () => { expect(calculateRAGStatus("job_vacancy_ratio", 3.5)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("job_vacancy_ratio", 3.0)).toBe("amber"); });
+  describe("job_vacancy_ratio (higher_better: green > 3.5, amber >= 2.5)", () => {
+    it("green", () => { expect(calculateRAGStatus("job_vacancy_ratio", 3.6)).toBe("green"); });
+    it("amber (boundary: exactly 3.5 is amber per tooltip '2.5% – 3.5%')", () => {
+      expect(calculateRAGStatus("job_vacancy_ratio", 3.5)).toBe("amber");
+      expect(calculateRAGStatus("job_vacancy_ratio", 3.0)).toBe("amber");
+    });
     it("red — 2.2% must be red, not green", () => {
       expect(calculateRAGStatus("job_vacancy_ratio", 2.2)).toBe("red");
     });
@@ -157,47 +209,80 @@ describe("calculateRAGStatus — Employment", () => {
     it("amber — 8.48% is amber, not red", () => {
       expect(calculateRAGStatus("underemployment", 8.48)).toBe("amber");
       expect(calculateRAGStatus("underemployment", 8.5)).toBe("amber");
+      expect(calculateRAGStatus("underemployment", 5.5)).toBe("amber");
     });
     it("red", () => { expect(calculateRAGStatus("underemployment", 8.6)).toBe("red"); });
   });
 
   describe("sickness_absence (lower_better: green < 3.0, amber <= 4.5)", () => {
     it("green", () => { expect(calculateRAGStatus("sickness_absence", 2.9)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("sickness_absence", 4.31)).toBe("amber"); });
+    it("amber", () => {
+      expect(calculateRAGStatus("sickness_absence", 3.0)).toBe("amber");
+      expect(calculateRAGStatus("sickness_absence", 4.31)).toBe("amber");
+      expect(calculateRAGStatus("sickness_absence", 4.5)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("sickness_absence", 4.6)).toBe("red"); });
   });
 });
 
+// ────────────────────────────────────────────────────────────
+//  Education
+// ────────────────────────────────────────────────────────────
+
 describe("calculateRAGStatus — Education", () => {
-  describe("attainment8 (higher_better: green >= 5.5, amber >= 4.5)", () => {
-    it("green", () => { expect(calculateRAGStatus("attainment8", 5.5)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("attainment8", 4.6)).toBe("amber"); });
+  describe("attainment8 (higher_better: green > 5.5, amber >= 4.5)", () => {
+    it("green", () => { expect(calculateRAGStatus("attainment8", 5.6)).toBe("green"); });
+    it("amber (boundary: exactly 5.5 is amber per tooltip '4.5 – 5.5')", () => {
+      expect(calculateRAGStatus("attainment8", 5.5)).toBe("amber");
+      expect(calculateRAGStatus("attainment8", 4.6)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("attainment8", 4.4)).toBe("red"); });
   });
 
   describe("neet_rate (lower_better: green < 8, amber <= 12)", () => {
-    it("green", () => { expect(calculateRAGStatus("neet_rate", 7.9)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("neet_rate", 10)).toBe("amber"); });
+    it("green", () => {
+      expect(calculateRAGStatus("neet_rate", 7.9)).toBe("green");
+      expect(calculateRAGStatus("neet_rate", 4.2)).toBe("green");
+    });
+    it("amber", () => {
+      expect(calculateRAGStatus("neet_rate", 8.0)).toBe("amber");
+      expect(calculateRAGStatus("neet_rate", 10)).toBe("amber");
+      expect(calculateRAGStatus("neet_rate", 12.0)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("neet_rate", 12.5)).toBe("red"); });
   });
 
   describe("pupil_attendance (lower_better: green < 1.0, amber <= 1.5)", () => {
     it("green", () => { expect(calculateRAGStatus("pupil_attendance", 0.9)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("pupil_attendance", 1.2)).toBe("amber"); });
+    it("amber", () => {
+      expect(calculateRAGStatus("pupil_attendance", 1.0)).toBe("amber");
+      expect(calculateRAGStatus("pupil_attendance", 1.2)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("pupil_attendance", 2.29)).toBe("red"); });
   });
 
-  describe("apprenticeship_intensity (higher_better: green >= 15, amber >= 10)", () => {
-    it("green", () => { expect(calculateRAGStatus("apprenticeship_intensity", 15)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("apprenticeship_intensity", 12.2)).toBe("amber"); });
+  describe("apprenticeship_intensity (higher_better: green > 15, amber >= 10)", () => {
+    it("green", () => { expect(calculateRAGStatus("apprenticeship_intensity", 15.1)).toBe("green"); });
+    it("amber (boundary: exactly 15 is amber per tooltip '10 – 15')", () => {
+      expect(calculateRAGStatus("apprenticeship_intensity", 15)).toBe("amber");
+      expect(calculateRAGStatus("apprenticeship_intensity", 12.2)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("apprenticeship_intensity", 9.9)).toBe("red"); });
   });
 });
 
+// ────────────────────────────────────────────────────────────
+//  Crime
+// ────────────────────────────────────────────────────────────
+
 describe("calculateRAGStatus — Crime", () => {
   describe("crown_court_backlog (lower_better: green < 60, amber <= 90)", () => {
     it("green", () => { expect(calculateRAGStatus("crown_court_backlog", 59)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("crown_court_backlog", 75)).toBe("amber"); });
+    it("amber", () => {
+      expect(calculateRAGStatus("crown_court_backlog", 60)).toBe("amber");
+      expect(calculateRAGStatus("crown_court_backlog", 75)).toBe("amber");
+      expect(calculateRAGStatus("crown_court_backlog", 90)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("crown_court_backlog", 107.4)).toBe("red"); });
   });
 
@@ -209,7 +294,10 @@ describe("calculateRAGStatus — Crime", () => {
 
   describe("street_confidence_index (lower_better: green < 20, amber <= 30)", () => {
     it("green", () => { expect(calculateRAGStatus("street_confidence_index", 15)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("street_confidence_index", 25)).toBe("amber"); });
+    it("amber", () => {
+      expect(calculateRAGStatus("street_confidence_index", 20)).toBe("amber");
+      expect(calculateRAGStatus("street_confidence_index", 25)).toBe("amber");
+    });
     it("red — 59% must be red", () => {
       expect(calculateRAGStatus("street_confidence_index", 59)).toBe("red");
     });
@@ -228,10 +316,17 @@ describe("calculateRAGStatus — Crime", () => {
   });
 });
 
+// ────────────────────────────────────────────────────────────
+//  Healthcare
+// ────────────────────────────────────────────────────────────
+
 describe("calculateRAGStatus — Healthcare", () => {
-  describe("a_e_wait_time (higher_better: green >= 95, amber >= 90)", () => {
-    it("green", () => { expect(calculateRAGStatus("a_e_wait_time", 95)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("a_e_wait_time", 92)).toBe("amber"); });
+  describe("a_e_wait_time (higher_better: green > 95, amber >= 90)", () => {
+    it("green", () => { expect(calculateRAGStatus("a_e_wait_time", 95.1)).toBe("green"); });
+    it("amber (boundary: exactly 95 is amber per tooltip '90% – 95%')", () => {
+      expect(calculateRAGStatus("a_e_wait_time", 95)).toBe("amber");
+      expect(calculateRAGStatus("a_e_wait_time", 92)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("a_e_wait_time", 74.4)).toBe("red"); });
   });
 
@@ -243,13 +338,19 @@ describe("calculateRAGStatus — Healthcare", () => {
 
   describe("ambulance_response_time (lower_better: green < 7, amber <= 10)", () => {
     it("green", () => { expect(calculateRAGStatus("ambulance_response_time", 6.5)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("ambulance_response_time", 8.5)).toBe("amber"); });
+    it("amber", () => {
+      expect(calculateRAGStatus("ambulance_response_time", 7.0)).toBe("amber");
+      expect(calculateRAGStatus("ambulance_response_time", 8.5)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("ambulance_response_time", 11)).toBe("red"); });
   });
 
-  describe("gp_appt_access (higher_better: green >= 70, amber >= 55)", () => {
-    it("green", () => { expect(calculateRAGStatus("gp_appt_access", 70)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("gp_appt_access", 65)).toBe("amber"); });
+  describe("gp_appt_access (higher_better: green > 70, amber >= 55)", () => {
+    it("green", () => { expect(calculateRAGStatus("gp_appt_access", 71)).toBe("green"); });
+    it("amber (boundary: exactly 70 is amber per tooltip '55% – 70%')", () => {
+      expect(calculateRAGStatus("gp_appt_access", 70)).toBe("amber");
+      expect(calculateRAGStatus("gp_appt_access", 65)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("gp_appt_access", 50)).toBe("red"); });
   });
 
@@ -260,27 +361,59 @@ describe("calculateRAGStatus — Healthcare", () => {
   });
 });
 
+// ────────────────────────────────────────────────────────────
+//  Defence
+// ────────────────────────────────────────────────────────────
+
 describe("calculateRAGStatus — Defence", () => {
-  describe("defence_spending_gdp (higher_better: green >= 2.5, amber >= 2.0)", () => {
-    it("green", () => { expect(calculateRAGStatus("defence_spending_gdp", 2.5)).toBe("green"); });
-    it("amber", () => { expect(calculateRAGStatus("defence_spending_gdp", 2.09)).toBe("amber"); });
+  describe("defence_spending_gdp (higher_better: green > 2.5, amber >= 2.0)", () => {
+    it("green", () => { expect(calculateRAGStatus("defence_spending_gdp", 2.6)).toBe("green"); });
+    it("amber (boundary: exactly 2.5 is amber per tooltip '2.0% – 2.5%')", () => {
+      expect(calculateRAGStatus("defence_spending_gdp", 2.5)).toBe("amber");
+      expect(calculateRAGStatus("defence_spending_gdp", 2.09)).toBe("amber");
+    });
     it("red", () => { expect(calculateRAGStatus("defence_spending_gdp", 1.9)).toBe("red"); });
   });
 
   for (const key of ["sea_mass", "land_mass", "air_mass", "defence_industry_vitality"] as const) {
-    describe(`${key} (higher_better: green >= 90, amber >= 70)`, () => {
-      it("green", () => { expect(calculateRAGStatus(key, 90)).toBe("green"); });
-      it("amber", () => { expect(calculateRAGStatus(key, 75)).toBe("amber"); });
+    describe(`${key} (higher_better: green > 90, amber >= 70)`, () => {
+      it("green", () => { expect(calculateRAGStatus(key, 91)).toBe("green"); });
+      it("amber (boundary: exactly 90 is amber per tooltip '70% – 90%')", () => {
+        expect(calculateRAGStatus(key, 90)).toBe("amber");
+        expect(calculateRAGStatus(key, 75)).toBe("amber");
+      });
       it("red", () => { expect(calculateRAGStatus(key, 48)).toBe("red"); });
     });
   }
 });
 
-describe("calculateRAGStatus — unknown metrics", () => {
+// ────────────────────────────────────────────────────────────
+//  Edge cases & fallback
+// ────────────────────────────────────────────────────────────
+
+describe("calculateRAGStatus — edge cases", () => {
   it("returns amber for unrecognised metric key", () => {
     expect(calculateRAGStatus("totally_unknown", 50)).toBe("amber");
   });
+
+  it("handles NaN gracefully (NaN comparisons always return false → red or amber)", () => {
+    expect(["red", "amber"]).toContain(calculateRAGStatus("output_per_hour", NaN));
+  });
+
+  it("handles negative values correctly for lower_better metrics", () => {
+    expect(calculateRAGStatus("inactivity_rate", -5)).toBe("green");
+    expect(calculateRAGStatus("crown_court_backlog", 0)).toBe("green");
+  });
+
+  it("handles zero for higher_better metrics", () => {
+    expect(calculateRAGStatus("real_gdp_growth", 0)).toBe("red");
+    expect(calculateRAGStatus("output_per_hour", 0)).toBe("red");
+  });
 });
+
+// ────────────────────────────────────────────────────────────
+//  Regression: current live DB values → correct RAG
+// ────────────────────────────────────────────────────────────
 
 describe("calculateRAGStatus — current live values produce correct RAG", () => {
   const liveValues: Array<[string, number, "red" | "amber" | "green"]> = [
@@ -295,6 +428,7 @@ describe("calculateRAGStatus — current live values produce correct RAG", () =>
     ["underemployment", 8.48, "amber"],
     ["sickness_absence", 4.31, "amber"],
     ["attainment8", 4.6, "amber"],
+    ["neet_rate", 4.2, "green"],
     ["pupil_attendance", 2.29, "red"],
     ["apprenticeship_intensity", 12.2, "amber"],
     ["crown_court_backlog", 107.4, "red"],
@@ -314,12 +448,22 @@ describe("calculateRAGStatus — current live values produce correct RAG", () =>
     ["defence_industry_vitality", 70.2, "amber"],
   ];
 
+  it("covers every metric in RAG_THRESHOLDS", () => {
+    const testedKeys = new Set(liveValues.map(([k]) => k));
+    const untested = Object.keys(RAG_THRESHOLDS).filter((k) => !testedKeys.has(k));
+    expect(untested, `Metrics missing from liveValues: ${untested.join(", ")}`).toEqual([]);
+  });
+
   for (const [key, value, expected] of liveValues) {
     it(`${key} = ${value} → ${expected}`, () => {
       expect(calculateRAGStatus(key, value)).toBe(expected);
     });
   }
 });
+
+// ────────────────────────────────────────────────────────────
+//  Legacy helper: getOutputPerHourRagStatus
+// ────────────────────────────────────────────────────────────
 
 describe("getOutputPerHourRagStatus (legacy helper)", () => {
   it("returns green for value > 1.5", () => {
@@ -331,9 +475,21 @@ describe("getOutputPerHourRagStatus (legacy helper)", () => {
     expect(getOutputPerHourRagStatus(1.0)).toBe("amber");
     expect(getOutputPerHourRagStatus(1.5)).toBe("amber");
   });
-  it("returns red for value <= 0.5", () => {
-    expect(getOutputPerHourRagStatus(0.5)).toBe("red");
+  it("returns red for value < 0.5", () => {
+    expect(getOutputPerHourRagStatus(0.4)).toBe("red");
     expect(getOutputPerHourRagStatus(0.0)).toBe("red");
     expect(getOutputPerHourRagStatus(-1.0)).toBe("red");
+  });
+  it("boundary: exactly 0.5 is amber (per tooltip '0.5% – 1.5%')", () => {
+    expect(getOutputPerHourRagStatus(0.5)).toBe("amber");
+  });
+
+  it("agrees with calculateRAGStatus for output_per_hour at all test points", () => {
+    for (const v of [-1, 0, 0.4, 0.5, 0.6, 1.0, 1.5, 1.6, 2.0, 3.0]) {
+      expect(
+        calculateRAGStatus("output_per_hour", v),
+        `Mismatch at value ${v}`,
+      ).toBe(getOutputPerHourRagStatus(v));
+    }
   });
 });

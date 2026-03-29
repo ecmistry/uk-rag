@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Centralised RAG thresholds** – Replaced ad-hoc `RAG_THRESHOLDS` object (7 metrics, inconsistent shapes) with a data-driven table covering all 29 metrics that have documented RAG thresholds in tooltips. Each entry declares its evaluation direction (`higher_better`, `lower_better`, or `target_band`) and boundary values.
 - **`calculateRAGStatus` simplified** – Replaced seven metric-specific `if` blocks with a single switch on the threshold direction, driven entirely by the threshold table.
 - **RAG applied to all metrics on refresh** – The admin "Refresh data" flow now recalculates RAG status using `calculateRAGStatus` for every metric with a threshold entry (was previously limited to 4 Employment metrics via `EMPLOYMENT_RAG_KEYS`).
+- **`loadEmploymentData.ts` simplified** – Replaced nested per-metric ternary chains with the centralised `RAG_THRESHOLDS` lookup, matching the pattern used in `routers.ts`.
 
 ### Fixed
 
@@ -22,11 +23,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - `underemployment` 8.48%: was red, now amber (tooltip: amber 5.5–8.5%)
   - `street_confidence_index` 59.0%: was amber, now red (tooltip: red < 70% safe)
   - `neet_rate` 4.2%: was amber, now green (tooltip: green < 8%)
-- **Threshold value mismatches vs tooltips** – `output_per_hour` green was 1.0 (should be 1.5), `real_gdp_growth` amber was 1.0 (should be 0.5), `cpi_inflation` amber ceiling was 3.5 (should be 4.0).
+- **Threshold value mismatches vs tooltips** – `output_per_hour` green was >= 1.0 (should be > 1.5), `real_gdp_growth` amber was >= 1.0 (should be >= 0.5), `cpi_inflation` amber ceiling was 3.5 (should be 4.0).
+- **`higher_better` boundary semantics** – Green threshold now uses strict `>` (was `>=`), matching tooltip wording "Above X" where X itself falls in the amber range (e.g., job_vacancy_ratio 3.5% is amber per "2.5% – 3.5%").
+- **Legacy `getOutputPerHourRagStatus` boundary** – Fixed 0.5% boundary from red to amber, matching tooltip "Amber: 0.5% – 1.5%".
+- **Duplicate docstring** – Removed leftover `/** RAG threshold definitions */` comment above the new block docstring.
 
 ### Added
 
-- **122 RAG threshold tests** – New comprehensive test suite verifying every metric's RAG calculation at boundary values and with current live data. Includes cross-checks ensuring every tooltip with RAG emoji has a matching threshold entry and that threshold directions match `METRIC_DIRECTION`.
+- **132 RAG threshold tests** – Comprehensive test suite verifying every metric's RAG calculation at boundary values and with current live data. Includes structural checks (threshold ordering, coverage of all tooltips with RAG emoji, direction agreement with `METRIC_DIRECTION`, live values covering every `RAG_THRESHOLDS` entry), edge cases (NaN, negative values, zero), and a cross-check confirming `getOutputPerHourRagStatus` agrees with the centralised function at all test points.
 
 ## [1.0.14] - 2026-03-29
 

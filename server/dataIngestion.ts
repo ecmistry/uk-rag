@@ -450,13 +450,10 @@ export async function getPublicSectorExpenditure(): Promise<PublicSectorExpendit
 }
 
 /**
- * RAG threshold definitions for each metric
- */
-/**
  * Centralised RAG thresholds for every metric with documented tooltip thresholds.
  * Values must match the RAG section in metricTooltips.ts.
  *
- *  higher_better  – green >= greenMin, amber >= amberMin, red below
+ *  higher_better  – green > greenMin, amber >= amberMin, red below
  *  lower_better   – green < greenMax, amber <= amberMax, red above
  *  target_band    – green within [gMin, gMax], amber within [aMin, aMax], red outside
  */
@@ -521,7 +518,7 @@ export function calculateRAGStatus(
 
   switch (t.direction) {
     case 'higher_better':
-      if (value >= t.greenMin) return 'green';
+      if (value > t.greenMin) return 'green';
       if (value >= t.amberMin) return 'amber';
       return 'red';
     case 'lower_better':

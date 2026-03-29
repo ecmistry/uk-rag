@@ -7,7 +7,7 @@
  */
 
 import "dotenv/config";
-import { fetchEmploymentMetrics, calculateRAGStatus } from "./dataIngestion";
+import { fetchEmploymentMetrics, calculateRAGStatus, RAG_THRESHOLDS } from "./dataIngestion";
 import { upsertMetric, addMetricHistory } from "./db";
 import type { MetricData } from "./dataIngestion";
 
@@ -39,16 +39,9 @@ async function main() {
     const sorted = [...keyRows].sort(sortByTimePeriod);
     const latest = sorted[sorted.length - 1];
 
-    const ragStatus =
-      metricKey === "inactivity_rate"
-        ? calculateRAGStatus("inactivity_rate", Number(latest.value))
-        : metricKey === "real_wage_growth"
-          ? calculateRAGStatus("real_wage_growth", Number(latest.value))
-          : metricKey === "job_vacancy_ratio"
-            ? calculateRAGStatus("job_vacancy_ratio", Number(latest.value))
-            : metricKey === "underemployment"
-              ? calculateRAGStatus("underemployment", Number(latest.value))
-              : (latest.rag_status as "red" | "amber" | "green");
+    const ragStatus = RAG_THRESHOLDS[metricKey]
+      ? calculateRAGStatus(metricKey, Number(latest.value))
+      : (latest.rag_status as "red" | "amber" | "green");
 
     await upsertMetric({
       metricKey: latest.metric_key,
@@ -64,16 +57,9 @@ async function main() {
     console.log(`Metric upserted: ${latest.metric_key} (${latest.time_period})`);
 
     for (const row of sorted) {
-      const rag =
-        row.metric_key === "inactivity_rate"
-          ? calculateRAGStatus("inactivity_rate", Number(row.value))
-          : row.metric_key === "real_wage_growth"
-            ? calculateRAGStatus("real_wage_growth", Number(row.value))
-            : row.metric_key === "job_vacancy_ratio"
-              ? calculateRAGStatus("job_vacancy_ratio", Number(row.value))
-              : row.metric_key === "underemployment"
-                ? calculateRAGStatus("underemployment", Number(row.value))
-                : (row.rag_status as "red" | "amber" | "green");
+      const rag = RAG_THRESHOLDS[row.metric_key]
+        ? calculateRAGStatus(row.metric_key, Number(row.value))
+        : (row.rag_status as "red" | "amber" | "green");
       await addMetricHistory({
         metricKey: row.metric_key,
         value: String(row.value),
