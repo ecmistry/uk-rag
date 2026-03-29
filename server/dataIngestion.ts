@@ -452,97 +452,87 @@ export async function getPublicSectorExpenditure(): Promise<PublicSectorExpendit
 /**
  * RAG threshold definitions for each metric
  */
-export const RAG_THRESHOLDS = {
-  real_gdp_growth: {
-    green: 2.0,
-    amber: 1.0,
-  },
-  cpi_inflation: {
-    green_min: 1.5,
-    green_max: 2.5,
-    amber_min: 1.0,
-    amber_max: 3.5,
-  },
-  output_per_hour: {
-    green: 1.0,   // >= 1% year-on-year growth
-    amber: 0.0,   // 0% to 1% growth
-  },
-  /** Inactivity rate: lower is better. Green < 14%, Amber 14%–20%, Red > 20% */
-  inactivity_rate: {
-    green_max: 14,
-    amber_max: 20,
-  },
-  /** Real wage growth: Green > 2%, Amber 1%–2%, Red < 1% */
-  real_wage_growth: {
-    green_min: 2,
-    amber_min: 1,
-    amber_max: 2,
-  },
-  /** Job vacancy ratio: Green > 3.5%, Amber 2.5%–3.5%, Red < 2.5% */
-  job_vacancy_ratio: {
-    green_min: 3.5,
-    amber_min: 2.5,
-    amber_max: 3.5,
-  },
-  /** Underemployment: lower is better. Green < 5.5%, Amber 5.5%–8.5%, Red > 8.5% */
-  underemployment: {
-    green_max: 5.5,
-    amber_max: 8.5,
-  },
-} as const;
+/**
+ * Centralised RAG thresholds for every metric with documented tooltip thresholds.
+ * Values must match the RAG section in metricTooltips.ts.
+ *
+ *  higher_better  – green >= greenMin, amber >= amberMin, red below
+ *  lower_better   – green < greenMax, amber <= amberMax, red above
+ *  target_band    – green within [gMin, gMax], amber within [aMin, aMax], red outside
+ */
+type ThresholdDef =
+  | { direction: 'higher_better'; greenMin: number; amberMin: number }
+  | { direction: 'lower_better'; greenMax: number; amberMax: number }
+  | { direction: 'target_band'; greenMin: number; greenMax: number; amberMin: number; amberMax: number };
+
+export const RAG_THRESHOLDS: Record<string, ThresholdDef> = {
+  // ── Economy ──────────────────────────────────────────────
+  output_per_hour:      { direction: 'higher_better', greenMin: 1.5,  amberMin: 0.5 },
+  real_gdp_growth:      { direction: 'higher_better', greenMin: 2.0,  amberMin: 0.5 },
+  business_investment:  { direction: 'higher_better', greenMin: 12,   amberMin: 10 },
+  public_sector_net_debt: { direction: 'lower_better', greenMax: 70,  amberMax: 85 },
+  cpi_inflation:        { direction: 'target_band', greenMin: 1.5, greenMax: 2.5, amberMin: 0, amberMax: 4.0 },
+
+  // ── Employment ───────────────────────────────────────────
+  real_wage_growth:     { direction: 'higher_better', greenMin: 2.0,  amberMin: 1.0 },
+  job_vacancy_ratio:    { direction: 'higher_better', greenMin: 3.5,  amberMin: 2.5 },
+  inactivity_rate:      { direction: 'lower_better',  greenMax: 14,   amberMax: 20 },
+  underemployment:      { direction: 'lower_better',  greenMax: 5.5,  amberMax: 8.5 },
+  sickness_absence:     { direction: 'lower_better',  greenMax: 3.0,  amberMax: 4.5 },
+
+  // ── Education ────────────────────────────────────────────
+  attainment8:              { direction: 'higher_better', greenMin: 5.5,  amberMin: 4.5 },
+  apprenticeship_intensity: { direction: 'higher_better', greenMin: 15,   amberMin: 10 },
+  neet_rate:                { direction: 'lower_better',  greenMax: 8,    amberMax: 12 },
+  pupil_attendance:         { direction: 'lower_better',  greenMax: 1.0,  amberMax: 1.5 },
+
+  // ── Crime ────────────────────────────────────────────────
+  crown_court_backlog:  { direction: 'lower_better',  greenMax: 60,   amberMax: 90 },
+  recall_rate:          { direction: 'lower_better',  greenMax: 7.5,  amberMax: 11 },
+  asb_low_level_crime:  { direction: 'lower_better',  greenMax: 800,  amberMax: 1200 },
+  serious_crime:        { direction: 'lower_better',  greenMax: 400,  amberMax: 700 },
+  street_confidence_index: { direction: 'lower_better', greenMax: 20, amberMax: 30 },
+
+  // ── Healthcare ───────────────────────────────────────────
+  a_e_wait_time:            { direction: 'higher_better', greenMin: 95,        amberMin: 90 },
+  gp_appt_access:           { direction: 'higher_better', greenMin: 70,        amberMin: 55 },
+  elective_backlog:         { direction: 'lower_better',  greenMax: 4_000_000, amberMax: 6_000_000 },
+  ambulance_response_time:  { direction: 'lower_better',  greenMax: 7,         amberMax: 10 },
+  old_age_dependency_ratio: { direction: 'lower_better',  greenMax: 300,       amberMax: 350 },
+
+  // ── Defence ──────────────────────────────────────────────
+  defence_spending_gdp:     { direction: 'higher_better', greenMin: 2.5,  amberMin: 2.0 },
+  sea_mass:                 { direction: 'higher_better', greenMin: 90,   amberMin: 70 },
+  land_mass:                { direction: 'higher_better', greenMin: 90,   amberMin: 70 },
+  air_mass:                 { direction: 'higher_better', greenMin: 90,   amberMin: 70 },
+  defence_industry_vitality: { direction: 'higher_better', greenMin: 90,  amberMin: 70 },
+};
 
 /**
- * Calculate RAG status for a given metric
+ * Calculate RAG status using the centralised threshold table.
+ * Falls back to 'amber' for metrics without defined thresholds.
  */
 export function calculateRAGStatus(
   metricKey: string,
-  value: number
+  value: number,
 ): 'red' | 'amber' | 'green' {
-  if (metricKey === 'cpi_inflation') {
-    const t = RAG_THRESHOLDS.cpi_inflation;
-    if (value >= t.green_min && value <= t.green_max) return 'green';
-    if (value >= t.amber_min && value <= t.amber_max) return 'amber';
-    return 'red';
+  const t = RAG_THRESHOLDS[metricKey];
+  if (!t) return 'amber';
+
+  switch (t.direction) {
+    case 'higher_better':
+      if (value >= t.greenMin) return 'green';
+      if (value >= t.amberMin) return 'amber';
+      return 'red';
+    case 'lower_better':
+      if (value < t.greenMax) return 'green';
+      if (value <= t.amberMax) return 'amber';
+      return 'red';
+    case 'target_band':
+      if (value >= t.greenMin && value <= t.greenMax) return 'green';
+      if (value >= t.amberMin && value <= t.amberMax) return 'amber';
+      return 'red';
   }
-
-  /** Inactivity rate: lower is better. Green < 14%, Amber 14%–20%, Red > 20% */
-  if (metricKey === 'inactivity_rate') {
-    const t = RAG_THRESHOLDS.inactivity_rate;
-    if (value < t.green_max) return 'green';
-    if (value <= t.amber_max) return 'amber';
-    return 'red';
-  }
-
-  /** Real wage growth: Green > 2%, Amber 1%–2%, Red < 1% */
-  if (metricKey === 'real_wage_growth') {
-    const t = RAG_THRESHOLDS.real_wage_growth;
-    if (value > t.green_min) return 'green';
-    if (value >= t.amber_min && value <= t.amber_max) return 'amber';
-    return 'red';
-  }
-
-  /** Job vacancy ratio: Green > 3.5%, Amber 2.5%–3.5%, Red < 2.5% */
-  if (metricKey === 'job_vacancy_ratio') {
-    const t = RAG_THRESHOLDS.job_vacancy_ratio;
-    if (value > t.green_min) return 'green';
-    if (value >= t.amber_min && value <= t.amber_max) return 'amber';
-    return 'red';
-  }
-
-  /** Underemployment: lower is better. Green < 5.5%, Amber 5.5%–8.5%, Red > 8.5% */
-  if (metricKey === 'underemployment') {
-    const t = RAG_THRESHOLDS.underemployment;
-    if (value < t.green_max) return 'green';
-    if (value <= t.amber_max) return 'amber';
-    return 'red';
-  }
-
-  const thresholds = RAG_THRESHOLDS[metricKey as keyof typeof RAG_THRESHOLDS];
-  if (!thresholds || !('green' in thresholds)) return 'red';
-
-  if (value >= thresholds.green) return 'green';
-  if (value >= thresholds.amber) return 'amber';
-  return 'red';
 }
 
 /**

@@ -14,7 +14,7 @@ import {
   upsertMetric,
   addMetricHistory,
 } from "./db";
-import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getPublicSectorExpenditure, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
+import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getPublicSectorExpenditure, getDataSourceUrl, calculateRAGStatus, RAG_THRESHOLDS, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 import { cache } from "./cache";
 
@@ -250,7 +250,6 @@ export const appRouter = router({
           validated.map(m => ({ metricKey: m.metric_key, dataDate: m.time_period }))
         );
 
-        const EMPLOYMENT_RAG_KEYS = new Set(['inactivity_rate', 'real_wage_growth', 'job_vacancy_ratio', 'underemployment']);
         const PCT_KEYS = new Set(['cpi_inflation', 'real_gdp_growth', 'output_per_hour', 'defence_spending_gdp', 'public_sector_net_debt', 'business_investment', 'a_e_wait_time']);
         const UNIT_MAP: Record<string, string> = { attainment8: 'Score', ambulance_response_time: ' minutes' };
 
@@ -259,7 +258,7 @@ export const appRouter = router({
         let newHistoryCount = 0;
 
         for (const metricData of validated) {
-          const ragStatus = EMPLOYMENT_RAG_KEYS.has(metricData.metric_key)
+          const ragStatus = RAG_THRESHOLDS[metricData.metric_key]
             ? calculateRAGStatus(metricData.metric_key, Number(metricData.value))
             : metricData.rag_status;
 

@@ -4,6 +4,30 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.15] - 2026-03-29
+
+### Changed
+
+- **Centralised RAG thresholds** – Replaced ad-hoc `RAG_THRESHOLDS` object (7 metrics, inconsistent shapes) with a data-driven table covering all 29 metrics that have documented RAG thresholds in tooltips. Each entry declares its evaluation direction (`higher_better`, `lower_better`, or `target_band`) and boundary values.
+- **`calculateRAGStatus` simplified** – Replaced seven metric-specific `if` blocks with a single switch on the threshold direction, driven entirely by the threshold table.
+- **RAG applied to all metrics on refresh** – The admin "Refresh data" flow now recalculates RAG status using `calculateRAGStatus` for every metric with a threshold entry (was previously limited to 4 Employment metrics via `EMPLOYMENT_RAG_KEYS`).
+
+### Fixed
+
+- **Scorecard colours not matching tooltips** – Fixed 7 metrics whose stored RAG status contradicted their own tooltip thresholds:
+  - `job_vacancy_ratio` 2.2%: was green, now red (tooltip: red < 2.5%)
+  - `inactivity_rate` 20.8%: was amber, now red (tooltip: red > 20%)
+  - `real_wage_growth` 0.84%: was amber, now red (tooltip: red < 1%)
+  - `real_gdp_growth` 0.97%: was red, now amber (tooltip: amber 0.5–1.5%)
+  - `underemployment` 8.48%: was red, now amber (tooltip: amber 5.5–8.5%)
+  - `street_confidence_index` 59.0%: was amber, now red (tooltip: red < 70% safe)
+  - `neet_rate` 4.2%: was amber, now green (tooltip: green < 8%)
+- **Threshold value mismatches vs tooltips** – `output_per_hour` green was 1.0 (should be 1.5), `real_gdp_growth` amber was 1.0 (should be 0.5), `cpi_inflation` amber ceiling was 3.5 (should be 4.0).
+
+### Added
+
+- **122 RAG threshold tests** – New comprehensive test suite verifying every metric's RAG calculation at boundary values and with current live data. Includes cross-checks ensuring every tooltip with RAG emoji has a matching threshold entry and that threshold directions match `METRIC_DIRECTION`.
+
 ## [1.0.14] - 2026-03-29
 
 ### Changed
