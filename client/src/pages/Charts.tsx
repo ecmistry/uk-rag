@@ -1,5 +1,5 @@
 import PopulationBreakdownChart from "@/components/PopulationBreakdownChart";
-import PublicSectorReceiptsChart from "@/components/PublicSectorReceiptsChart";
+import FiscalOverviewChart from "@/components/FiscalOverviewChart";
 
 export default function Charts() {
   return (
@@ -11,7 +11,7 @@ export default function Charts() {
         </p>
       </div>
 
-      <PublicSectorReceiptsChart />
+      <FiscalOverviewChart />
       <PopulationBreakdownChart />
     </div>
   );

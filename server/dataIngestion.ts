@@ -402,6 +402,50 @@ export async function getPublicSectorReceipts(): Promise<PublicSectorReceipts | 
   }
 }
 
+export interface PublicSectorExpenditurePeriod {
+  period: string;
+  public_and_common_services: number;
+  international_services: number;
+  debt_interest: number;
+  defence: number;
+  public_order_and_safety: number;
+  enterprise_and_economic_dev: number;
+  science_and_technology: number;
+  employment_policies: number;
+  agriculture_fisheries_forestry: number;
+  transport: number;
+  environment_protection: number;
+  housing_and_community: number;
+  health: number;
+  recreation_culture_religion: number;
+  education: number;
+  social_protection: number;
+  eu_transactions: number;
+}
+
+export interface PublicSectorExpenditure {
+  periods: PublicSectorExpenditurePeriod[];
+}
+
+/**
+ * Fetch public sector expenditure on services (HMT PSS Table 10a).
+ * Runs public_expenditure_fetcher.py --chart, returns fiscal year data.
+ */
+export async function getPublicSectorExpenditure(): Promise<PublicSectorExpenditure | null> {
+  try {
+    const projectRoot = getProjectRoot();
+    const scriptPath = path.join(projectRoot, 'server', 'public_expenditure_fetcher.py');
+    const { stdout } = await execAsync(`python3 ${scriptPath} --chart`, { timeout: 30_000 });
+    const trimmed = stdout.trim();
+    if (!trimmed || trimmed === '{}') return null;
+    const data = JSON.parse(trimmed) as PublicSectorExpenditure;
+    if (!data.periods || !Array.isArray(data.periods) || data.periods.length === 0) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * RAG threshold definitions for each metric
  */

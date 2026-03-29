@@ -14,7 +14,7 @@ import {
   upsertMetric,
   addMetricHistory,
 } from "./db";
-import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
+import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getPublicSectorExpenditure, getDataSourceUrl, calculateRAGStatus, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 import { cache } from "./cache";
 
@@ -141,6 +141,15 @@ export const appRouter = router({
       const cached = cache.get<Awaited<ReturnType<typeof getPublicSectorReceipts>>>(cacheKey);
       if (cached) return cached;
       const result = await getPublicSectorReceipts();
+      cache.set(cacheKey, result, 15 * 60 * 1000);
+      return result;
+    }),
+
+    getPublicSectorExpenditure: publicProcedure.query(async () => {
+      const cacheKey = "publicSectorExpenditure";
+      const cached = cache.get<Awaited<ReturnType<typeof getPublicSectorExpenditure>>>(cacheKey);
+      if (cached) return cached;
+      const result = await getPublicSectorExpenditure();
       cache.set(cacheKey, result, 15 * 60 * 1000);
       return result;
     }),
@@ -418,7 +427,8 @@ export const appRouter = router({
       const CRON_LABELS: Record<string, string> = {
         'ensure-uk-rag-portal-up': 'Service Watchdog',
         'daily_data_refresh_cron': 'Dashboard Data Refresh',
-        'public_sector_receipts_fetcher': 'Charts Data (Public Sector Receipts)',
+        'public_sector_receipts_fetcher': 'Charts Data (Receipts)',
+        'public_expenditure_fetcher': 'Charts Data (Expenditure)',
       };
 
       const CRON_SCHEDULE_LABELS: Record<string, string> = {
@@ -520,6 +530,7 @@ export const appRouter = router({
         'daily_data_refresh_cron.log': 'Daily Refresh',
         'watchdog.log': 'Watchdog',
         'public_sector_receipts.log': 'Public Sector Receipts',
+        'public_expenditure.log': 'Public Expenditure',
         'crime_per_capita_cron.log': 'Crime Per-Capita',
         'apprenticeship_intensity_cron.log': 'Apprenticeship Intensity',
         'sickness_absence_cron.log': 'Sickness Absence',
