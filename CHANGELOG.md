@@ -4,6 +4,25 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.16] - 2026-03-30
+
+### Fixed
+
+- **NEET Rate live data** – Replaced hardcoded 4.2% placeholder in `education_data_fetcher.py` with live ONS NEET XLSX parsing. Now fetches the "People - SA" sheet and extracts the 16–24 NEET percentage (current value: 12.8%).
+- **GP Appointment Access live data** – Replaced hardcoded 65.0% placeholder in `healthcare_data_fetcher.py` with live NHS Digital monthly summary XLSX parsing. Calculates the percentage of appointments booked within 14 days (current value: 83.1%).
+- **Ambulance Response Time live data** – Replaced fallback 8.5 min in `healthcare_data_fetcher.py` with live NHS England AmbSYS CSV parsing. Extracts Category 2 mean response time in seconds and converts to minutes (current value: 7.8 min).
+- **Recall Rate live data** – Replaced hardcoded recall/prison-population counts in `crime_data_fetcher.py` with live GOV.UK OMSQ ODS parsing for both licence recalls and prison population snapshot (current value: 15.0%).
+
+### Added
+
+- **No-placeholder-data test suite (83 tests)** – Six layers of defence ensuring every visible dashboard metric comes from a live source, never hardcoded values:
+  1. Static analysis: scans all fetcher/cron `.py` files for `"value": "placeholder"`, hardcoded numeric values, and `"not yet implemented"` stubs in dashboard metric functions.
+  2. Network call verification: confirms every dashboard metric function contains evidence of HTTP/file fetch (excludes Defence ORBAT models).
+  3. Pure-stub detection: flags functions that return hardcoded values without attempting any live data fetch.
+  4. Runtime execution: runs all 5 fetcher scripts end-to-end, verifying output contains real numeric values — missing metrics from transient API failures are tolerated, fake data is not.
+  5. MongoDB guard: queries the live database to ensure no dashboard metric has `value="placeholder"` or a `lastUpdated` older than 18 months.
+  6. Fetcher coverage: every `metric_key` from `expectedMetrics.ts` must appear in at least one fetcher or cron script.
+
 ## [1.0.15] - 2026-03-29
 
 ### Changed
