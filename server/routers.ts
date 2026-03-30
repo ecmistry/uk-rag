@@ -485,13 +485,18 @@ export const appRouter = router({
 
             const hasRealErrors = lines.slice(-15).some(isRealError);
 
+            const isRealWarning = (line: string) => {
+              if (/warnings?\s*:\s*0\b/i.test(line)) return false;
+              return /⚠|(?<!\w)warning(?!s?\s*:\s*0)/i.test(line);
+            };
+
             if (hasRealErrors) {
               lastStatus = 'error';
               const errLine = lines.filter(isRealError).pop();
               lastMessage = errLine ? stripPrefix(errLine) : 'Error detected';
-            } else if (/warning|⚠/i.test(tailStr)) {
+            } else if (lines.slice(-15).some(isRealWarning)) {
               lastStatus = 'warning';
-              const warnLine = lines.filter(l => /warning|⚠/i.test(l)).pop();
+              const warnLine = lines.filter(isRealWarning).pop();
               lastMessage = warnLine ? stripPrefix(warnLine) : 'Completed with warnings';
             } else if (timestampLines.length > 0 || lines.length > 0) {
               lastStatus = 'success';
