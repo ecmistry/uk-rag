@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **False "Warning" status on admin Scheduled Jobs panel** – The cron status regex `/warning/i` matched the summary line `Warnings: 0` as a warning, causing a clean run with zero warnings to display as "Warning". Now excludes `Warnings: 0` using the same pattern already used for `Errors: 0`.
+- **Daily refresh OOM kill** – The `MemoryMax=1536M` cgroup limit on the daily cron was too tight; the education fetcher (NEET XLSX + openpyxl) pushed cumulative memory past the limit after Economy and Employment historical loads. Increased to `3G` (system has 8GB total, 5GB available).
+
 - **NEET Rate live data** – Replaced hardcoded 4.2% placeholder in `education_data_fetcher.py` with live ONS NEET XLSX parsing. Now fetches the "People - SA" sheet and extracts the 16–24 NEET percentage (current value: 12.8%).
 - **GP Appointment Access live data** – Replaced hardcoded 65.0% placeholder in `healthcare_data_fetcher.py` with live NHS Digital monthly summary XLSX parsing. Calculates the percentage of appointments booked within 14 days (current value: 83.1%).
 - **Ambulance Response Time live data** – Replaced fallback 8.5 min in `healthcare_data_fetcher.py` with live NHS England AmbSYS CSV parsing. Extracts Category 2 mean response time in seconds and converts to minutes (current value: 7.8 min).
