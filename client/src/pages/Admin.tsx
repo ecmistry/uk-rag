@@ -18,8 +18,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // used by login form
+import { Label } from "@/components/ui/label";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Lock,
   RefreshCw,
@@ -36,9 +42,11 @@ import {
   CalendarClock,
   ScrollText,
   Info,
+  ChevronDown,
+  LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -125,6 +133,69 @@ function progressColor(percent: number): string {
   return "[&>div]:bg-red-500";
 }
 
+
+const STORAGE_KEY = "admin-collapsed-sections";
+
+function useCollapsedSections() {
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const toggle = useCallback((id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
+  const isOpen = useCallback((id: string) => !collapsed.has(id), [collapsed]);
+
+  return { toggle, isOpen };
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  description,
+  isOpen,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description?: React.ReactNode;
+  isOpen: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <CollapsibleTrigger asChild>
+      <CardHeader className="cursor-pointer select-none hover:bg-muted/50 transition-colors rounded-t-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">{title}</CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            {children}
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                isOpen ? "" : "-rotate-90"
+              }`}
+            />
+          </div>
+        </div>
+        {description && <CardDescription>{description}</CardDescription>}
+      </CardHeader>
+    </CollapsibleTrigger>
+  );
+}
 
 export default function Admin() {
   const { user, refresh } = useAuth();
@@ -225,7 +296,15 @@ export default function Admin() {
   return <AdminDashboard />;
 }
 
-function DataRefreshSection({ cronSchedule }: { cronSchedule?: string }) {
+function DataRefreshSection({
+  cronSchedule,
+  isOpen,
+  onToggle,
+}: {
+  cronSchedule?: string;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
   const utils = trpc.useUtils();
   const refreshMutation = trpc.metrics.refresh.useMutation({
     onSuccess: () => {
@@ -239,39 +318,111 @@ function DataRefreshSection({ cronSchedule }: { cronSchedule?: string }) {
   });
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          <CardTitle className="text-base">Data Refresh</CardTitle>
-        </div>
-        <CardDescription>
-          Dashboard data is refreshed automatically by a server-side cron job.
-          Use the button below for an ad-hoc manual refresh.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex flex-wrap items-center gap-4">
-          <Button
-            onClick={() => refreshMutation.mutate({ category: "All" })}
-            disabled={refreshMutation.isPending}
-            size="sm"
-          >
-            <RefreshCw
-              className={refreshMutation.isPending ? "animate-spin" : ""}
-              size={14}
-            />
-            <span className="ml-2">Refresh all now</span>
-          </Button>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CalendarClock className="h-4 w-4" />
-            <span>
-              Automatic: <strong>{cronSchedule ?? "Daily at 06:00"}</strong>
-            </span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <Card>
+        <SectionHeader
+          icon={RefreshCw}
+          title="Data Refresh"
+          description="Dashboard data is refreshed automatically by a server-side cron job. Use the button below for an ad-hoc manual refresh."
+          isOpen={isOpen}
+        />
+        <CollapsibleContent>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-center gap-4">
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  refreshMutation.mutate({ category: "All" });
+                }}
+                disabled={refreshMutation.isPending}
+                size="sm"
+              >
+                <RefreshCw
+                  className={refreshMutation.isPending ? "animate-spin" : ""}
+                  size={14}
+                />
+                <span className="ml-2">Refresh all now</span>
+              </Button>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CalendarClock className="h-4 w-4" />
+                <span>
+                  Automatic: <strong>{cronSchedule ?? "Daily at 06:00"}</strong>
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}
+
+const DASHBOARD_CATEGORIES = [
+  "Economy", "Employment", "Education", "Crime", "Healthcare", "Defence",
+] as const;
+
+function DashboardSectionsCard({
+  isOpen,
+  onToggle,
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const utils = trpc.useUtils();
+  const { data: sections } = trpc.settings.getDashboardSections.useQuery();
+  const updateMutation = trpc.settings.updateDashboardSections.useMutation({
+    onSuccess: () => {
+      void utils.settings.getDashboardSections.invalidate();
+      toast.success("Dashboard sections updated");
+    },
+    onError: (err) => {
+      toast.error(`Failed to update: ${err.message}`);
+    },
+  });
+
+  const handleToggle = (category: string, checked: boolean) => {
+    if (!sections) return;
+    updateMutation.mutate({ ...sections, [category]: checked });
+  };
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <Card>
+        <SectionHeader
+          icon={LayoutDashboard}
+          title="Dashboard Sections"
+          description="Toggle which metric categories are visible on the dashboard for all users"
+          isOpen={isOpen}
+        />
+        <CollapsibleContent>
+          <CardContent>
+            <div className="space-y-3">
+              {DASHBOARD_CATEGORIES.map((category) => (
+                <div
+                  key={category}
+                  className="flex items-center justify-between py-1.5"
+                >
+                  <Label
+                    htmlFor={`section-${category}`}
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    {category}
+                  </Label>
+                  <Switch
+                    id={`section-${category}`}
+                    checked={sections?.[category] !== false}
+                    onCheckedChange={(checked) =>
+                      handleToggle(category, checked)
+                    }
+                    disabled={updateMutation.isPending}
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }
 
@@ -280,6 +431,7 @@ function AdminDashboard() {
     trpc.metrics.serverHealth.useQuery(undefined, {
       refetchInterval: 60_000,
     });
+  const { toggle, isOpen } = useCollapsedSections();
 
   if (isLoading) {
     return (
@@ -349,223 +501,247 @@ function AdminDashboard() {
               j.name.toLowerCase().includes("data refresh"),
           )?.schedule
         }
+        isOpen={isOpen("data-refresh")}
+        onToggle={() => toggle("data-refresh")}
+      />
+
+      {/* Dashboard Section Visibility */}
+      <DashboardSectionsCard
+        isOpen={isOpen("dashboard-sections")}
+        onToggle={() => toggle("dashboard-sections")}
       />
 
       {/* Resource gauges */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <Collapsible open={isOpen("resources")} onOpenChange={() => toggle("resources")}>
         <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <HardDrive className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">Disk</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {data.disk.used} / {data.disk.total}
-              </span>
-              <span className={statusColor(diskPercent)}>
-                {data.disk.percent}
-              </span>
-            </div>
-            <Progress
-              value={diskPercent}
-              className={`h-2 ${progressColor(diskPercent)}`}
-            />
-            <p className="text-xs text-muted-foreground">
-              {data.disk.available} available
-            </p>
-          </CardContent>
-        </Card>
+          <SectionHeader
+            icon={Cpu}
+            title="System Resources"
+            description="Disk, memory, and CPU utilisation"
+            isOpen={isOpen("resources")}
+          />
+          <CollapsibleContent>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <HardDrive className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Disk</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {data.disk.used} / {data.disk.total}
+                    </span>
+                    <span className={statusColor(diskPercent)}>
+                      {data.disk.percent}
+                    </span>
+                  </div>
+                  <Progress
+                    value={diskPercent}
+                    className={`h-2 ${progressColor(diskPercent)}`}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {data.disk.available} available
+                  </p>
+                </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <MemoryStick className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">Memory</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {formatBytes(data.mem.used)} / {formatBytes(data.mem.total)}
-              </span>
-              <span className={statusColor(memPercent)}>{memPercent}%</span>
-            </div>
-            <Progress
-              value={memPercent}
-              className={`h-2 ${progressColor(memPercent)}`}
-            />
-            <p className="text-xs text-muted-foreground">
-              {formatBytes(data.mem.available)} available
-              {data.appMem > 0 && (
-                <> &middot; App: {formatBytes(data.appMem)}</>
-              )}
-            </p>
-          </CardContent>
-        </Card>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <MemoryStick className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Memory</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {formatBytes(data.mem.used)} / {formatBytes(data.mem.total)}
+                    </span>
+                    <span className={statusColor(memPercent)}>{memPercent}%</span>
+                  </div>
+                  <Progress
+                    value={memPercent}
+                    className={`h-2 ${progressColor(memPercent)}`}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formatBytes(data.mem.available)} available
+                    {data.appMem > 0 && (
+                      <> &middot; App: {formatBytes(data.appMem)}</>
+                    )}
+                  </p>
+                </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Cpu className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">CPU Load</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {data.load.avg1} / {data.load.cpuCount} cores
-              </span>
-              <span className={statusColor(loadPercent)}>
-                {loadPercent}%
-              </span>
-            </div>
-            <Progress
-              value={Math.min(loadPercent, 100)}
-              className={`h-2 ${progressColor(loadPercent)}`}
-            />
-            <p className="text-xs text-muted-foreground">
-              Load avg: {data.load.avg1} · {data.load.avg5} · {data.load.avg15}
-            </p>
-          </CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">CPU Load</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {data.load.avg1} / {data.load.cpuCount} cores
+                    </span>
+                    <span className={statusColor(loadPercent)}>
+                      {loadPercent}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={Math.min(loadPercent, 100)}
+                    className={`h-2 ${progressColor(loadPercent)}`}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Load avg: {data.load.avg1} · {data.load.avg5} · {data.load.avg15}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
         </Card>
-      </div>
+      </Collapsible>
 
       {/* MongoDB */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">MongoDB</CardTitle>
-          </div>
-          <CardDescription>
-            {data.mongo.collections} collections &middot;{" "}
-            {data.mongo.documents.toLocaleString()} documents &middot; Data:{" "}
-            {formatBytes(data.mongo.dataSize)} &middot; Indexes:{" "}
-            {formatBytes(data.mongo.indexSize)}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Collection</TableHead>
-                <TableHead className="text-right">Documents</TableHead>
-                <TableHead className="text-right">Size</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.mongo.collectionDetails
-                .sort(
-                  (a: { documents: number }, b: { documents: number }) =>
-                    b.documents - a.documents
-                )
-                .map(
-                  (col: {
-                    name: string;
-                    documents: number;
-                    sizeKB: number;
-                  }) => (
-                    <TableRow key={col.name}>
-                      <TableCell className="font-mono text-sm">
-                        {col.name}
-                        {col.documents === 0 && (
-                          <Badge variant="outline" className="ml-2 text-xs">
-                            empty
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {col.documents.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {col.sizeKB < 1
-                          ? "< 1 KB"
-                          : `${col.sizeKB.toLocaleString()} KB`}
-                      </TableCell>
-                    </TableRow>
-                  )
-                )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Collapsible open={isOpen("mongodb")} onOpenChange={() => toggle("mongodb")}>
+        <Card>
+          <SectionHeader
+            icon={Database}
+            title="MongoDB"
+            description={
+              <>
+                {data.mongo.collections} collections &middot;{" "}
+                {data.mongo.documents.toLocaleString()} documents &middot; Data:{" "}
+                {formatBytes(data.mongo.dataSize)} &middot; Indexes:{" "}
+                {formatBytes(data.mongo.indexSize)}
+              </>
+            }
+            isOpen={isOpen("mongodb")}
+          />
+          <CollapsibleContent>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Collection</TableHead>
+                    <TableHead className="text-right">Documents</TableHead>
+                    <TableHead className="text-right">Size</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.mongo.collectionDetails
+                    .sort(
+                      (a: { documents: number }, b: { documents: number }) =>
+                        b.documents - a.documents
+                    )
+                    .map(
+                      (col: {
+                        name: string;
+                        documents: number;
+                        sizeKB: number;
+                      }) => (
+                        <TableRow key={col.name}>
+                          <TableCell className="font-mono text-sm">
+                            {col.name}
+                            {col.documents === 0 && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                empty
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {col.documents.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {col.sizeKB < 1
+                              ? "< 1 KB"
+                              : `${col.sizeKB.toLocaleString()} KB`}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Cron Jobs */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Scheduled Jobs</CardTitle>
-          </div>
-          <CardDescription>
-            {data.cronJobs.length} active job
-            {data.cronJobs.length !== 1 ? "s" : ""} &middot; Total log size:{" "}
-            {formatBytes(data.logsBytes)}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {data.cronJobs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No cron jobs configured
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Job</TableHead>
-                  <TableHead>Schedule</TableHead>
-                  <TableHead>Last Run</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">
-                    Detail
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.cronJobs.map(
-                  (
-                    job: {
-                      name: string;
-                      schedule: string;
-                      lastRun: string | null;
-                      lastStatus: string;
-                      lastMessage: string;
-                      raw: string;
-                    },
-                    i: number
-                  ) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium text-sm">
-                        {job.name}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {job.schedule}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {job.lastRun
-                          ? formatRelativeTime(job.lastRun)
-                          : "Never"}
-                      </TableCell>
-                      <TableCell>
-                        <CronStatusBadge status={job.lastStatus} />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-xs text-muted-foreground max-w-[300px] truncate">
-                        {job.lastMessage || "\u2014"}
-                      </TableCell>
+      <Collapsible open={isOpen("scheduled-jobs")} onOpenChange={() => toggle("scheduled-jobs")}>
+        <Card>
+          <SectionHeader
+            icon={Clock}
+            title="Scheduled Jobs"
+            description={
+              <>
+                {data.cronJobs.length} active job
+                {data.cronJobs.length !== 1 ? "s" : ""} &middot; Total log size:{" "}
+                {formatBytes(data.logsBytes)}
+              </>
+            }
+            isOpen={isOpen("scheduled-jobs")}
+          />
+          <CollapsibleContent>
+            <CardContent>
+              {data.cronJobs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No cron jobs configured
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Job</TableHead>
+                      <TableHead>Schedule</TableHead>
+                      <TableHead>Last Run</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden lg:table-cell">
+                        Detail
+                      </TableHead>
                     </TableRow>
-                  )
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {data.cronJobs.map(
+                      (
+                        job: {
+                          name: string;
+                          schedule: string;
+                          lastRun: string | null;
+                          lastStatus: string;
+                          lastMessage: string;
+                          raw: string;
+                        },
+                        i: number
+                      ) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium text-sm">
+                            {job.name}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                            {job.schedule}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                            {job.lastRun
+                              ? formatRelativeTime(job.lastRun)
+                              : "Never"}
+                          </TableCell>
+                          <TableCell>
+                            <CronStatusBadge status={job.lastStatus} />
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell text-xs text-muted-foreground max-w-[300px] truncate">
+                            {job.lastMessage || "\u2014"}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Recent Logs */}
-      <RecentLogsSection logs={data.recentLogs ?? []} />
+      <RecentLogsSection
+        logs={data.recentLogs ?? []}
+        isOpen={isOpen("logs")}
+        onToggle={() => toggle("logs")}
+      />
     </div>
   );
 }
@@ -615,7 +791,15 @@ function LogLevelBadge({ level }: { level: string }) {
   );
 }
 
-function RecentLogsSection({ logs }: { logs: LogEntry[] }) {
+function RecentLogsSection({
+  logs,
+  isOpen,
+  onToggle,
+}: {
+  logs: LogEntry[];
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
   const [filter, setFilter] = useState<"all" | "error" | "warning">("all");
 
   const filtered =
@@ -627,14 +811,15 @@ function RecentLogsSection({ logs }: { logs: LogEntry[] }) {
   const warningCount = logs.filter((l) => l.level === "warning").length;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ScrollText className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Recent Logs</CardTitle>
-          </div>
-          <div className="flex items-center gap-1.5">
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <Card>
+        <SectionHeader
+          icon={ScrollText}
+          title="Recent Logs"
+          description="Errors, warnings, and notable events from cron jobs and the Node.js service"
+          isOpen={isOpen}
+        >
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             {(["all", "error", "warning"] as const).map((f) => (
               <Button
                 key={f}
@@ -651,61 +836,59 @@ function RecentLogsSection({ logs }: { logs: LogEntry[] }) {
               </Button>
             ))}
           </div>
-        </div>
-        <CardDescription>
-          Errors, warnings, and notable events from cron jobs and the Node.js
-          service
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {filtered.length === 0 ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            {filter === "all"
-              ? "No recent errors or warnings — everything looks healthy"
-              : `No recent ${filter}s`}
-          </div>
-        ) : (
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[140px]">Time</TableHead>
-                  <TableHead className="w-[80px]">Level</TableHead>
-                  <TableHead className="w-[160px]">Source</TableHead>
-                  <TableHead>Message</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((entry, i) => {
-                  const config =
-                    LOG_LEVEL_CONFIG[
-                      entry.level as keyof typeof LOG_LEVEL_CONFIG
-                    ] ?? LOG_LEVEL_CONFIG.info;
-                  return (
-                    <TableRow key={i} className={config.rowClass}>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">
-                        {entry.timestamp
-                          ? formatRelativeTime(entry.timestamp)
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <LogLevelBadge level={entry.level} />
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">
-                        {entry.source}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[400px]">
-                        <span className="line-clamp-2">{entry.message}</span>
-                      </TableCell>
+        </SectionHeader>
+        <CollapsibleContent>
+          <CardContent>
+            {filtered.length === 0 ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                {filter === "all"
+                  ? "No recent errors or warnings — everything looks healthy"
+                  : `No recent ${filter}s`}
+              </div>
+            ) : (
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[140px]">Time</TableHead>
+                      <TableHead className="w-[80px]">Level</TableHead>
+                      <TableHead className="w-[160px]">Source</TableHead>
+                      <TableHead>Message</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((entry, i) => {
+                      const config =
+                        LOG_LEVEL_CONFIG[
+                          entry.level as keyof typeof LOG_LEVEL_CONFIG
+                        ] ?? LOG_LEVEL_CONFIG.info;
+                      return (
+                        <TableRow key={i} className={config.rowClass}>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-mono">
+                            {entry.timestamp
+                              ? formatRelativeTime(entry.timestamp)
+                              : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <LogLevelBadge level={entry.level} />
+                          </TableCell>
+                          <TableCell className="text-sm font-medium">
+                            {entry.source}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground max-w-[400px]">
+                            <span className="line-clamp-2">{entry.message}</span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }

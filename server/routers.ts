@@ -13,6 +13,8 @@ import {
   getExistingHistoryPeriods,
   upsertMetric,
   addMetricHistory,
+  getDashboardSections,
+  setDashboardSections,
 } from "./db";
 import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getPublicSectorExpenditure, getDataSourceUrl, calculateRAGStatus, RAG_THRESHOLDS, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
@@ -71,6 +73,19 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 
 export const appRouter = router({
   system: systemRouter,
+
+  settings: router({
+    getDashboardSections: publicProcedure.query(async () => {
+      return getDashboardSections();
+    }),
+
+    updateDashboardSections: adminProcedure
+      .input(z.record(z.string(), z.boolean()))
+      .mutation(async ({ input }) => {
+        await setDashboardSections(input);
+        return { success: true } as const;
+      }),
+  }),
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

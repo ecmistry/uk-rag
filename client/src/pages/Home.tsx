@@ -113,6 +113,10 @@ export default function Home() {
     placeholderData: (previousData) => previousData,
   });
 
+  const { data: dashboardSections } = trpc.settings.getDashboardSections.useQuery(undefined, {
+    staleTime: 60 * 1000,
+  });
+
   // Refresh mutation (used by empty-state "Fetch X Data" buttons)
   const refreshMutation = trpc.metrics.refresh.useMutation({
     onSuccess: () => {
@@ -143,7 +147,9 @@ export default function Home() {
     <div className="w-full">
       <div>
         {/* Metrics by category – RAG-of-RAGs style: section label + dense grid of small scorecards */}
-        {['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence'].map((category, index) => {
+        {['Economy', 'Employment', 'Education', 'Crime', 'Healthcare', 'Defence']
+          .filter((category) => !dashboardSections || dashboardSections[category] !== false)
+          .map((category, index) => {
           const categoryMetrics = metricsByCategory[category] || [];
           const metricsByKey = metricsByKeyByCategory[category] ?? {};
           const expectedSlots = EXPECTED_METRICS[category] ?? [];

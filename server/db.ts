@@ -23,6 +23,7 @@ const COLLECTIONS = {
   users: "users",
   metrics: "metrics",
   metricHistory: "metricHistory",
+  settings: "settings",
 } as const;
 
 /**
@@ -702,4 +703,48 @@ export async function getMetricTrends(): Promise<
 
   cache.set(cacheKey, trends, 10 * 60 * 1000);
   return trends;
+}
+
+// ============================================================================
+// Dashboard Section Visibility Settings
+// ============================================================================
+
+const ALL_DASHBOARD_CATEGORIES = [
+  "Economy", "Employment", "Education", "Crime", "Healthcare", "Defence",
+] as const;
+
+const DEFAULT_SECTIONS: Record<string, boolean> = Object.fromEntries(
+  ALL_DASHBOARD_CATEGORIES.map((c) => [c, true]),
+);
+
+export async function getDashboardSections(): Promise<Record<string, boolean>> {
+  const collection = await getCollection(COLLECTIONS.settings);
+  if (!collection) return { ...DEFAULT_SECTIONS };
+
+  const doc = await collection.findOne({ _id: "dashboardSections" as any });
+  if (!doc || !doc.sections) return { ...DEFAULT_SECTIONS };
+
+  const result: Record<string, boolean> = {};
+  for (const cat of ALL_DASHBOARD_CATEGORIES) {
+    result[cat] = doc.sections[cat] !== false;
+  }
+  return result;
+}
+
+export async function setDashboardSections(
+  sections: Record<string, boolean>,
+): Promise<void> {
+  const collection = await getCollection(COLLECTIONS.settings);
+  if (!collection) throw new Error("Database not available");
+
+  const value: Record<string, boolean> = {};
+  for (const cat of ALL_DASHBOARD_CATEGORIES) {
+    value[cat] = sections[cat] !== false;
+  }
+
+  await collection.updateOne(
+    { _id: "dashboardSections" as any },
+    { $set: { sections: value, updatedAt: new Date() } },
+    { upsert: true },
+  );
 }
