@@ -549,6 +549,10 @@ def run(only_category: Optional[str] = None) -> None:
             cat_inserted = 0
             cat_updated = 0
 
+            # Track the latest row per metric_key so only the most
+            # recent period is written to the dashboard tile.
+            latest_per_key: Dict[str, Dict] = {}
+
             for row in valid_metrics:
                 key = row["metric_key"]
                 val = str(row["value"])
@@ -558,11 +562,7 @@ def run(only_category: Optional[str] = None) -> None:
                 source = row.get("source_url", "")
                 unit = infer_unit(key, row.get("unit"))
                 info = row.get("information")
-
-                # Use the metric's own category if provided, otherwise fall back to the parent category
                 metric_category = row.get("category", cat["name"])
-                upsert_metric(db, key, name, metric_category, val, unit, rag, period, source)
-                cat_updated += 1
 
                 # Insert history if this period doesn't exist yet
                 dedup_key = f"{key}|{period}"
@@ -571,6 +571,24 @@ def run(only_category: Optional[str] = None) -> None:
                     existing.add(dedup_key)
                     cat_inserted += 1
                     log(f"  ✓ New history: {name} — {period} = {val} ({rag})")
+
+                # Keep only the latest period for the dashboard tile
+                prev = latest_per_key.get(key)
+                if prev is None or period >= prev["period"]:
+                    latest_per_key[key] = {
+                        "key": key, "name": name, "category": metric_category,
+                        "val": val, "unit": unit, "rag": rag,
+                        "period": period, "source": source,
+                    }
+
+            # Upsert only the latest row per metric to the dashboard tile
+            for entry in latest_per_key.values():
+                upsert_metric(
+                    db, entry["key"], entry["name"], entry["category"],
+                    entry["val"], entry["unit"], entry["rag"],
+                    entry["period"], entry["source"],
+                )
+                cat_updated += 1
 
             total_inserted += cat_inserted
             total_updated += cat_updated

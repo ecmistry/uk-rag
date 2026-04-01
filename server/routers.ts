@@ -253,9 +253,16 @@ export const appRouter = router({
         const PCT_KEYS = new Set(['cpi_inflation', 'real_gdp_growth', 'output_per_hour', 'defence_spending_gdp', 'public_sector_net_debt', 'business_investment', 'a_e_wait_time']);
         const UNIT_MAP: Record<string, string> = { attainment8: 'Score', ambulance_response_time: ' minutes' };
 
-        const upsertPromises: Promise<void>[] = [];
         const historyPromises: Promise<void>[] = [];
         let newHistoryCount = 0;
+
+        // Track only the latest period per metric for the dashboard tile.
+        // History gets ALL rows, but the tile must show the most recent.
+        const latestPerKey = new Map<string, {
+          metricKey: string; name: string; category: string;
+          value: string; unit: string; ragStatus: string;
+          dataDate: string; sourceUrl: string;
+        }>();
 
         for (const metricData of validated) {
           const ragStatus = RAG_THRESHOLDS[metricData.metric_key]
@@ -266,16 +273,19 @@ export const appRouter = router({
             || UNIT_MAP[metricData.metric_key]
             || (PCT_KEYS.has(metricData.metric_key) || metricData.metric_key.includes('rate') || metricData.metric_key.includes('vacancy') ? '%' : '');
 
-          upsertPromises.push(upsertMetric({
-            metricKey: metricData.metric_key,
-            name: metricData.metric_name,
-            category: metricData.category,
-            value: metricData.value.toString(),
-            unit,
-            ragStatus,
-            dataDate: metricData.time_period,
-            sourceUrl: metricData.source_url,
-          }));
+          const prev = latestPerKey.get(metricData.metric_key);
+          if (!prev || metricData.time_period >= prev.dataDate) {
+            latestPerKey.set(metricData.metric_key, {
+              metricKey: metricData.metric_key,
+              name: metricData.metric_name,
+              category: metricData.category,
+              value: metricData.value.toString(),
+              unit,
+              ragStatus,
+              dataDate: metricData.time_period,
+              sourceUrl: metricData.source_url,
+            });
+          }
 
           if (!existingPeriods.has(`${metricData.metric_key}|${metricData.time_period}`)) {
             historyPromises.push(addMetricHistory({
@@ -289,6 +299,7 @@ export const appRouter = router({
           }
         }
 
+        const upsertPromises = [...latestPerKey.values()].map(entry => upsertMetric(entry));
         await Promise.all(upsertPromises);
         await Promise.all(historyPromises);
         console.log(`[Metrics Refresh] ${upsertPromises.length} tiles upserted, ${newHistoryCount} new history entries`);
