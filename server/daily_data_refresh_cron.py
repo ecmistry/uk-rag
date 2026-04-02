@@ -675,6 +675,37 @@ def run(only_category: Optional[str] = None) -> None:
         else:
             log("\n✓ All categories processed successfully")
 
+        # ── Post-refresh consistency scan ──
+        log(f"\n{'─' * 50}")
+        log("Post-refresh consistency scan: tile vs history")
+        log(f"{'─' * 50}")
+        try:
+            tiles = list(db["metrics"].find({}))
+            mismatches: List[str] = []
+            for tile in tiles:
+                dd = tile.get("dataDate")
+                if not dd or dd == "Placeholder":
+                    continue
+                hist = db["metricHistory"].find_one(
+                    {"metricKey": tile["metricKey"], "dataDate": dd}
+                )
+                if hist and hist.get("value") != tile.get("value"):
+                    mismatches.append(
+                        f"{tile['metricKey']}: tile={tile['value']} "
+                        f"history={hist['value']} ({dd})"
+                    )
+            if mismatches:
+                log_warn(f"{len(mismatches)} tile/history mismatch(es) found:")
+                for m in mismatches:
+                    log_warn(f"  {m}")
+                all_warnings.extend(
+                    [f"Tile/history mismatch: {m}" for m in mismatches]
+                )
+            else:
+                log("  ✓ All tiles match their history entries")
+        except Exception as e:
+            log_error(f"Consistency scan failed: {e}")
+
     finally:
         client.close()
         log("Database connection closed")
