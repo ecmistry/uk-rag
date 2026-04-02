@@ -582,12 +582,18 @@ def run(only_category: Optional[str] = None) -> None:
                         "period": period, "source": source,
                     }
 
-            # Upsert only the latest row per metric to the dashboard tile
+            # Upsert only the latest row per metric to the dashboard tile,
+            # and always update the history entry for that period so the
+            # tile and history stay in sync when data sources revise values.
             for entry in latest_per_key.values():
                 upsert_metric(
                     db, entry["key"], entry["name"], entry["category"],
                     entry["val"], entry["unit"], entry["rag"],
                     entry["period"], entry["source"],
+                )
+                insert_history(
+                    db, entry["key"], entry["val"], entry["rag"],
+                    entry["period"], entry.get("info"),
                 )
                 cat_updated += 1
 

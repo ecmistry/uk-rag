@@ -932,3 +932,77 @@ describe("Tile latest value: cron normalisation", () => {
     expect(upsertInLatestLoop![0]).toContain('entry["period"]');
   });
 });
+
+// ─── 14. Tile/history value sync guard ──────────────────────────────────────
+//
+// Prevents the bug where data sources revise values (e.g. ambulance 8.5→7.8,
+// recall 14.7→15.0) but only the tile gets updated while history keeps the
+// old value, because the dedup logic skips existing history periods.
+
+describe("Tile latest value: tile/history sync on data revision", () => {
+  const cronPath = path.join(__dirname, "daily_data_refresh_cron.py");
+  const cronSrc = fs.readFileSync(cronPath, "utf-8");
+  const routerPath = path.join(__dirname, "routers.ts");
+  const routerSrc = fs.readFileSync(routerPath, "utf-8");
+
+  it("cron calls insert_history inside the latest_per_key tile loop", () => {
+    const tileLoop = cronSrc.match(
+      /for entry in latest_per_key\.values\(\):[\s\S]*?cat_updated/,
+    );
+    expect(tileLoop).toBeTruthy();
+    expect(
+      tileLoop![0],
+      "insert_history must be called alongside upsert_metric in the " +
+        "latest_per_key loop so revised data updates both tile AND history",
+    ).toContain("insert_history");
+  });
+
+  it("router calls addMetricHistory for latest entries alongside tile upsert", () => {
+    const afterLatestPerKey = routerSrc.match(
+      /latestPerKey\.values\(\)[\s\S]*?await Promise\.all/,
+    );
+    expect(afterLatestPerKey).toBeTruthy();
+    expect(
+      afterLatestPerKey![0],
+      "addMetricHistory must be called for latestPerKey entries so " +
+        "revised data updates both tile AND history",
+    ).toContain("addMetricHistory");
+  });
+
+  it("DB: no tile value differs from its matching history entry", () => {
+    let stdout: string;
+    try {
+      stdout = execSync(
+        `node -e "
+const { MongoClient } = require('mongodb');
+async function main() {
+  const client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017');
+  await client.connect();
+  const db = client.db('uk_rag_portal');
+  const tiles = await db.collection('metrics').find({}).toArray();
+  const mismatches = [];
+  for (const t of tiles) {
+    if (!t.dataDate) continue;
+    const h = await db.collection('metricHistory').findOne({ metricKey: t.metricKey, dataDate: t.dataDate });
+    if (h && h.value !== t.value) {
+      mismatches.push(t.metricKey + ': tile=' + t.value + ' history=' + h.value + ' period=' + t.dataDate);
+    }
+  }
+  console.log(JSON.stringify(mismatches));
+  await client.close();
+}
+main();
+"`,
+        { encoding: "utf-8", timeout: 15000 },
+      ).trim();
+    } catch {
+      stdout = "[]";
+    }
+    const mismatches: string[] = JSON.parse(stdout);
+    expect(
+      mismatches,
+      "Tile value must equal history value for the same period. " +
+        "Mismatches: " + mismatches.join("; "),
+    ).toHaveLength(0);
+  });
+});

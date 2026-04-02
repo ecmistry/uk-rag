@@ -315,8 +315,18 @@ export const appRouter = router({
         }
 
         const upsertPromises = [...latestPerKey.values()].map(entry => upsertMetric(entry));
+        // Always update history for the latest period per metric so revised
+        // data sources don't leave tile and history out of sync.
+        const latestHistoryPromises = [...latestPerKey.values()].map(entry =>
+          addMetricHistory({
+            metricKey: entry.metricKey,
+            value: entry.value,
+            ragStatus: entry.ragStatus,
+            dataDate: entry.dataDate,
+          }),
+        );
         await Promise.all(upsertPromises);
-        await Promise.all(historyPromises);
+        await Promise.all([...historyPromises, ...latestHistoryPromises]);
         console.log(`[Metrics Refresh] ${upsertPromises.length} tiles upserted, ${newHistoryCount} new history entries`);
 
         try {
