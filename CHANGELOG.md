@@ -4,6 +4,16 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.18] - 2026-04-02
+
+### Fixed
+
+- **Perception of Safety (street_confidence_index) wrong data source** – The fetcher was downloading the CSEW "Perceptions Other" quarterly dataset and using a vague keyword search that matched the string "Perception" in the MeasurementType column, then grabbed 59 from the UnweightedCount column (a survey respondent count, not a percentage). Rewrote the fetcher to use ONS Annual Supplementary Tables (Table B7: "% who felt safe walking alone after dark"), computing `100% − safe% = unsafe%`. Also fixed the RAG thresholds from `higher_better, green≥70` to `lower_better, green≤20, amber≤30` to match the centralised dataIngestion.ts definition. Current correct value: 21.6% (amber).
+
+### Added
+
+- **Street confidence index test suite (32 tests)** – Structural checks ensuring the fetcher uses the correct ONS source (Annual Supplementary Tables), RAG threshold alignment with dataIngestion.ts, fetcher output validation (values in expected range, no UnweightedCount leak), database consistency (tile matches latest history), and value sanity guards.
+
 ## [1.0.17] - 2026-04-02
 
 ### Fixed

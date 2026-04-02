@@ -14,6 +14,7 @@ import sys
 import zipfile
 from datetime import datetime
 
+import openpyxl
 import pandas as pd
 import requests
 
@@ -21,7 +22,7 @@ import requests
 SOURCE_URLS = {
     "recorded_crime_rate": "https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/crimeinenglandandwalesquarterlydatatables",
     "charge_rate": "https://www.gov.uk/government/statistical-data-sets/police-recorded-crime-and-outcomes-open-data-tables",
-    "street_confidence_index": "https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/perceptionsothercsewopendatatable",
+    "street_confidence_index": "https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/crimeinenglandandwalesannualsupplementarytables",
     "crown_court_backlog": "https://www.gov.uk/government/collections/criminal-court-statistics",
     "recall_rate": "https://www.gov.uk/government/collections/offender-management-statistics-quarterly",
 }
@@ -39,9 +40,9 @@ RAG_THRESHOLDS = {
         # Red: < 7.0
     },
     "street_confidence_index": {
-        "green": 70.0,   # High % feeling safe
-        "amber": 55.0,
-        # Red: < 55.0
+        "green": 20.0,   # % feeling unsafe — lower is better (matches dataIngestion.ts)
+        "amber": 30.0,
+        # Red: > 30.0
     },
     "crown_court_backlog": {
         "green": 60.0,   # G7 gold standard — lower is better
@@ -67,11 +68,18 @@ def calculate_rag_status(metric_key, value):
         elif value <= thresholds["amber"]:
             return "amber"
         return "red"
-    # Higher is better: charge_rate, street_confidence_index
-    if metric_key in ("charge_rate", "street_confidence_index"):
+    # Higher is better: charge_rate
+    if metric_key in ("charge_rate",):
         if value >= thresholds["green"]:
             return "green"
         elif value >= thresholds["amber"]:
+            return "amber"
+        return "red"
+    # Lower is better: street_confidence_index (% feeling unsafe)
+    if metric_key == "street_confidence_index":
+        if value <= thresholds["green"]:
+            return "green"
+        elif value <= thresholds["amber"]:
             return "amber"
         return "red"
     return "amber"
@@ -289,67 +297,106 @@ def fetch_charge_rate_data():
         return None
 
 
-def fetch_perception_of_safety_data():
+def _parse_b7_period(raw: str) -> str:
+    """Convert Table B7 time period headers to 'YYYY QN' format.
+
+    'Apr 2024 to Mar 2025' → '2025 Q1'  (year ending March = Q1)
+    'Jan 1994 to Dec 1994' → '1994 Q4'  (calendar year = Q4)
     """
-    Fetch perception of safety from ONS: Crime Survey (CSEW).
-    Source: https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/perceptionsothercsewopendatatable
+    m = re.match(r"^(\w+)\s+(\d{4})\s+to\s+(\w+)\s+(\d{4})$", raw.strip(), re.I)
+    if not m:
+        return raw
+    end_month_name, end_year = m.group(3).lower()[:3], int(m.group(4))
+    month_map = {
+        "jan": 1, "feb": 1, "mar": 1, "apr": 2, "may": 2, "jun": 2,
+        "jul": 3, "aug": 3, "sep": 3, "oct": 4, "nov": 4, "dec": 4,
+    }
+    quarter = month_map.get(end_month_name, 4)
+    return f"{end_year} Q{quarter}"
+
+
+def fetch_perception_of_safety_data():
+    """Fetch perception of safety from ONS Annual Supplementary Tables (Table B7).
+
+    Table B7: '% aged 16+ who felt very/fairly safe walking alone after dark'.
+    We compute 100% − safe% = % feeling unsafe (lower is better).
+    Source: https://www.ons.gov.uk/peoplepopulationandcommunity/crimeandjustice/datasets/crimeinenglandandwalesannualsupplementarytables
     """
     try:
-        print("\n" + "="*60)
-        print("Fetching Perception of Safety Data (ONS: Crime Survey CSEW)")
-        print("="*60)
-        # CSEW perceptions open data (zip with CSV/Excel inside)
-        url = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/crimeandjustice/datasets/perceptionsothercsewopendatatable/current/perceptionsotherenglandandwales2025q2.zip"
-        response = requests.get(url, timeout=90)
+        print("\n" + "=" * 60)
+        print("Fetching Perception of Safety (ONS Annual Supplementary Tables – Table B7)")
+        print("=" * 60)
+
+        url = (
+            "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/"
+            "crimeandjustice/datasets/crimeinenglandandwalesannualsupplementarytables/"
+            "march2025/annualsupplementarytablesmarch2025.xlsx"
+        )
+        response = requests.get(url, timeout=120)
         response.raise_for_status()
-        z = zipfile.ZipFile(io.BytesIO(response.content), "r")
-        names = z.namelist()
-        csv_or_xlsx = [n for n in names if n.endswith(".csv") or n.endswith(".xlsx")]
-        value_pct = None
-        time_period = "2025 Q2"
-        for fname in csv_or_xlsx[:3]:
-            buf = z.read(fname)
-            if fname.endswith(".csv"):
-                df = pd.read_csv(io.BytesIO(buf), encoding="utf-8", header=None)
-            else:
-                df = pd.read_excel(io.BytesIO(buf), header=None)
-            for idx, row in df.iterrows():
-                row_str = " ".join([str(c) for c in row.values if pd.notna(c)]).lower()
-                if "safe" in row_str or "perception" in row_str or "walking" in row_str:
-                    for c in row.values:
-                        if pd.notna(c):
-                            try:
-                                v = float(str(c).replace("%", "").replace(",", ""))
-                                if 40 <= v <= 95:
-                                    value_pct = v
-                                    break
-                            except Exception:
-                                pass
-                    if value_pct is not None:
-                        break
-            if value_pct is not None:
-                break
-        z.close()
-        if value_pct is None:
-            print("  Could not parse CSEW perceptions; returning None")
-            return None
-        rag_status = calculate_rag_status("street_confidence_index", value_pct)
-        result = {
-            "metric_name": "Perception of Safety",
-            "metric_key": "street_confidence_index",
-            "category": "Crime",
-            "value": value_pct,
-            "rag_status": rag_status,
-            "time_period": time_period,
-            "data_source": "ONS: Crime Survey (CSEW)",
-            "source_url": SOURCE_URLS["street_confidence_index"],
-            "last_updated": datetime.now().isoformat()
-        }
-        print(f"  Value: {value_pct}% (RAG: {rag_status.upper()})")
-        return result
+
+        wb = openpyxl.load_workbook(io.BytesIO(response.content), read_only=True, data_only=True)
+        if "Table B7" not in wb.sheetnames:
+            print("  Sheet 'Table B7' not found in workbook", file=sys.stderr)
+            return []
+
+        ws = wb["Table B7"]
+        rows = list(ws.iter_rows(values_only=True))
+        wb.close()
+
+        header_row_idx = None
+        data_row_idx = None
+        for i, row in enumerate(rows):
+            first_cell = str(row[0] or "").strip().lower()
+            if first_cell == "sex":
+                header_row_idx = i
+            elif "all people" in first_cell:
+                data_row_idx = i
+
+        if header_row_idx is None or data_row_idx is None:
+            print("  Could not locate header/data rows in Table B7", file=sys.stderr)
+            return []
+
+        headers = rows[header_row_idx]
+        data = rows[data_row_idx]
+
+        results = []
+        for period_raw, safe_pct in zip(headers[1:], data[1:]):
+            if period_raw is None or safe_pct is None:
+                continue
+            try:
+                safe_val = float(safe_pct)
+            except (ValueError, TypeError):
+                continue
+
+            unsafe_val = round(100.0 - safe_val, 1)
+            period_str = _parse_b7_period(str(period_raw))
+            rag = calculate_rag_status("street_confidence_index", unsafe_val)
+
+            results.append({
+                "metric_name": "Perception of Safety",
+                "metric_key": "street_confidence_index",
+                "category": "Crime",
+                "value": unsafe_val,
+                "rag_status": rag,
+                "time_period": period_str,
+                "data_source": "ONS: Crime Survey (CSEW) – Annual Supplementary Table B7",
+                "source_url": SOURCE_URLS["street_confidence_index"],
+                "last_updated": datetime.now().isoformat(),
+            })
+
+        if not results:
+            print("  No data points extracted from Table B7")
+            return []
+
+        latest = results[-1]
+        print(f"  Extracted {len(results)} data points (1994–2025)")
+        print(f"  Latest: {latest['time_period']} = {latest['value']}% unsafe (RAG: {latest['rag_status'].upper()})")
+        return results
+
     except Exception as e:
         print(f"Error fetching perception of safety data: {e}", file=sys.stderr)
-        return None
+        return []
 
 
 EW_POPULATION_FALLBACK = 69_487_000
@@ -559,10 +606,10 @@ def main():
     if recall:
         metrics.append(recall)
 
-    # Perception of Safety (ONS: Crime Survey CSEW)
-    perception = fetch_perception_of_safety_data()
-    if perception:
-        metrics.append(perception)
+    # Perception of Safety (ONS: Annual Supplementary Tables – Table B7)
+    perception_rows = fetch_perception_of_safety_data()
+    if perception_rows:
+        metrics.extend(perception_rows)
 
     # Print summary
     print("\n" + "="*60)
