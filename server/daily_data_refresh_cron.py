@@ -151,12 +151,13 @@ PERCENTAGE_KEYS = {
     "street_confidence_index", "apprenticeship_intensity",
 }
 
-# RAG recalculation for Employment metrics (mirrors routers.ts)
+# RAG recalculation for Employment metrics — must match dataIngestion.ts RAG_THRESHOLDS
 EMPLOYMENT_RAG_OVERRIDES = {
-    "inactivity_rate":   {"green_max": 20.5, "amber_max": 22.0},
-    "real_wage_growth":  {"green_min": 1.5, "amber_min": 0.0},
-    "job_vacancy_ratio": {"green_min": 0.7, "amber_min": 0.5},
-    "underemployment":   {"green_max": 3.5, "amber_max": 4.5},
+    "inactivity_rate":   {"green_max": 14,   "amber_max": 20},
+    "real_wage_growth":  {"green_min": 2.0,  "amber_min": 1.0},
+    "job_vacancy_ratio": {"green_min": 3.5,  "amber_min": 2.5},
+    "underemployment":   {"green_max": 5.5,  "amber_max": 8.5},
+    "sickness_absence":  {"green_max": 3.0,  "amber_max": 4.5},
 }
 
 # ---------------------------------------------------------------------------
