@@ -4,6 +4,21 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.17] - 2026-04-02
+
+### Fixed
+
+- **Dashboard tiles showing stale historical values** – Both the daily cron and the admin refresh were upserting every historical row to the metrics tile, so the last-processed row (which could be from any year) overwrote the current value. 8 metrics were affected (output_per_hour showed 2003 data instead of 2025). Fixed both code paths to track only the latest period per metric key before writing the tile.
+- **RAG threshold mismatch for Employment metrics** – The daily cron had `EMPLOYMENT_RAG_OVERRIDES` with completely wrong thresholds (e.g. job_vacancy_ratio greenMin=0.7 instead of 3.5), causing 2.2% to show as green instead of red. Aligned all cron overrides with the centralised thresholds in dataIngestion.ts, added sickness_absence, and corrected one wrong history entry.
+
+### Added
+
+- **Admin collapsible sections** – All admin panel sections (Data Refresh, System Resources, MongoDB, Scheduled Jobs, Recent Logs) can now be collapsed/expanded. State persists in localStorage.
+- **Admin dashboard section visibility toggles** – New "Dashboard Sections" card in the admin panel with 6 toggle switches (Economy, Employment, Education, Crime, Healthcare, Defence). Toggling a section off hides it from the main dashboard for all users. Settings persist in MongoDB via a new `settings` collection and `settings` tRPC router.
+- **Tile latest-value test suite (54 tests)** – Database consistency checks, unit tests for the latest-per-key algorithm (chronological, reversed, shuffled, multi-key), structural guards ensuring upsert only happens from the latest-per-key loop, refresh survival tests (idempotency, order-independence), Promise.all race condition guards, and regression tests for the 8 previously broken metrics.
+- **RAG threshold consistency test suite (42 tests)** – Cross-checks the cron's EMPLOYMENT_RAG_OVERRIDES, Python fetcher RAG functions, and dataIngestion.ts thresholds against each other. Includes correctness tests for known values and a DB history scan ensuring no employment metrics have mismatched RAG statuses.
+- **Dashboard sections test suite (30 tests)** – API endpoint tests, database round-trip tests, structural guards for db.ts/routers.ts/Admin.tsx/Home.tsx, and unit tests for the filter logic.
+
 ## [1.0.16] - 2026-03-30
 
 ### Fixed
