@@ -20,7 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Lock, BarChart3, Settings } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Lock, BarChart3, Settings, Stethoscope } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { CSSProperties, useEffect, useRef, useState } from "react";
@@ -34,6 +34,7 @@ const baseMenuItems = [
 
 const signInMenuItem = { icon: Lock, label: "Sign in", path: "/admin" };
 const adminMenuItem = { icon: Settings, label: "Admin", path: "/admin" };
+const diagnosisMenuItem = { icon: Stethoscope, label: "Diagnosis", path: "/diagnosis" };
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
@@ -93,7 +94,7 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const menuItems =
     user?.role === "admin"
-      ? [...baseMenuItems, adminMenuItem]
+      ? [...baseMenuItems, diagnosisMenuItem, adminMenuItem]
       : [...baseMenuItems, signInMenuItem];
   const isMobile = useIsMobile();
 

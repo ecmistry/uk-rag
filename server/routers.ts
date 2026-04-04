@@ -21,6 +21,7 @@ import {
 import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getPublicSectorExpenditure, getDataSourceUrl, calculateRAGStatus, RAG_THRESHOLDS, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 import { cache } from "./cache";
+import { diagnose as runDiagnosis, chat as runChat, type ChatMessage } from "./diagnosis";
 
 function csvEscape(field: unknown): string {
   let s = String(field ?? "");
@@ -730,6 +731,42 @@ export const appRouter = router({
         }
         cache.set(cacheKey, result.data, 15 * 60 * 1000);
         return result.data;
+      }),
+  }),
+
+  diagnosis: router({
+    assess: adminProcedure
+      .input(
+        z.object({
+          symptoms: z.string().min(3).max(2000),
+          age: z.number().int().min(0).max(150),
+          gender: z.enum(["male", "female", "other", "prefer_not_to_say"]),
+          duration: z.string().min(1).max(200),
+          medicalHistory: z.string().max(2000).optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        return runDiagnosis(input);
+      }),
+
+    chat: adminProcedure
+      .input(
+        z.object({
+          messages: z.array(
+            z.object({
+              role: z.enum(["user", "assistant", "system"]),
+              content: z.string(),
+            }),
+          ),
+          conditionContext: z.string().optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const reply = await runChat(
+          input.messages as ChatMessage[],
+          input.conditionContext,
+        );
+        return { reply };
       }),
   }),
 });

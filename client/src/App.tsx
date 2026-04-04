@@ -12,6 +12,7 @@ import { useHidePreviewBanner } from "./hooks/useHidePreviewBanner";
 const MetricDetail = lazy(() => import("./pages/MetricDetail"));
 const Charts = lazy(() => import("./pages/Charts"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Diagnosis = lazy(() => import("./pages/Diagnosis"));
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
           <Route path={"/metric/:metricKey"} component={MetricDetail} />
           <Route path={"/charts"} component={Charts} />
           <Route path={"/admin"} component={Admin} />
+          <Route path={"/diagnosis"} component={Diagnosis} />
           <Route path={"/404"} component={NotFound} />
           <Route component={NotFound} />
         </Switch>
