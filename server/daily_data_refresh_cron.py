@@ -706,6 +706,32 @@ def run(only_category: Optional[str] = None) -> None:
         except Exception as e:
             log_error(f"Consistency scan failed: {e}")
 
+        # ── Visitor stats aggregation ──
+        log(f"\n{'─' * 50}")
+        log("Visitor stats aggregation")
+        log(f"{'─' * 50}")
+        try:
+            pipeline = [
+                {"$group": {"_id": "$date", "uniqueVisitors": {"$sum": 1}}},
+                {"$sort": {"_id": -1}},
+            ]
+            agg_results = list(db["visitors"].aggregate(pipeline))
+            upserted = 0
+            for row in agg_results:
+                db["visitorStats"].update_one(
+                    {"date": row["_id"]},
+                    {"$set": {
+                        "date": row["_id"],
+                        "uniqueVisitors": row["uniqueVisitors"],
+                        "updatedAt": datetime.utcnow(),
+                    }},
+                    upsert=True,
+                )
+                upserted += 1
+            log(f"  ✓ {upserted} day(s) of visitor stats aggregated")
+        except Exception as e:
+            log_error(f"Visitor stats aggregation failed: {e}")
+
     finally:
         client.close()
         log("Database connection closed")

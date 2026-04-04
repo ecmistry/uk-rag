@@ -15,6 +15,8 @@ import {
   addMetricHistory,
   getDashboardSections,
   setDashboardSections,
+  getVisitorStats,
+  aggregateDailyVisitors,
 } from "./db";
 import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getPublicSectorExpenditure, getDataSourceUrl, calculateRAGStatus, RAG_THRESHOLDS, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
@@ -646,6 +648,27 @@ export const appRouter = router({
       const trimmedLogs = dedupedLogs.slice(0, 50);
 
       return { disk, mem, load, uptimeSeconds, appMem, mongo, logsBytes, cronJobs, recentLogs: trimmedLogs };
+    }),
+
+    visitorStats: adminProcedure.query(async () => {
+      const days = await getVisitorStats(30);
+      const today = new Date().toISOString().slice(0, 10);
+
+      const todayCount = days.find((d) => d.date === today)?.uniqueVisitors ?? 0;
+
+      const cutoff7 = new Date();
+      cutoff7.setDate(cutoff7.getDate() - 7);
+      const cutoff7Str = cutoff7.toISOString().slice(0, 10);
+      const last7 = days.filter((d) => d.date >= cutoff7Str).reduce((s, d) => s + d.uniqueVisitors, 0);
+
+      const last30 = days.reduce((s, d) => s + d.uniqueVisitors, 0);
+
+      return { today: todayCount, last7, last30, daily: days };
+    }),
+
+    aggregateVisitors: adminProcedure.mutation(async () => {
+      const count = await aggregateDailyVisitors();
+      return { success: true, daysAggregated: count };
     }),
 
     /**

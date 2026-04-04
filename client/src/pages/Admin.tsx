@@ -44,6 +44,7 @@ import {
   Info,
   ChevronDown,
   LayoutDashboard,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useCallback } from "react";
@@ -426,6 +427,96 @@ function DashboardSectionsCard({
   );
 }
 
+function VisitorStatsCard({
+  isOpen,
+  onToggle,
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const { data, isLoading } = trpc.metrics.visitorStats.useQuery(undefined, {
+    refetchInterval: 60_000,
+  });
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <Card>
+        <SectionHeader
+          icon={Users}
+          title="Site Visitors"
+          description="Unique daily visitors tracked via anonymised IP hashes"
+          isOpen={isOpen}
+        />
+        <CollapsibleContent>
+          <CardContent className="space-y-4">
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading visitor data...
+              </div>
+            ) : !data ? (
+              <p className="text-sm text-muted-foreground">
+                No visitor data available yet
+              </p>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {[
+                    { label: "Today", value: data.today },
+                    { label: "Last 7 days", value: data.last7 },
+                    { label: "Last 30 days", value: data.last30 },
+                  ].map(({ label, value }) => (
+                    <div
+                      key={label}
+                      className="rounded-lg border p-3 text-center"
+                    >
+                      <p className="text-2xl font-bold">
+                        {value.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {data.daily.length > 0 && (
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead className="text-right">
+                            Unique Visitors
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.daily.map(
+                          (row: { date: string; uniqueVisitors: number }) => (
+                            <TableRow key={row.date}>
+                              <TableCell className="text-sm font-mono">
+                                {row.date}
+                              </TableCell>
+                              <TableCell className="text-right text-sm">
+                                {row.uniqueVisitors.toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                          ),
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}
+
 function AdminDashboard() {
   const { data, isLoading, error, refetch, isFetching } =
     trpc.metrics.serverHealth.useQuery(undefined, {
@@ -509,6 +600,12 @@ function AdminDashboard() {
       <DashboardSectionsCard
         isOpen={isOpen("dashboard-sections")}
         onToggle={() => toggle("dashboard-sections")}
+      />
+
+      {/* Site Visitors */}
+      <VisitorStatsCard
+        isOpen={isOpen("site-visitors")}
+        onToggle={() => toggle("site-visitors")}
       />
 
       {/* Resource gauges */}

@@ -24,6 +24,8 @@ const COLLECTIONS = {
   metrics: "metrics",
   metricHistory: "metricHistory",
   settings: "settings",
+  visitors: "visitors",
+  visitorStats: "visitorStats",
 } as const;
 
 /**
@@ -747,4 +749,99 @@ export async function setDashboardSections(
     { $set: { sections: value, updatedAt: new Date() } },
     { upsert: true },
   );
+}
+
+// ============================================================================
+// Visitor Tracking
+// ============================================================================
+
+/**
+ * Record a unique visitor (one doc per IP-hash per day).
+ * Fire-and-forget — callers should not await or let errors propagate.
+ */
+export async function recordVisit(ipHash: string, date: string): Promise<void> {
+  const collection = await getCollection<{ ipHash: string; date: string; createdAt: Date }>(
+    COLLECTIONS.visitors,
+  );
+  if (!collection) return;
+
+  await collection.updateOne(
+    { ipHash, date },
+    { $setOnInsert: { ipHash, date, createdAt: new Date() } },
+    { upsert: true },
+  );
+}
+
+/**
+ * Ensure TTL + compound indexes exist on the visitors collection.
+ * Called once at server startup.
+ */
+export async function ensureVisitorIndexes(): Promise<void> {
+  const collection = await getCollection<{ ipHash: string; date: string; createdAt: Date }>(
+    COLLECTIONS.visitors,
+  );
+  if (!collection) return;
+
+  try {
+    await collection.createIndex({ ipHash: 1, date: 1 }, { unique: true });
+    await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 90 * 86400 });
+    await collection.createIndex({ date: 1 });
+  } catch {
+    // indexes may already exist
+  }
+}
+
+export interface DailyVisitorCount {
+  date: string;
+  uniqueVisitors: number;
+}
+
+/**
+ * Aggregate raw visitor docs into per-day unique counts and persist
+ * them in the visitorStats collection.
+ */
+export async function aggregateDailyVisitors(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const pipeline = [
+    { $group: { _id: "$date", uniqueVisitors: { $sum: 1 } } },
+    { $sort: { _id: -1 as const } },
+  ];
+  const results = await db.collection(COLLECTIONS.visitors).aggregate(pipeline).toArray();
+
+  const statsCol = db.collection(COLLECTIONS.visitorStats);
+  let upserted = 0;
+  for (const row of results) {
+    await statsCol.updateOne(
+      { date: row._id },
+      { $set: { date: row._id, uniqueVisitors: row.uniqueVisitors, updatedAt: new Date() } },
+      { upsert: true },
+    );
+    upserted++;
+  }
+  return upserted;
+}
+
+/**
+ * Get visitor stats for the last N days.
+ */
+export async function getVisitorStats(days: number = 30): Promise<DailyVisitorCount[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  const docs = await db
+    .collection(COLLECTIONS.visitorStats)
+    .find({ date: { $gte: cutoffStr } })
+    .sort({ date: -1 })
+    .toArray();
+
+  return docs.map((d) => ({
+    date: d.date as string,
+    uniqueVisitors: d.uniqueVisitors as number,
+  }));
 }

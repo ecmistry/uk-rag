@@ -1,4 +1,5 @@
 import "dotenv/config";
+import crypto from "crypto";
 import express from "express";
 import compression from "compression";
 import { createServer } from "http";
@@ -8,6 +9,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { recordVisit, ensureVisitorIndexes } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -53,6 +55,16 @@ async function startServer() {
 
   app.use(compression());
 
+  // Visitor tracking — hash IP per day, fire-and-forget to MongoDB
+  app.use((req, _res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api/") && !req.path.startsWith("/assets/") && !req.path.includes(".")) {
+      const today = new Date().toISOString().slice(0, 10);
+      const hash = crypto.createHash("sha256").update(`${req.ip}:${today}`).digest("hex");
+      recordVisit(hash, today).catch(() => {});
+    }
+    next();
+  });
+
   app.use(express.json({ limit: "2mb" }));
   app.use(express.urlencoded({ limit: "2mb", extended: true }));
   // OAuth callback under /api/oauth/callback
@@ -97,6 +109,11 @@ async function startServer() {
   } else if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Create TTL + compound indexes for visitor tracking (runs once at startup)
+  ensureVisitorIndexes().catch((err) =>
+    console.warn("[Visitors] Failed to create indexes:", err),
+  );
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
