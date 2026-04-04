@@ -825,6 +825,9 @@ export async function aggregateDailyVisitors(): Promise<number> {
 
 /**
  * Get visitor stats for the last N days.
+ * Merges pre-aggregated stats with a live count from the raw visitors
+ * collection so that today's visitors appear immediately (without waiting
+ * for the daily cron to aggregate).
  */
 export async function getVisitorStats(days: number = 30): Promise<DailyVisitorCount[]> {
   const db = await getDb();
@@ -834,14 +837,36 @@ export async function getVisitorStats(days: number = 30): Promise<DailyVisitorCo
   cutoff.setDate(cutoff.getDate() - days);
   const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-  const docs = await db
-    .collection(COLLECTIONS.visitorStats)
-    .find({ date: { $gte: cutoffStr } })
-    .sort({ date: -1 })
-    .toArray();
+  const [aggregatedDocs, liveCounts] = await Promise.all([
+    db
+      .collection(COLLECTIONS.visitorStats)
+      .find({ date: { $gte: cutoffStr } })
+      .sort({ date: -1 })
+      .toArray(),
+    db
+      .collection(COLLECTIONS.visitors)
+      .aggregate([
+        { $match: { date: { $gte: cutoffStr } } },
+        { $group: { _id: "$date", uniqueVisitors: { $sum: 1 } } },
+      ])
+      .toArray(),
+  ]);
 
-  return docs.map((d) => ({
-    date: d.date as string,
-    uniqueVisitors: d.uniqueVisitors as number,
-  }));
+  const merged = new Map<string, number>();
+
+  for (const d of aggregatedDocs) {
+    merged.set(d.date as string, d.uniqueVisitors as number);
+  }
+  // Live counts override pre-aggregated (they include any visits since last aggregation)
+  for (const d of liveCounts) {
+    const date = d._id as string;
+    const existing = merged.get(date) ?? 0;
+    if (d.uniqueVisitors > existing) {
+      merged.set(date, d.uniqueVisitors as number);
+    }
+  }
+
+  return [...merged.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([date, uniqueVisitors]) => ({ date, uniqueVisitors }));
 }
