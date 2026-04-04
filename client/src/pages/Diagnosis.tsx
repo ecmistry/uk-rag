@@ -48,6 +48,7 @@ interface PossibleCondition {
   keyFeatures: string[];
   triage: TriageLevel;
   redFlags: string[];
+  nhsContent?: string;
 }
 
 interface DiagnosisResponse {
@@ -245,6 +246,17 @@ function ConditionCard({
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {condition.nhsContent && (
+          <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 p-2.5">
+            <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">
+              From NHS.uk:
+            </p>
+            <p className="text-xs text-blue-600 dark:text-blue-300">
+              {condition.nhsContent}
+            </p>
           </div>
         )}
 
