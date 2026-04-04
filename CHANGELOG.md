@@ -4,6 +4,29 @@ All notable changes to the UK RAG Portal are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.19] - 2026-04-04
+
+### Added
+
+- **Daily unique visitor tracking** – Server-side Express middleware hashes client IPs (SHA-256 with daily salt) and records unique visits to a new `visitors` MongoDB collection with a TTL index (auto-expires after 90 days). The daily cron aggregates per-day unique counts into a `visitorStats` collection after the consistency scan. No raw IPs are stored.
+- **Admin "Site Visitors" card** – New collapsible section in the admin panel showing today's, 7-day, and 30-day unique visitor counts with a daily breakdown table. Auto-refreshes every 60 seconds. Live counts appear immediately without waiting for the daily cron aggregation.
+- **NHS Symptom Assessment tool** (`/diagnosis`, admin-only) – AI-powered symptom checker using Gemini 2.0 Flash (via Gravitee gateway) grounded in NHS guidelines:
+  - **Symptom input form** with free-text entry and 14 quick-select symptom chips (headache, fever, cough, etc.), plus age, gender, duration, and medical history fields.
+  - **Differential diagnosis** returning 3–5 ranked possible conditions with likelihood levels, NHS.uk links, key distinguishing features, and per-condition triage recommendations.
+  - **Triage-level colour coding** across 5 levels: Self-care (green), GP routine (blue), GP urgent (orange), Call 111 (amber), Call 999 (red).
+  - **Hardcoded red-flag detection** — 60+ emergency symptoms across 10 body systems (cardiac, neurological, respiratory, anaphylaxis, sepsis, paediatric, pregnancy, mental health, trauma, stroke) that bypass AI and immediately return a 999 emergency response.
+  - **Follow-up Q&A chat** — conversational interface for asking questions about results, grounded in NHS guidance and NICE CKS.
+  - **Medical disclaimer** displayed on every view.
+  - **NHS Website Content API enrichment** — validates AI-returned conditions against real NHS data, pulls verified URLs and official descriptions (activates when API subscription is approved).
+  - **UK prevalence data** (QOF 2023/24) embedded in the system prompt so the AI calibrates condition likelihood against real GP consultation rates, preferring common conditions over rare ones.
+  - **NHS Pathways triage rules** embedded in the prompt for consistent escalation decisions.
+  - **Age-specific considerations** — lower escalation thresholds for under-5s and over-65s, pregnancy-aware assessment.
+- **Sidebar navigation** — "Diagnosis" entry with stethoscope icon visible only to logged-in administrators.
+
+### Changed
+
+- **Visitor stats query** — `getVisitorStats()` now runs a live aggregation against the raw `visitors` collection in parallel with pre-aggregated stats, merging results so today's visits appear immediately without waiting for the cron.
+
 ## [1.0.18] - 2026-04-02
 
 ### Fixed
