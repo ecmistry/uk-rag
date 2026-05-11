@@ -17,6 +17,10 @@ import {
   setDashboardSections,
   getVisitorStats,
   aggregateDailyVisitors,
+  listFleetProposals,
+  approveFleetProposal,
+  rejectFleetProposal,
+  getFleetProposalCounts,
 } from "./db";
 import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHealthcareMetrics, fetchDefenceMetrics, fetchEmploymentMetrics, fetchRegionalEducationData, getPopulationBreakdown, getPublicSectorReceipts, getPublicSectorExpenditure, getDataSourceUrl, calculateRAGStatus, RAG_THRESHOLDS, type MetricData } from "./dataIngestion";
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
@@ -89,7 +93,128 @@ export const appRouter = router({
         return { success: true } as const;
       }),
   }),
-  
+
+  /**
+   * Fleet change proposals — admin-only review queue (Phase 4 defence pipeline).
+   * Approvals flip the fleet_inventory row, then trigger a Defence refresh so
+   * the Sea Mass tile reflects the new force structure within the same request.
+   */
+  fleetProposals: router({
+    list: adminProcedure
+      .input(
+        z
+          .object({
+            status: z
+              .enum(["pending_review", "approved", "rejected", "auto_rejected"])
+              .optional(),
+            limit: z.number().int().min(1).max(500).optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const proposals = await listFleetProposals({
+          status: input?.status,
+          limit: input?.limit ?? 200,
+        });
+        // Normalise ObjectId -> string so it serialises cleanly to the client.
+        return proposals.map((p) => ({
+          ...p,
+          _id: p._id.toString(),
+        }));
+      }),
+
+    counts: adminProcedure.query(async () => {
+      return getFleetProposalCounts();
+    }),
+
+    approve: adminProcedure
+      .input(
+        z.object({
+          id: z.string().min(1).max(64),
+          notes: z.string().max(500).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const reviewerEmail = ctx.user.email ?? "admin@uk-rag.online";
+        const result = await approveFleetProposal({
+          proposalId: input.id,
+          reviewerEmail,
+          notes: input.notes,
+        });
+        if (!result.ok) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: result.error ?? "Approval failed",
+          });
+        }
+
+        // Refresh Defence metrics so the Sea Mass tile reflects the new
+        // inventory state immediately. Fire-and-forget at the Sea-Mass
+        // granularity would be cleaner, but reusing the existing fetcher
+        // path is the smaller, lower-risk change.
+        let refreshed = false;
+        try {
+          const fr = await fetchDefenceMetrics();
+          if (fr.success && fr.data) {
+            for (const m of fr.data) {
+              if (m.metric_key !== "sea_mass") continue;
+              const ragStatus = RAG_THRESHOLDS[m.metric_key]
+                ? calculateRAGStatus(m.metric_key, Number(m.value))
+                : m.rag_status;
+              await upsertMetric({
+                metricKey: m.metric_key,
+                name: m.metric_name,
+                category: m.category,
+                value: String(m.value),
+                unit: m.unit ?? "",
+                ragStatus,
+                dataDate: m.time_period,
+                sourceUrl: m.source_url,
+              });
+              await addMetricHistory({
+                metricKey: m.metric_key,
+                value: String(m.value),
+                ragStatus,
+                dataDate: m.time_period,
+                ...(m.information != null && { information: m.information }),
+              });
+              refreshed = true;
+            }
+          }
+        } catch (e) {
+          // Non-fatal — the approval itself succeeded. Surface the warning
+          // so the UI can prompt a manual refresh if it's important.
+          console.warn("[fleetProposals.approve] sea_mass refresh failed:", e);
+        }
+
+        cache.clear();
+        return { ok: true, refreshed, proposal: result.proposal };
+      }),
+
+    reject: adminProcedure
+      .input(
+        z.object({
+          id: z.string().min(1).max(64),
+          notes: z.string().max(500).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const reviewerEmail = ctx.user.email ?? "admin@uk-rag.online";
+        const result = await rejectFleetProposal({
+          proposalId: input.id,
+          reviewerEmail,
+          notes: input.notes,
+        });
+        if (!result.ok) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: result.error ?? "Rejection failed",
+          });
+        }
+        return { ok: true, proposal: result.proposal };
+      }),
+  }),
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

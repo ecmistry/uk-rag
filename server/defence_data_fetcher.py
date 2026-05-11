@@ -275,83 +275,46 @@ def get_sea_mass_path_to_green(
     return "To reach green (90%): " + best + "."
 
 
-def compute_land_mass_score():
+def compute_land_mass_score(
+    mbts: float = 288.0,
+    afvs: float = 1055.0,
+    regulars: float = 125_680.0,
+    modern_artillery: float = 75.0,
+    ad_batteries: float = 7.0,
+    active_reserves: float = 29_000.0,
+    recall_veterans: float = 25_000.0,
+    logistics_ratio: float = 0.90,
+) -> float:
     """
     Compute the Land Mass score using four pillars:
 
-      1. Armoured Strike (35%)
-      2. Personnel Mass (30%)
-      3. Indirect Fires (20%)
-      4. Depth (Reserves) (15%)
+      1. Armoured Strike (35%)  — MBTs (target 450) + AFVs (target 1,000)
+      2. Personnel Mass (30%)   — regulars (target 150,000)
+      3. Indirect Fires (20%)   — artillery (target 300) + AD batteries (target 12)
+      4. Depth / Reserves (15%) — active reserves (target 50k) + veterans (target 30k) + logistics
 
-    Each pillar is normalised against a Tier 1 "Global Power" benchmark:
-
-      - Armoured Strike:
-          * 450+ main battle tanks (MBTs)
-          * 1,000 armoured fighting vehicles (AFVs)
-          MBT contribution 60%, AFV contribution 40%.
-
-      - Personnel Mass:
-          * 150,000+ regulars (full‑time trained personnel)
-
-      - Indirect Fires:
-          * 300+ modern artillery systems (guns / rocket artillery)
-          * 12 ground‑based air‑defence batteries
-          Artillery contribution 70%, air defence contribution 30%.
-
-      - Depth (Reserves):
-          * 50,000 active reserves
-          * 30,000 high‑utility recallable veterans
-          * 20,000 "equivalent" logistics mass
-          Active reserves 50%, recallable veterans 30%, logistics 20%.
-
-    The underlying numbers are derived from a synthesis of:
-      - Janes ORBATs and equipment data (primary),
-      - RUSI and IISS Military Balance 2026 commentary,
-      - UK MOD "UK armed forces equipment and formations 2025",
-      - MOD "Quarterly Service Personnel Statistics 2025".
+    Defaults preserve the original hardcoded baseline so existing callers
+    keep working. The inventory-driven fetcher (fetch_land_mass) passes the
+    sums it computed from the fleet_inventory collection.
     """
-
-    # --- Armoured Strike pillar (35%) ---
-    # MBTs (e.g. Challenger 2) – ~288 in service.
-    mbts = 288.0
-    # Armoured Fighting Vehicles – MOD 2025 stats list ~1,055 AFVs.
-    afvs = 1055.0
-    mbt_ratio = min(mbts / 450.0, 1.0)
-    afv_ratio = min(afvs / 1000.0, 1.0)
+    mbt_ratio = min(max(0.0, mbts) / 450.0, 1.0)
+    afv_ratio = min(max(0.0, afvs) / 1000.0, 1.0)
     armoured_pillar = 0.60 * mbt_ratio + 0.40 * afv_ratio
 
-    # --- Personnel Mass pillar (30%) ---
-    # Full‑time trade‑trained regulars across the forces (~125,680).
-    regulars = 125_680.0
-    personnel_ratio = min(regulars / 150_000.0, 1.0)
+    personnel_ratio = min(max(0.0, regulars) / 150_000.0, 1.0)
 
-    # --- Indirect Fires pillar (20%) ---
-    # Modern artillery systems (M270 + Archer etc.) – approx. 75.
-    modern_artillery = 75.0
-    artillery_ratio = min(modern_artillery / 300.0, 1.0)
-    # Ground‑based air defence batteries (Sky Sabre / Land Ceptor) – 7.
-    ad_batteries = 7.0
-    ad_ratio = min(ad_batteries / 12.0, 1.0)
+    artillery_ratio = min(max(0.0, modern_artillery) / 300.0, 1.0)
+    ad_ratio = min(max(0.0, ad_batteries) / 12.0, 1.0)
     indirect_pillar = 0.70 * artillery_ratio + 0.30 * ad_ratio
 
-    # --- Depth (Reserves) pillar (15%) ---
-    # Active trained reserves (FR20) – about 29,000.
-    active_reserves = 29_000.0
-    # High‑utility recallable veterans – working estimate ~25,000.
-    recall_veterans = 25_000.0
-    # Logistics mass as fraction of a fully‑resourced Tier 1 logistic fleet.
-    logistics_ratio = 0.90
-
-    active_ratio = min(active_reserves / 50_000.0, 1.0)
-    veterans_ratio = min(recall_veterans / 30_000.0, 1.0)
+    active_ratio = min(max(0.0, active_reserves) / 50_000.0, 1.0)
+    veterans_ratio = min(max(0.0, recall_veterans) / 30_000.0, 1.0)
     depth_pillar = (
         0.50 * active_ratio
         + 0.30 * veterans_ratio
-        + 0.20 * logistics_ratio
+        + 0.20 * min(max(0.0, logistics_ratio), 1.0)
     )
 
-    # Combine pillars with weights to produce a 0–100 score.
     score = (
         armoured_pillar * 0.35
         + personnel_ratio * 0.30
@@ -455,50 +418,32 @@ def get_land_mass_path_to_green(
     return "To reach green (90%): " + best + "."
 
 
-def compute_air_mass_score():
+def compute_air_mass_score(
+    mission_ready_fighters: float = 120.0,
+    active_tankers: float = 14.0,
+    active_aew: float = 3.0,
+    strategic_lift_aircraft: float = 30.0,
+    autonomous_platforms: float = 0.0,
+) -> float:
     """
     Compute the Air Mass score using four pillars:
 
-      1. Combat Strike (40%)
-      2. Force Multipliers (25%)
-      3. Strategic Lift (20%)
-      4. Autonomous Mass (15%)
+      1. Combat Strike (40%)    — multi-role fighters (target 300)
+      2. Force Multipliers (25%) — tankers + AEW (target 25 combined)
+      3. Strategic Lift (20%)   — heavy/medium transports (target 40)
+      4. Autonomous Mass (15%)  — loyal-wingman class ACPs (target 150)
 
-    Benchmarks (Tier 1 "Global Power" standard):
-
-      - Combat Strike:
-          * 300 multi-role fighters
-
-      - Force Multipliers:
-          * 25 specialised support aircraft (tankers + AEW)
-
-      - Strategic Lift:
-          * 40 heavy/medium transports (C-17 / A400M / C-130 class)
-
-      - Autonomous Mass:
-          * 150 loyal-wingman-type Tier 1/2 autonomous combat platforms
+    Defaults preserve the original hardcoded baseline. The inventory-driven
+    fetcher (fetch_air_mass) passes the sums it computed from the
+    fleet_inventory collection.
     """
-
-    # --- Combat Strike pillar (40%) ---
-    # Mission-ready multi-role fighters (Typhoon + F-35B).
-    mission_ready_fighters = 120.0  # Approximate effective availability
-    combat_ratio = min(mission_ready_fighters / 300.0, 1.0)
-
-    # --- Force Multipliers pillar (25%) ---
-    # Tankers (Voyager) + AEW (E-7).
-    active_tankers = 14.0
-    active_aew = 3.0
-    multipliers_ratio = min((active_tankers + active_aew) / 25.0, 1.0)
-
-    # --- Strategic Lift pillar (20%) ---
-    # Heavy/medium transports (C-17 + A400M).
-    strategic_lift_aircraft = 30.0  # 8 C-17 + 22 A400M
-    strategic_lift_ratio = min(strategic_lift_aircraft / 40.0, 1.0)
-
-    # --- Autonomous Mass pillar (15%) ---
-    # Loyal wingman / Tier 1/2 ACPs – still effectively 0 in 2026.
-    autonomous_platforms = 0.0
-    autonomous_ratio = min(autonomous_platforms / 150.0, 1.0)
+    combat_ratio = min(max(0.0, mission_ready_fighters) / 300.0, 1.0)
+    multipliers_ratio = min(
+        (max(0.0, active_tankers) + max(0.0, active_aew)) / 25.0,
+        1.0,
+    )
+    strategic_lift_ratio = min(max(0.0, strategic_lift_aircraft) / 40.0, 1.0)
+    autonomous_ratio = min(max(0.0, autonomous_platforms) / 150.0, 1.0)
 
     score = (
         combat_ratio * 0.40
@@ -1041,14 +986,26 @@ def _get_sea_mass_db():
     return client, client[db_name]
 
 
-def load_sea_mass_inventory() -> Optional[Dict[str, Any]]:
+def _item_quantity(item: Dict[str, Any]) -> int:
+    """Return the quantity an inventory row represents (defaults to 1)."""
+    q = item.get("quantity")
+    if q is None:
+        return 1
+    try:
+        n = int(q)
+    except (TypeError, ValueError):
+        return 1
+    return max(0, n)
+
+
+def load_inventory_for_category(category: str) -> Optional[Dict[str, Any]]:
     """
-    Read the sea_mass slice of the fleet_inventory collection.
+    Read a category slice of the fleet_inventory collection.
 
     Returns a dict with:
-      - counts: {role: int}            counted (active + refit) per role
-      - recent_changes: [item, ...]    hulls in non-counted statuses, with citations
-      - all_items: [item, ...]         raw inventory rows (sea_mass only)
+      - counts: {role: int}            sum(quantity) for active+refit per role
+      - recent_changes: [item, ...]    items in non-counted statuses, with citations
+      - all_items: [item, ...]         raw inventory rows for the category
     Or None if the collection is empty / unreachable.
     """
     client, db = _get_sea_mass_db()
@@ -1056,7 +1013,7 @@ def load_sea_mass_inventory() -> Optional[Dict[str, Any]]:
         return None
     try:
         items = list(db["fleet_inventory"].find(
-            {"category": "sea_mass"},
+            {"category": category},
             {"_id": 0},
         ))
     except Exception as e:
@@ -1079,12 +1036,15 @@ def load_sea_mass_inventory() -> Optional[Dict[str, Any]]:
         if not role:
             continue
         if it.get("status") in SEA_MASS_COUNTED_STATUSES:
-            counts[role] = counts.get(role, 0) + 1
+            counts[role] = counts.get(role, 0) + _item_quantity(it)
         else:
-            # Non-counted hulls (withdrawn / decommissioned / low_readiness) —
-            # surface the most recent ones to the information blurb.
             recent_changes.append(it)
     return {"counts": counts, "recent_changes": recent_changes, "all_items": items}
+
+
+def load_sea_mass_inventory() -> Optional[Dict[str, Any]]:
+    """Back-compat wrapper. Use load_inventory_for_category('sea_mass')."""
+    return load_inventory_for_category("sea_mass")
 
 
 def _format_recent_changes(recent: List[Dict[str, Any]], limit: int = 3) -> str:
@@ -1224,29 +1184,73 @@ def fetch_sea_mass() -> Optional[Dict[str, Any]]:
         return None
 
 
+# Hardcoded fallback for Land Mass (used when fleet_inventory is empty/unreachable).
+# Matches the pre-Phase-2b baseline so existing tile values don't regress
+# unexpectedly in environments without an inventory.
+LAND_MASS_FALLBACK_COUNTS = {
+    "mbt": 288,
+    "afv": 1055,
+    "regular": 125_680,
+    "artillery": 75,
+    "ad_battery": 7,
+    "active_reserve": 29_000,
+    "recall_veteran": 25_000,
+}
+
+
 def fetch_land_mass() -> Optional[Dict[str, Any]]:
     """
     Compute and return the Land Mass composite metric.
 
-    Uses the four‑pillar model described in the Land Mass
-    specification and stores results as quarterly snapshots
-    (YYYY Q1–Q4), in line with Sea Mass.
+    Source of truth: the `fleet_inventory` MongoDB collection, slice
+    category='land_mass'. Each row represents an aggregate equipment lot
+    or personnel category with a `quantity` field; status 'active' or
+    'refit' counts toward the score, others are surfaced as recent changes.
+    Falls back to hardcoded constants if the collection is empty/unreachable.
     """
     try:
         print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
         print("[Defence] Computing Land Mass Composite Score", file=sys.stderr, flush=True)
         print("[Defence] " + "="*60, file=sys.stderr, flush=True)
 
-        # Current UK counts (from compute_land_mass_score)
-        mbts = 288
-        afvs = 1055
-        regulars = 125680
-        modern_artillery = 75
-        ad_batteries = 7
-        active_reserves = 29000
-        recall_veterans = 25000
+        inventory = load_inventory_for_category("land_mass")
+        if inventory is None:
+            print("[Defence]   fleet_inventory: no land_mass items — using hardcoded fallback",
+                  file=sys.stderr, flush=True)
+            counts = dict(LAND_MASS_FALLBACK_COUNTS)
+            recent_changes: List[Dict[str, Any]] = []
+            data_source_label = (
+                "Synthesis of Janes ORBATs, RUSI/IISS Military Balance, "
+                "MOD equipment and personnel statistics (fallback baseline)"
+            )
+        else:
+            counts = inventory["counts"]
+            recent_changes = inventory["recent_changes"]
+            data_source_label = (
+                "fleet_inventory collection (Janes / RUSI / IISS / MOD UKAF Equipment & QSPS)"
+            )
+            print(
+                f"[Defence]   fleet_inventory counts: {counts}",
+                file=sys.stderr, flush=True,
+            )
 
-        score_pct = compute_land_mass_score()
+        mbts = counts.get("mbt", 0)
+        afvs = counts.get("afv", 0)
+        regulars = counts.get("regular", 0)
+        modern_artillery = counts.get("artillery", 0)
+        ad_batteries = counts.get("ad_battery", 0)
+        active_reserves = counts.get("active_reserve", 0)
+        recall_veterans = counts.get("recall_veteran", 0)
+
+        score_pct = compute_land_mass_score(
+            mbts=mbts,
+            afvs=afvs,
+            regulars=regulars,
+            modern_artillery=modern_artillery,
+            ad_batteries=ad_batteries,
+            active_reserves=active_reserves,
+            recall_veterans=recall_veterans,
+        )
         rag = calculate_rag_status("land_mass", score_pct)
 
         now = datetime.now(timezone.utc)
@@ -1267,6 +1271,7 @@ def fetch_land_mass() -> Optional[Dict[str, Any]]:
                 "fewer regular personnel and active reserves than the Tier 1 benchmark."
             ),
         )
+        information += _format_recent_changes(recent_changes)
         path_to_green = get_land_mass_path_to_green(
             mbts=mbts,
             afvs=afvs,
@@ -1287,10 +1292,7 @@ def fetch_land_mass() -> Optional[Dict[str, Any]]:
             "value": score_pct,
             "rag_status": rag,
             "time_period": time_period,
-            "data_source": (
-                "Synthesis of Janes ORBATs, RUSI/IISS Military Balance, "
-                "MOD equipment and personnel statistics"
-            ),
+            "data_source": data_source_label,
             "source_url": "https://www.janes.com/",
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "information": information,
@@ -1320,25 +1322,64 @@ def get_air_mass_information(
     )
 
 
+# Hardcoded fallback for Air Mass (used when fleet_inventory is empty/unreachable).
+AIR_MASS_FALLBACK_COUNTS = {
+    "fighter": 120,
+    "tanker": 14,
+    "aew": 3,
+    "strategic_lift": 30,
+    "autonomous": 0,
+}
+
+
 def fetch_air_mass() -> Optional[Dict[str, Any]]:
     """
     Compute and return the Air Mass composite metric.
 
-    Uses the four‑pillar model described in the Air Mass
-    specification and stores results as quarterly snapshots
-    (YYYY Q1–Q4), in line with Sea Mass and Land Mass.
+    Source of truth: the `fleet_inventory` MongoDB collection, slice
+    category='air_mass'. Aggregate rows (fighter, tanker, aew, strategic_lift,
+    autonomous) carry a `quantity` field summed for active+refit. Falls back
+    to hardcoded constants if the collection is empty/unreachable.
     """
     try:
         print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
         print("[Defence] Computing Air Mass Composite Score", file=sys.stderr, flush=True)
         print("[Defence] " + "="*60, file=sys.stderr, flush=True)
 
-        fighters = 120
-        force_multipliers = 17  # 14 tankers + 3 AEW
-        strategic_lift = 30
-        autonomous = 0
+        inventory = load_inventory_for_category("air_mass")
+        if inventory is None:
+            print("[Defence]   fleet_inventory: no air_mass items — using hardcoded fallback",
+                  file=sys.stderr, flush=True)
+            counts = dict(AIR_MASS_FALLBACK_COUNTS)
+            recent_changes: List[Dict[str, Any]] = []
+            data_source_label = (
+                "FlightGlobal / IISS / RUSI (fallback baseline)"
+            )
+        else:
+            counts = inventory["counts"]
+            recent_changes = inventory["recent_changes"]
+            data_source_label = (
+                "fleet_inventory collection (FlightGlobal / IISS / RUSI)"
+            )
+            print(
+                f"[Defence]   fleet_inventory counts: {counts}",
+                file=sys.stderr, flush=True,
+            )
 
-        score_pct = compute_air_mass_score()
+        fighters = counts.get("fighter", 0)
+        tankers = counts.get("tanker", 0)
+        aew = counts.get("aew", 0)
+        strategic_lift = counts.get("strategic_lift", 0)
+        autonomous = counts.get("autonomous", 0)
+        force_multipliers = tankers + aew
+
+        score_pct = compute_air_mass_score(
+            mission_ready_fighters=fighters,
+            active_tankers=tankers,
+            active_aew=aew,
+            strategic_lift_aircraft=strategic_lift,
+            autonomous_platforms=autonomous,
+        )
         rag = calculate_rag_status("air_mass", score_pct)
 
         now = datetime.now(timezone.utc)
@@ -1352,6 +1393,7 @@ def fetch_air_mass() -> Optional[Dict[str, Any]]:
             strategic_lift=strategic_lift,
             autonomous=autonomous,
         )
+        information += _format_recent_changes(recent_changes)
         path_to_green = get_air_mass_path_to_green(
             fighters=fighters,
             force_multipliers=force_multipliers,
@@ -1369,10 +1411,7 @@ def fetch_air_mass() -> Optional[Dict[str, Any]]:
             "value": score_pct,
             "rag_status": rag,
             "time_period": time_period,
-            "data_source": (
-                "FlightGlobal World Air Forces directory, "
-                "IISS Military Balance, RUSI air power analysis"
-            ),
+            "data_source": data_source_label,
             "source_url": "https://www.flightglobal.com/defence/2026-world-air-forces-directory/165267.article",
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "information": information,

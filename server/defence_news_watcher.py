@@ -248,28 +248,34 @@ def fetch_article_text(url: str) -> Tuple[str, str]:
 # LLM extraction (Forge / OpenAI-compatible)
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = """You extract status changes for specific UK military units from a news article.
+SYSTEM_PROMPT = """You extract status changes for specific named UK military units or equipment types from a news article.
 
-You will receive an article about UK defence. Your job is to detect, for any individually-named UK military hull (Royal Navy, RFA), regiment (British Army), or squadron (RAF), a CONFIRMED status change reported in the article.
+You will receive an article about UK defence. Detect CONFIRMED status changes for any of these named entities:
+
+  1. Royal Navy / RFA hulls — e.g. "HMS Iron Duke", "RFA Mounts Bay".
+  2. British Army equipment types — e.g. "Challenger 2", "Warrior IFV", "Ajax", "Boxer", "AS90", "M270 MLRS", "Archer 155mm", "Sky Sabre".
+  3. RAF aircraft types — e.g. "E-7 Wedgetail", "Typhoon", "F-35B", "Voyager", "C-17", "A400M Atlas".
+  4. Specific named regiments, squadrons, or battalions where the article reports a status change to that unit as a whole.
 
 Allowed statuses (output exactly one):
   - active           : currently in service, deployable
   - refit            : in maintenance/refit, expected to return to service
-  - low_readiness    : retained in low/reserve readiness, not deployable
+  - low_readiness    : retained in low/reserve readiness, or pre-IOC (delivered but not yet operational), not deployable
   - withdrawn        : stripped of equipment / quietly removed from service; no formal decommissioning yet
   - decommissioned   : formally retired from service
 
 Rules:
-  - ONLY report changes that the article CONFIRMS or that the article reports as confirmed by MOD / Royal Navy / Royal Air Force / British Army.
-  - Do NOT report speculation, rumour, opinion, or hypothetical scenarios. Set confidence below 0.7 if there is meaningful doubt.
-  - Do NOT report aggregate claims like "the navy is shrinking" — only per-unit claims with a name.
-  - vessel_name must be the unit name as written (e.g. "HMS Iron Duke", "RFA Mounts Bay", "2nd Battalion The Royal Anglian Regiment").
+  - ONLY report changes that the article CONFIRMS or that it reports as confirmed by MOD / Royal Navy / Royal Air Force / British Army.
+  - Do NOT report speculation, rumour, opinion, or hypothetical scenarios. Drop confidence below 0.7 if there is meaningful doubt.
+  - Do NOT report aggregate trend claims like "the navy is shrinking" or "the army is rebuilding" — only per-unit / per-type claims that name the entity.
+  - For equipment types (e.g. Warrior IFV, E-7 Wedgetail), the status applies to the type-level fleet as currently described by the article. Use `withdrawn`/`decommissioned` when the article reports the whole type is being retired, `low_readiness` if the article reports the type is delivered/ordered but not yet operationally available (e.g. pre-IOC), `active` when the article reports the type entering or remaining in operational service.
+  - vessel_name must be the entity name as written (e.g. "HMS Iron Duke", "Warrior IFV", "E-7 Wedgetail", "2nd Battalion The Royal Anglian Regiment").
   - evidence_quote must be a direct excerpt of <= 400 characters from the article body that supports the claim.
   - Confidence calibration:
-      * 0.9–1.0: explicit, unambiguous, attributed announcement
-      * 0.7–0.9: clearly stated by reliable reporting with named sourcing
-      * 0.5–0.7: strong rumour or unattributed but specific claim
-      * <0.5: anything more speculative — still emit but it will be filtered
+      * 0.9–1.0: explicit, unambiguous, attributed announcement (MOD statement, parliamentary answer, official press release).
+      * 0.7–0.9: clearly stated by reliable reporting with named sourcing.
+      * 0.5–0.7: strong rumour or unattributed but specific claim.
+      * <0.5: anything more speculative — still emit but it will be filtered.
 
 OUTPUT FORMAT
 =============
@@ -286,7 +292,7 @@ Respond with raw JSON ONLY. No prose, no Markdown, no code fences. Exactly this 
   ]
 }
 
-If the article contains no per-unit status changes, return: {"changes": []}
+If the article contains no per-entity status changes, return: {"changes": []}
 """
 
 

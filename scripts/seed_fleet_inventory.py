@@ -45,15 +45,19 @@ ALLOWED_CATEGORIES = {"sea_mass", "land_mass", "air_mass"}
 def load_seed() -> List[Dict[str, Any]]:
     with open(SEED_PATH, "r", encoding="utf-8") as f:
         payload = json.load(f)
-    items = payload.get("items", [])
-    if not isinstance(items, list):
+    raw = payload.get("items", [])
+    if not isinstance(raw, list):
         raise ValueError("fleet_inventory.seed.json must contain an 'items' array")
-    return items
+    # Drop free-form `_comment` blocks used to annotate the seed file.
+    return [it for it in raw if isinstance(it, dict) and "itemId" in it]
 
 
 def validate(items: List[Dict[str, Any]]) -> None:
     seen_ids: set[str] = set()
     for item in items:
+        # Permit free-form `_comment` blocks in the seed file (skipped here).
+        if "itemId" not in item and "_comment" in item:
+            continue
         item_id = item.get("itemId")
         if not item_id or not isinstance(item_id, str):
             raise ValueError(f"item missing string itemId: {item!r}")
@@ -67,6 +71,10 @@ def validate(items: List[Dict[str, Any]]) -> None:
         for required in ("name", "className", "role"):
             if not item.get(required):
                 raise ValueError(f"{item_id}: missing required field {required!r}")
+        if "quantity" in item:
+            q = item["quantity"]
+            if not isinstance(q, (int, float)) or q < 0:
+                raise ValueError(f"{item_id}: quantity must be a non-negative number, got {q!r}")
 
 
 def get_db():
@@ -93,6 +101,8 @@ def upsert_item(coll, item: Dict[str, Any], now: datetime) -> str:
         "notes": item.get("notes"),
         "updatedAt": now,
     }
+    if "quantity" in item:
+        doc["quantity"] = int(item["quantity"])
     result = coll.find_one_and_update(
         {"itemId": item["itemId"]},
         {
@@ -141,13 +151,17 @@ def main() -> int:
         print(f"[FleetSeed] Done. inserted={inserted} updated={updated}")
 
         counts: Dict[str, Dict[str, int]] = {}
-        for doc in coll.find({}, {"_id": 0, "category": 1, "role": 1, "status": 1}):
+        for doc in coll.find(
+            {},
+            {"_id": 0, "category": 1, "role": 1, "status": 1, "quantity": 1},
+        ):
             cat = doc["category"]
             role = doc["role"]
             counts.setdefault(cat, {}).setdefault(role, 0)
             if doc["status"] in ("active", "refit"):
-                counts[cat][role] += 1
-        print("[FleetSeed] Counted (active+refit) by category/role:")
+                q = doc.get("quantity")
+                counts[cat][role] += int(q) if q is not None else 1
+        print("[FleetSeed] Counted (sum of quantity for active+refit) by category/role:")
         for cat, by_role in sorted(counts.items()):
             print(f"  {cat}:")
             for role, n in sorted(by_role.items()):

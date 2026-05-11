@@ -143,6 +143,160 @@ class TestFallbackBehaviour(unittest.TestCase):
         self.assertIn("fallback baseline", metric["data_source"])
 
 
+class TestLandMassInventory(unittest.TestCase):
+    """Inventory-driven Land Mass uses sum(quantity) per role."""
+
+    def _inv(self, items):
+        counts = {}
+        recent = []
+        for it in items:
+            if it["status"] in fetcher.SEA_MASS_COUNTED_STATUSES:
+                role = it["role"]
+                q = it.get("quantity")
+                counts[role] = counts.get(role, 0) + (
+                    int(q) if q is not None else 1
+                )
+            else:
+                recent.append(it)
+        return {"counts": counts, "recent_changes": recent, "all_items": items}
+
+    def test_land_mass_with_audit_seed_produces_59_9(self):
+        items = [
+            {"itemId": "mbt-op", "role": "mbt", "status": "active",
+             "category": "land_mass", "quantity": 150, "name": "C2 op"},
+            {"itemId": "mbt-st", "role": "mbt", "status": "low_readiness",
+             "category": "land_mass", "quantity": 138, "name": "C2 stored"},
+            {"itemId": "warrior", "role": "afv", "status": "active",
+             "category": "land_mass", "quantity": 632, "name": "Warrior"},
+            {"itemId": "ajax", "role": "afv", "status": "active",
+             "category": "land_mass", "quantity": 50, "name": "Ajax"},
+            {"itemId": "mastiff", "role": "afv", "status": "active",
+             "category": "land_mass", "quantity": 20, "name": "Mastiff"},
+            {"itemId": "regs", "role": "regular", "status": "active",
+             "category": "land_mass", "quantity": 126440, "name": "Regs"},
+            {"itemId": "m270", "role": "artillery", "status": "active",
+             "category": "land_mass", "quantity": 44, "name": "M270"},
+            {"itemId": "archer", "role": "artillery", "status": "active",
+             "category": "land_mass", "quantity": 14, "name": "Archer"},
+            {"itemId": "other-arty", "role": "artillery", "status": "active",
+             "category": "land_mass", "quantity": 17, "name": "Other"},
+            {"itemId": "sky-sabre", "role": "ad_battery", "status": "active",
+             "category": "land_mass", "quantity": 7, "name": "Sky Sabre"},
+            {"itemId": "reserves", "role": "active_reserve", "status": "active",
+             "category": "land_mass", "quantity": 29000, "name": "Reserves"},
+            {"itemId": "veterans", "role": "recall_veteran", "status": "active",
+             "category": "land_mass", "quantity": 25000, "name": "Veterans"},
+        ]
+        with mock.patch.object(
+            fetcher, "load_inventory_for_category",
+            side_effect=lambda cat: self._inv(items) if cat == "land_mass" else None,
+        ):
+            metric = fetcher.fetch_land_mass()
+        self.assertIsNotNone(metric)
+        self.assertEqual(metric["value"], 59.9)
+        self.assertEqual(metric["rag_status"], "red")
+
+    def test_land_mass_falls_back_to_hardcoded_when_inventory_empty(self):
+        with mock.patch.object(
+            fetcher, "load_inventory_for_category", return_value=None,
+        ):
+            metric = fetcher.fetch_land_mass()
+        self.assertIsNotNone(metric)
+        # Falls back to 70.4 (original baseline).
+        self.assertEqual(metric["value"], 70.4)
+        self.assertIn("fallback baseline", metric["data_source"])
+
+
+class TestAirMassInventory(unittest.TestCase):
+    """Inventory-driven Air Mass — E-7 in low_readiness should drop score to 45.0."""
+
+    def _inv(self, items):
+        counts = {}
+        recent = []
+        for it in items:
+            if it["status"] in fetcher.SEA_MASS_COUNTED_STATUSES:
+                role = it["role"]
+                q = it.get("quantity")
+                counts[role] = counts.get(role, 0) + (
+                    int(q) if q is not None else 1
+                )
+            else:
+                recent.append(it)
+        return {"counts": counts, "recent_changes": recent, "all_items": items}
+
+    def test_air_mass_with_e7_pre_ioc_drops_to_45(self):
+        items = [
+            {"itemId": "typhoon", "role": "fighter", "status": "active",
+             "category": "air_mass", "quantity": 100, "name": "Typhoon"},
+            {"itemId": "f35b", "role": "fighter", "status": "active",
+             "category": "air_mass", "quantity": 20, "name": "F-35B"},
+            {"itemId": "voyager", "role": "tanker", "status": "active",
+             "category": "air_mass", "quantity": 14, "name": "Voyager"},
+            {"itemId": "e7", "role": "aew", "status": "low_readiness",
+             "category": "air_mass", "quantity": 3, "name": "E-7",
+             "statusSourceUrl": "https://example.test/e7",
+             "statusSourceTitle": "FlightGlobal"},
+            {"itemId": "c17", "role": "strategic_lift", "status": "active",
+             "category": "air_mass", "quantity": 8, "name": "C-17"},
+            {"itemId": "a400m", "role": "strategic_lift", "status": "active",
+             "category": "air_mass", "quantity": 22, "name": "A400M"},
+            {"itemId": "acp", "role": "autonomous", "status": "active",
+             "category": "air_mass", "quantity": 0, "name": "ACP"},
+        ]
+        with mock.patch.object(
+            fetcher, "load_inventory_for_category",
+            side_effect=lambda cat: self._inv(items) if cat == "air_mass" else None,
+        ):
+            metric = fetcher.fetch_air_mass()
+        self.assertIsNotNone(metric)
+        self.assertEqual(metric["value"], 45.0)
+        # E-7 should be in the recent_changes block of the information field.
+        self.assertIn("E-7", metric["information"])
+
+    def test_air_mass_with_e7_active_returns_to_48(self):
+        items = [
+            {"itemId": "typhoon", "role": "fighter", "status": "active",
+             "category": "air_mass", "quantity": 100, "name": "Typhoon"},
+            {"itemId": "f35b", "role": "fighter", "status": "active",
+             "category": "air_mass", "quantity": 20, "name": "F-35B"},
+            {"itemId": "voyager", "role": "tanker", "status": "active",
+             "category": "air_mass", "quantity": 14, "name": "Voyager"},
+            {"itemId": "e7", "role": "aew", "status": "active",
+             "category": "air_mass", "quantity": 3, "name": "E-7"},
+            {"itemId": "c17", "role": "strategic_lift", "status": "active",
+             "category": "air_mass", "quantity": 8, "name": "C-17"},
+            {"itemId": "a400m", "role": "strategic_lift", "status": "active",
+             "category": "air_mass", "quantity": 22, "name": "A400M"},
+            {"itemId": "acp", "role": "autonomous", "status": "active",
+             "category": "air_mass", "quantity": 0, "name": "ACP"},
+        ]
+        with mock.patch.object(
+            fetcher, "load_inventory_for_category",
+            side_effect=lambda cat: self._inv(items) if cat == "air_mass" else None,
+        ):
+            metric = fetcher.fetch_air_mass()
+        # E-7 active again -> +3 multipliers -> Air Mass returns to 48.0.
+        self.assertEqual(metric["value"], 48.0)
+
+
+class TestQuantityHandling(unittest.TestCase):
+    """The quantity field is the key Phase 2b mechanic — exercise its edges."""
+
+    def test_quantity_zero_is_respected(self):
+        self.assertEqual(
+            fetcher._item_quantity({"quantity": 0}), 0,
+        )
+
+    def test_missing_quantity_defaults_to_one(self):
+        self.assertEqual(fetcher._item_quantity({}), 1)
+
+    def test_invalid_quantity_defaults_to_one(self):
+        self.assertEqual(fetcher._item_quantity({"quantity": "lots"}), 1)
+
+    def test_negative_quantity_clamped_to_zero(self):
+        self.assertEqual(fetcher._item_quantity({"quantity": -10}), 0)
+
+
 class TestRecentChangesCitations(unittest.TestCase):
     """The information field must surface recent non-counted hulls with URLs."""
 

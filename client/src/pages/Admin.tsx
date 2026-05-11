@@ -45,6 +45,8 @@ import {
   ChevronDown,
   LayoutDashboard,
   Users,
+  Ship,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useCallback } from "react";
@@ -596,6 +598,12 @@ function AdminDashboard() {
         onToggle={() => toggle("data-refresh")}
       />
 
+      {/* Fleet change proposals (from nightly defence news watcher) */}
+      <FleetProposalsCard
+        isOpen={isOpen("fleet-proposals")}
+        onToggle={() => toggle("fleet-proposals")}
+      />
+
       {/* Dashboard Section Visibility */}
       <DashboardSectionsCard
         isOpen={isOpen("dashboard-sections")}
@@ -979,6 +987,266 @@ function RecentLogsSection({
                         </TableRow>
                       );
                     })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}
+
+// ─── Fleet Proposals (Phase 4 defence pipeline) ────────────────────────────
+
+const STATUS_PILL: Record<
+  string,
+  { label: string; className: string }
+> = {
+  active: {
+    label: "active",
+    className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  },
+  refit: {
+    label: "refit",
+    className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  },
+  low_readiness: {
+    label: "low readiness",
+    className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  },
+  withdrawn: {
+    label: "withdrawn",
+    className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  },
+  decommissioned: {
+    label: "decommissioned",
+    className: "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  },
+};
+
+function StatusPill({ status }: { status: string | null }) {
+  if (!status) {
+    return <span className="text-xs text-muted-foreground italic">unknown</span>;
+  }
+  const config = STATUS_PILL[status] ?? {
+    label: status,
+    className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${config.className}`}
+    >
+      {config.label}
+    </span>
+  );
+}
+
+function ConfidenceBar({ value }: { value: number }) {
+  const pct = Math.round(value * 100);
+  const tone =
+    value >= 0.85
+      ? "bg-green-500"
+      : value >= 0.7
+      ? "bg-blue-500"
+      : "bg-amber-500";
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
+        <div className={`h-full ${tone}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs tabular-nums text-muted-foreground">
+        {pct}%
+      </span>
+    </div>
+  );
+}
+
+function FleetProposalsCard({
+  isOpen,
+  onToggle,
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const utils = trpc.useUtils();
+  const { data: counts } = trpc.fleetProposals.counts.useQuery(undefined, {
+    refetchInterval: 60_000,
+  });
+  const { data: proposals, isLoading } =
+    trpc.fleetProposals.list.useQuery({ status: "pending_review" });
+
+  const approveMutation = trpc.fleetProposals.approve.useMutation({
+    onSuccess: (data) => {
+      toast.success(
+        data.refreshed
+          ? "Proposal approved — Sea Mass refreshed"
+          : "Proposal approved (Sea Mass refresh deferred)",
+      );
+      void utils.fleetProposals.list.invalidate();
+      void utils.fleetProposals.counts.invalidate();
+      void utils.metrics.list.invalidate();
+      void utils.metrics.trends.invalidate();
+    },
+    onError: (err) => toast.error(`Approve failed: ${err.message}`),
+  });
+  const rejectMutation = trpc.fleetProposals.reject.useMutation({
+    onSuccess: () => {
+      toast.success("Proposal rejected");
+      void utils.fleetProposals.list.invalidate();
+      void utils.fleetProposals.counts.invalidate();
+    },
+    onError: (err) => toast.error(`Reject failed: ${err.message}`),
+  });
+
+  const pendingCount = counts?.pending_review ?? 0;
+  const inFlight =
+    approveMutation.isPending || rejectMutation.isPending;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <Card>
+        <SectionHeader
+          icon={Ship}
+          title="Fleet Proposals"
+          description={
+            <>
+              Status-change proposals extracted by the nightly news watcher
+              from Navy Lookout, UK Defence Journal and MOD feeds. Approvals
+              flip the fleet inventory and recompute Sea Mass.
+            </>
+          }
+          isOpen={isOpen}
+        >
+          {pendingCount > 0 && (
+            <Badge variant="default">
+              {pendingCount} pending
+            </Badge>
+          )}
+        </SectionHeader>
+        <CollapsibleContent>
+          <CardContent className="space-y-4">
+            {counts && (
+              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                <span>
+                  Pending:{" "}
+                  <strong className="text-foreground">
+                    {counts.pending_review}
+                  </strong>
+                </span>
+                <span>
+                  Approved (lifetime):{" "}
+                  <strong className="text-foreground">{counts.approved}</strong>
+                </span>
+                <span>
+                  Rejected:{" "}
+                  <strong className="text-foreground">{counts.rejected}</strong>
+                </span>
+                <span>
+                  Auto-rejected (low confidence):{" "}
+                  <strong className="text-foreground">
+                    {counts.auto_rejected}
+                  </strong>
+                </span>
+              </div>
+            )}
+
+            {isLoading && (
+              <div className="py-8 flex justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
+            {!isLoading && (!proposals || proposals.length === 0) && (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                No pending proposals. The watcher runs daily at 06:00 UTC.
+              </div>
+            )}
+
+            {!isLoading && proposals && proposals.length > 0 && (
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Vessel</TableHead>
+                      <TableHead>Change</TableHead>
+                      <TableHead className="w-[110px]">Confidence</TableHead>
+                      <TableHead>Evidence</TableHead>
+                      <TableHead className="w-[150px]">Source</TableHead>
+                      <TableHead className="text-right w-[160px]">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {proposals.map((p) => (
+                      <TableRow key={p._id}>
+                        <TableCell className="font-medium text-sm whitespace-nowrap">
+                          {p.vesselNameFromArticle}
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {p.itemId}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <StatusPill status={p.currentStatus} />
+                            <span className="text-muted-foreground">→</span>
+                            <StatusPill status={p.proposedStatus} />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <ConfidenceBar value={p.confidence} />
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[260px]">
+                          <span className="italic">
+                            &ldquo;{p.evidenceQuote}&rdquo;
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="text-foreground font-medium">
+                            {p.articleSource}
+                          </div>
+                          <a
+                            href={p.articleUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            <span className="truncate max-w-[120px] inline-block align-bottom">
+                              article
+                            </span>
+                          </a>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              disabled={inFlight}
+                              onClick={() =>
+                                approveMutation.mutate({ id: p._id })
+                              }
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={inFlight}
+                              onClick={() =>
+                                rejectMutation.mutate({ id: p._id })
+                              }
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>

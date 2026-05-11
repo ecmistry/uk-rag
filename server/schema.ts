@@ -128,6 +128,10 @@ export interface FleetInventoryItem {
   category: FleetInventoryCategory;
   role: string; // SeaMassRole for sea_mass; free-form for other categories
   status: FleetItemStatus;
+  // Quantity represented by this inventory row. Defaults to 1 when absent so
+  // existing Sea Mass per-hull rows keep their original meaning. Land Mass
+  // and Air Mass use aggregate rows (e.g. "Warrior IFV" with quantity 632).
+  quantity?: number;
   statusChangedAt: Date;
   statusSourceUrl?: string | null; // citation for the current status
   statusSourceTitle?: string | null; // optional human label for the citation
@@ -143,6 +147,7 @@ export interface InsertFleetInventoryItem {
   category: FleetInventoryCategory;
   role: string;
   status: FleetItemStatus;
+  quantity?: number;
   statusChangedAt?: Date;
   statusSourceUrl?: string | null;
   statusSourceTitle?: string | null;

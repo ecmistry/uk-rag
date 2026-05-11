@@ -27,7 +27,10 @@ export interface MetricData {
   data_source: string;
   source_url: string;
   last_updated: string;
-  unit?: string; // Optional unit field
+  unit?: string;
+  // Optional narrative blurb persisted on metricHistory.information.
+  // Used by Sea Mass / Land Mass / Air Mass to carry citations.
+  information?: string;
 }
 
 export interface DataIngestionResult {

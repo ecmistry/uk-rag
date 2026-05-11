@@ -3,7 +3,7 @@
  * Replaces Drizzle ORM with native MongoDB driver
  */
 
-import { MongoClient, Db, Collection } from "mongodb";
+import { MongoClient, Db, Collection, ObjectId } from "mongodb";
 import { ENV } from "./_core/env";
 import { cache } from "./cache";
 import type {
@@ -13,6 +13,10 @@ import type {
   InsertMetric,
   MetricHistory,
   InsertMetricHistory,
+  FleetInventoryItem,
+  FleetItemStatus,
+  FleetChangeProposal,
+  ProposalStatus,
 } from "./schema";
 
 let _client: MongoClient | null = null;
@@ -26,6 +30,9 @@ const COLLECTIONS = {
   settings: "settings",
   visitors: "visitors",
   visitorStats: "visitorStats",
+  fleetInventory: "fleet_inventory",
+  fleetChangeProposals: "fleet_change_proposals",
+  fleetNewsSeenArticles: "fleet_news_seen_articles",
 } as const;
 
 /**
@@ -869,4 +876,214 @@ export async function getVisitorStats(days: number = 30): Promise<DailyVisitorCo
   return [...merged.entries()]
     .sort((a, b) => b[0].localeCompare(a[0]))
     .map(([date, uniqueVisitors]) => ({ date, uniqueVisitors }));
+}
+
+// ============================================================================
+// Fleet Inventory & Change Proposals (Phase 2–4 defence pipeline)
+// ============================================================================
+
+export async function getFleetInventoryItem(
+  itemId: string,
+): Promise<FleetInventoryItem | null> {
+  const collection = await getCollection<FleetInventoryItem>(
+    COLLECTIONS.fleetInventory,
+  );
+  if (!collection) return null;
+  const item = await collection.findOne({ itemId });
+  return item ?? null;
+}
+
+/**
+ * Update a single inventory item's status. Used by the admin proposal
+ * approval flow — never call directly from a non-admin path.
+ */
+export async function updateFleetInventoryStatus(args: {
+  itemId: string;
+  newStatus: FleetItemStatus;
+  statusSourceUrl?: string | null;
+  statusSourceTitle?: string | null;
+  notes?: string | null;
+}): Promise<boolean> {
+  const collection = await getCollection<FleetInventoryItem>(
+    COLLECTIONS.fleetInventory,
+  );
+  if (!collection) throw new Error("Database not available");
+
+  const now = new Date();
+  const result = await collection.updateOne(
+    { itemId: args.itemId },
+    {
+      $set: {
+        status: args.newStatus,
+        statusChangedAt: now,
+        statusSourceUrl: args.statusSourceUrl ?? null,
+        statusSourceTitle: args.statusSourceTitle ?? null,
+        ...(args.notes !== undefined ? { notes: args.notes } : {}),
+        updatedAt: now,
+      },
+    },
+  );
+  return result.matchedCount > 0;
+}
+
+/**
+ * List proposals, optionally filtered by status. Default order: newest first.
+ */
+export async function listFleetProposals(args?: {
+  status?: ProposalStatus;
+  limit?: number;
+}): Promise<FleetChangeProposal[]> {
+  const collection = await getCollection<FleetChangeProposal>(
+    COLLECTIONS.fleetChangeProposals,
+  );
+  if (!collection) return [];
+  const query = args?.status ? { status: args.status } : {};
+  const cursor = collection
+    .find(query)
+    .sort({ createdAt: -1 })
+    .limit(Math.min(Math.max(1, args?.limit ?? 200), 500));
+  return cursor.toArray();
+}
+
+export async function getFleetProposal(
+  proposalId: string,
+): Promise<FleetChangeProposal | null> {
+  if (!ObjectId.isValid(proposalId)) return null;
+  const collection = await getCollection<FleetChangeProposal>(
+    COLLECTIONS.fleetChangeProposals,
+  );
+  if (!collection) return null;
+  const doc = await collection.findOne({ _id: new ObjectId(proposalId) });
+  return doc ?? null;
+}
+
+/**
+ * Approve a proposal: applies the proposed status to the inventory item,
+ * marks the proposal as approved with reviewer audit fields. Atomic-ish:
+ * if the inventory update fails (e.g. item disappeared), the proposal is
+ * NOT marked approved — caller sees the error and can investigate.
+ */
+export async function approveFleetProposal(args: {
+  proposalId: string;
+  reviewerEmail: string;
+  notes?: string;
+}): Promise<{
+  ok: boolean;
+  proposal?: FleetChangeProposal;
+  error?: string;
+}> {
+  if (!ObjectId.isValid(args.proposalId)) {
+    return { ok: false, error: "Invalid proposal id" };
+  }
+  const proposalsColl = await getCollection<FleetChangeProposal>(
+    COLLECTIONS.fleetChangeProposals,
+  );
+  if (!proposalsColl) return { ok: false, error: "Database not available" };
+
+  const proposal = await proposalsColl.findOne({
+    _id: new ObjectId(args.proposalId),
+  });
+  if (!proposal) return { ok: false, error: "Proposal not found" };
+  if (proposal.status !== "pending_review") {
+    return { ok: false, error: `Proposal already ${proposal.status}` };
+  }
+
+  // Apply the change to the inventory FIRST. If this fails, the proposal
+  // stays pending and the admin can retry.
+  const flipped = await updateFleetInventoryStatus({
+    itemId: proposal.itemId,
+    newStatus: proposal.proposedStatus,
+    statusSourceUrl: proposal.articleUrl,
+    statusSourceTitle: `${proposal.articleSource} (${proposal.articleTitle.slice(0, 80)})`,
+  });
+  if (!flipped) {
+    return {
+      ok: false,
+      error: `Inventory item ${proposal.itemId} not found — cannot apply approval`,
+    };
+  }
+
+  const now = new Date();
+  await proposalsColl.updateOne(
+    { _id: new ObjectId(args.proposalId) },
+    {
+      $set: {
+        status: "approved" as ProposalStatus,
+        reviewedAt: now,
+        reviewerEmail: args.reviewerEmail,
+        ...(args.notes ? { reviewNotes: args.notes } : {}),
+      },
+    },
+  );
+
+  const updated = await proposalsColl.findOne({
+    _id: new ObjectId(args.proposalId),
+  });
+  return { ok: true, proposal: updated ?? proposal };
+}
+
+export async function rejectFleetProposal(args: {
+  proposalId: string;
+  reviewerEmail: string;
+  notes?: string;
+}): Promise<{
+  ok: boolean;
+  proposal?: FleetChangeProposal;
+  error?: string;
+}> {
+  if (!ObjectId.isValid(args.proposalId)) {
+    return { ok: false, error: "Invalid proposal id" };
+  }
+  const proposalsColl = await getCollection<FleetChangeProposal>(
+    COLLECTIONS.fleetChangeProposals,
+  );
+  if (!proposalsColl) return { ok: false, error: "Database not available" };
+
+  const proposal = await proposalsColl.findOne({
+    _id: new ObjectId(args.proposalId),
+  });
+  if (!proposal) return { ok: false, error: "Proposal not found" };
+  if (proposal.status !== "pending_review") {
+    return { ok: false, error: `Proposal already ${proposal.status}` };
+  }
+
+  const now = new Date();
+  await proposalsColl.updateOne(
+    { _id: new ObjectId(args.proposalId) },
+    {
+      $set: {
+        status: "rejected" as ProposalStatus,
+        reviewedAt: now,
+        reviewerEmail: args.reviewerEmail,
+        ...(args.notes ? { reviewNotes: args.notes } : {}),
+      },
+    },
+  );
+  const updated = await proposalsColl.findOne({
+    _id: new ObjectId(args.proposalId),
+  });
+  return { ok: true, proposal: updated ?? proposal };
+}
+
+/** Summary counts by proposal status. */
+export async function getFleetProposalCounts(): Promise<
+  Record<ProposalStatus, number>
+> {
+  const collection = await getCollection<FleetChangeProposal>(
+    COLLECTIONS.fleetChangeProposals,
+  );
+  const empty: Record<ProposalStatus, number> = {
+    pending_review: 0,
+    approved: 0,
+    rejected: 0,
+    auto_rejected: 0,
+  };
+  if (!collection) return empty;
+  const rows = await collection
+    .aggregate<{ _id: ProposalStatus; n: number }>([
+      { $group: { _id: "$status", n: { $sum: 1 } } },
+    ])
+    .toArray();
+  for (const r of rows) empty[r._id] = r.n;
+  return empty;
 }
