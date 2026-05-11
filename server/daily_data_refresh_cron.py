@@ -580,6 +580,7 @@ def run(only_category: Optional[str] = None) -> None:
                         "key": key, "name": name, "category": metric_category,
                         "val": val, "unit": unit, "rag": rag,
                         "period": period, "source": source,
+                        "info": info,
                     }
 
             # Upsert only the latest row per metric to the dashboard tile,
@@ -607,6 +608,11 @@ def run(only_category: Optional[str] = None) -> None:
             {"name": "Apprenticeship Intensity", "script": "apprenticeship_intensity_cron.py"},
             {"name": "Crime Per Capita", "script": "crime_per_capita_cron.py"},
             {"name": "Defence Industry Vitality", "script": "defence_industry_vitality_cron.py"},
+            # Phase 3: pulls trusted defence feeds, extracts status changes
+            # via LLM, writes pending proposals to fleet_change_proposals.
+            # Never mutates fleet_inventory directly — that's gated by admin.
+            {"name": "Defence News Watcher", "script": "defence_news_watcher.py",
+             "args": ["--max-articles", "20"], "timeout": 600},
         ]
         supplement_errors: List[str] = []
 
@@ -623,12 +629,13 @@ def run(only_category: Optional[str] = None) -> None:
                     supplement_errors.append(msg)
                     continue
 
-                cmd = ["python3", script_path]
+                cmd = ["python3", script_path, *sup.get("args", [])]
                 log(f"  Running {sup['name']}: {' '.join(cmd)}")
                 try:
+                    timeout = int(sup.get("timeout", 300))
                     result = subprocess.run(
                         cmd,
-                        capture_output=True, text=True, timeout=300,
+                        capture_output=True, text=True, timeout=timeout,
                         cwd=os.path.dirname(SCRIPT_DIR) or ".",
                     )
                     if result.returncode == 0:

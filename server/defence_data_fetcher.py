@@ -7,7 +7,7 @@ Equipment Spend: MOD Trade & Contracts | Deployability %: MOD Health & Wellbeing
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import os
 import requests
@@ -989,30 +989,175 @@ def fetch_personnel_strength() -> Optional[Dict[str, Any]]:
         return None
 
 
+# ---------------------------------------------------------------------------
+# Phase 2: Inventory-driven Sea Mass
+#
+# The fleet_inventory collection is the source of truth for Sea Mass. The
+# fetcher reads counts of active+refit hulls per role from Mongo, falls back
+# to hardcoded defaults if the collection is empty, and writes a citation
+# trail of recent non-counted hulls into the `information` blurb so the
+# dashboard tile carries provenance back to the source article.
+# ---------------------------------------------------------------------------
+
+# Statuses that contribute toward the score. Mirrors `FLEET_COUNTED_STATUSES`
+# in server/schema.ts. Refitting hulls remain in the order of battle.
+SEA_MASS_COUNTED_STATUSES = {"active", "refit"}
+
+# Hardcoded fallback used when the fleet_inventory collection is empty
+# (e.g. first deploy, test env, or DB unreachable). Matches Phase 1 baseline.
+SEA_MASS_FALLBACK_COUNTS = {
+    "carrier": 2,
+    "ssbn": 4,
+    "ssn": 6,
+    "escort": 16,
+    "rfa": 9,
+    "patrol_mcm": 14,
+}
+
+
+def _get_sea_mass_db():
+    """Return (client, db) or (None, None) if Mongo cannot be reached."""
+    try:
+        from pymongo import MongoClient  # local import keeps test envs happy
+    except ImportError:
+        return None, None
+    mongo_uri = (
+        os.environ.get("MONGODB_URI")
+        or os.environ.get("DATABASE_URL")
+        or "mongodb://localhost:27017/uk_rag_portal"
+    )
+    try:
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000)
+        # Trigger connection to surface failures early.
+        client.admin.command("ping")
+    except Exception as e:
+        print(f"[Defence]   fleet_inventory: Mongo unreachable ({e}); using fallback counts",
+              file=sys.stderr, flush=True)
+        return None, None
+    parts = mongo_uri.rsplit("/", 1)
+    db_name = parts[1].split("?")[0] if len(parts) == 2 and parts[1] else "uk_rag_portal"
+    if not db_name or ":" in db_name:
+        db_name = "uk_rag_portal"
+    return client, client[db_name]
+
+
+def load_sea_mass_inventory() -> Optional[Dict[str, Any]]:
+    """
+    Read the sea_mass slice of the fleet_inventory collection.
+
+    Returns a dict with:
+      - counts: {role: int}            counted (active + refit) per role
+      - recent_changes: [item, ...]    hulls in non-counted statuses, with citations
+      - all_items: [item, ...]         raw inventory rows (sea_mass only)
+    Or None if the collection is empty / unreachable.
+    """
+    client, db = _get_sea_mass_db()
+    if db is None:
+        return None
+    try:
+        items = list(db["fleet_inventory"].find(
+            {"category": "sea_mass"},
+            {"_id": 0},
+        ))
+    except Exception as e:
+        print(f"[Defence]   fleet_inventory: read failed ({e}); using fallback counts",
+              file=sys.stderr, flush=True)
+        return None
+    finally:
+        try:
+            client.close()
+        except Exception:
+            pass
+
+    if not items:
+        return None
+
+    counts: Dict[str, int] = {}
+    recent_changes: List[Dict[str, Any]] = []
+    for it in items:
+        role = it.get("role")
+        if not role:
+            continue
+        if it.get("status") in SEA_MASS_COUNTED_STATUSES:
+            counts[role] = counts.get(role, 0) + 1
+        else:
+            # Non-counted hulls (withdrawn / decommissioned / low_readiness) —
+            # surface the most recent ones to the information blurb.
+            recent_changes.append(it)
+    return {"counts": counts, "recent_changes": recent_changes, "all_items": items}
+
+
+def _format_recent_changes(recent: List[Dict[str, Any]], limit: int = 3) -> str:
+    """Render the top-N recent fleet changes as a citation block for the information field."""
+    if not recent:
+        return ""
+
+    def _key(item: Dict[str, Any]):
+        ts = item.get("statusChangedAt")
+        # Sort newest first; Mongo timestamps come back as datetimes.
+        return ts if isinstance(ts, datetime) else datetime.min
+
+    sorted_recent = sorted(recent, key=_key, reverse=True)[:limit]
+
+    lines = ["", "Recent fleet changes reflected in this score:"]
+    for it in sorted_recent:
+        name = it.get("name", it.get("itemId", "unknown"))
+        cls = it.get("className", "")
+        status = (it.get("status") or "").replace("_", " ")
+        src_title = it.get("statusSourceTitle") or it.get("statusSourceUrl") or ""
+        src_url = it.get("statusSourceUrl") or ""
+        line = f"  - {name} ({cls}): {status}"
+        if src_url:
+            label = src_title or src_url
+            line += f" — source: {label} ({src_url})"
+        elif src_title:
+            line += f" — source: {src_title}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def fetch_sea_mass() -> Optional[Dict[str, Any]]:
     """
     Compute and return the Sea Mass composite metric.
 
-    Uses the weighted pillar model provided in the Sea Mass specification
-    and current UK force levels validated against:
-      - UK Defence Journal (Royal Navy surface fleet snapshot)
-      - Navy Lookout (order of battle and escort/RFA updates)
-      - RUSI and IISS commentary on Royal Navy size and readiness.
-
-    The metric is expressed as a percentage score from 0–100.
+    Source of truth: the `fleet_inventory` MongoDB collection. Each hull is a
+    row with a status field; rows in 'active' or 'refit' count toward the
+    score, others are excluded but kept for citation surfacing. When the
+    collection is empty or unreachable, falls back to hardcoded counts.
     """
     try:
         print(f"[Defence]\n" + "="*60, file=sys.stderr, flush=True)
         print("[Defence] Computing Sea Mass Composite Score", file=sys.stderr, flush=True)
         print("[Defence] " + "="*60, file=sys.stderr, flush=True)
 
-        # Current UK counts (surface fleet + submarines), as of March 2026.
-        carriers = 2          # HMS Queen Elizabeth, HMS Prince of Wales
-        ssbns = 4             # Vanguard class
-        ssns = 6              # Astute class in commission
-        escorts = 17          # Type 23 + Type 45
-        rfa = 9               # Major RFAs in service
-        patrol_mcm = 14       # River-class OPVs + Hunt/Sandown MCMVs
+        inventory = load_sea_mass_inventory()
+        if inventory is None:
+            print("[Defence]   fleet_inventory empty/unreachable — using hardcoded fallback",
+                  file=sys.stderr, flush=True)
+            counts = dict(SEA_MASS_FALLBACK_COUNTS)
+            recent_changes: List[Dict[str, Any]] = []
+            data_source_label = (
+                "Open-source fleet data cross-checked across: "
+                "UK Defence Journal, Navy Lookout, RUSI, IISS (fallback baseline)"
+            )
+        else:
+            counts = inventory["counts"]
+            recent_changes = inventory["recent_changes"]
+            data_source_label = (
+                "fleet_inventory collection (seeded from open-source order of battle; "
+                "see Navy Lookout, UK Defence Journal, RUSI, IISS)"
+            )
+            print(
+                f"[Defence]   fleet_inventory counts: {counts}",
+                file=sys.stderr, flush=True,
+            )
+
+        carriers = counts.get("carrier", 0)
+        ssbns = counts.get("ssbn", 0)
+        ssns = counts.get("ssn", 0)
+        escorts = counts.get("escort", 0)
+        rfa = counts.get("rfa", 0)
+        patrol_mcm = counts.get("patrol_mcm", 0)
 
         score_pct = compute_sea_mass_score(
             carriers=carriers,
@@ -1024,8 +1169,7 @@ def fetch_sea_mass() -> Optional[Dict[str, Any]]:
         )
         rag = calculate_rag_status("sea_mass", score_pct)
 
-        # Label Sea Mass snapshots by calendar quarter (e.g. "2026 Q1").
-        # This ensures we only ever store and visualise quarterly data points.
+        # Label Sea Mass snapshots by calendar quarter.
         now = datetime.now(timezone.utc)
         quarter = (now.month - 1) // 3 + 1
         time_period = f"{now.year} Q{quarter}"
@@ -1039,11 +1183,14 @@ def fetch_sea_mass() -> Optional[Dict[str, Any]]:
             rfa=rfa,
             patrol_mcm=patrol_mcm,
         )
-        # Add trend context: score has reduced vs previous quarters due to fewer SSNs
         information += (
             " This metric has reduced versus previous quarters largely because the UK has "
             "fewer attack submarines than historically (6 vs target of 12)."
         )
+        # Surface the most recent non-counted hulls with citations so a score
+        # movement can always be traced back to a source article.
+        information += _format_recent_changes(recent_changes)
+
         path_to_green = get_sea_mass_path_to_green(
             carriers=carriers,
             ssbns=ssbns,
@@ -1063,10 +1210,7 @@ def fetch_sea_mass() -> Optional[Dict[str, Any]]:
             "value": score_pct,
             "rag_status": rag,
             "time_period": time_period,
-            "data_source": (
-                "Open-source fleet data cross-checked across: "
-                "UK Defence Journal, Navy Lookout, RUSI, IISS"
-            ),
+            "data_source": data_source_label,
             "source_url": "https://www.navylookout.com/",
             "last_updated": datetime.now().isoformat(),
             "information": information,

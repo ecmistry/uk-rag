@@ -1,0 +1,592 @@
+{
+  "_comment": [
+    "Seed roster for the Royal Navy fleet inventory, used to compute Sea Mass.",
+    "Counted statuses (contribute to score): 'active', 'refit'.",
+    "Excluded statuses: 'low_readiness', 'withdrawn', 'decommissioned'.",
+    "",
+    "Phase 2 baseline aligns to the Navy Lookout article of 4 May 2026:",
+    "  https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+    "  - 5 active Type 23 frigates (Argyll, Lancaster, Northumberland, Somerset, St Albans)",
+    "  - 1 Type 23 in refit (Kent, due to emerge 2026)",
+    "  - 1 Type 23 with confirmed planned decommissioning this year (Richmond) — kept 'active' until OOSD",
+    "  - 1 Type 23 in unplanned dock (Portland) — kept 'active' (expected to return)",
+    "  - HMS Sutherland kept as 'active'",
+    "  - 6 Type 45 destroyers — 'active'",
+    "Total escorts counted: 5 active Type 23 + 1 refit Type 23 + 6 Type 45 = 12.",
+    "",
+    "Status citations capture the SOURCE that justified the current status.",
+    "When the news watcher (Phase 3) proposes a change, the URL it picked up will be stored here on approval."
+  ],
+  "items": [
+    {
+      "itemId": "hms-queen-elizabeth",
+      "name": "HMS Queen Elizabeth",
+      "className": "Queen Elizabeth-class aircraft carrier",
+      "category": "sea_mass",
+      "role": "carrier",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/aircraft-carriers/queen-elizabeth-class",
+      "statusSourceTitle": "Royal Navy: Queen Elizabeth-class"
+    },
+    {
+      "itemId": "hms-prince-of-wales",
+      "name": "HMS Prince of Wales",
+      "className": "Queen Elizabeth-class aircraft carrier",
+      "category": "sea_mass",
+      "role": "carrier",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/aircraft-carriers/queen-elizabeth-class",
+      "statusSourceTitle": "Royal Navy: Queen Elizabeth-class"
+    },
+    {
+      "itemId": "hms-vanguard",
+      "name": "HMS Vanguard",
+      "className": "Vanguard-class SSBN",
+      "category": "sea_mass",
+      "role": "ssbn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/ballistic-submarines/vanguard-class",
+      "statusSourceTitle": "Royal Navy: Vanguard-class"
+    },
+    {
+      "itemId": "hms-victorious",
+      "name": "HMS Victorious",
+      "className": "Vanguard-class SSBN",
+      "category": "sea_mass",
+      "role": "ssbn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/ballistic-submarines/vanguard-class",
+      "statusSourceTitle": "Royal Navy: Vanguard-class"
+    },
+    {
+      "itemId": "hms-vigilant",
+      "name": "HMS Vigilant",
+      "className": "Vanguard-class SSBN",
+      "category": "sea_mass",
+      "role": "ssbn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/ballistic-submarines/vanguard-class",
+      "statusSourceTitle": "Royal Navy: Vanguard-class"
+    },
+    {
+      "itemId": "hms-vengeance",
+      "name": "HMS Vengeance",
+      "className": "Vanguard-class SSBN",
+      "category": "sea_mass",
+      "role": "ssbn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/ballistic-submarines/vanguard-class",
+      "statusSourceTitle": "Royal Navy: Vanguard-class"
+    },
+    {
+      "itemId": "hms-astute",
+      "name": "HMS Astute",
+      "className": "Astute-class SSN",
+      "category": "sea_mass",
+      "role": "ssn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/attack-submarines/astute-class",
+      "statusSourceTitle": "Royal Navy: Astute-class"
+    },
+    {
+      "itemId": "hms-ambush",
+      "name": "HMS Ambush",
+      "className": "Astute-class SSN",
+      "category": "sea_mass",
+      "role": "ssn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/attack-submarines/astute-class",
+      "statusSourceTitle": "Royal Navy: Astute-class"
+    },
+    {
+      "itemId": "hms-artful",
+      "name": "HMS Artful",
+      "className": "Astute-class SSN",
+      "category": "sea_mass",
+      "role": "ssn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/attack-submarines/astute-class",
+      "statusSourceTitle": "Royal Navy: Astute-class"
+    },
+    {
+      "itemId": "hms-audacious",
+      "name": "HMS Audacious",
+      "className": "Astute-class SSN",
+      "category": "sea_mass",
+      "role": "ssn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/attack-submarines/astute-class",
+      "statusSourceTitle": "Royal Navy: Astute-class"
+    },
+    {
+      "itemId": "hms-anson",
+      "name": "HMS Anson",
+      "className": "Astute-class SSN",
+      "category": "sea_mass",
+      "role": "ssn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/attack-submarines/astute-class",
+      "statusSourceTitle": "Royal Navy: Astute-class"
+    },
+    {
+      "itemId": "hms-agamemnon",
+      "name": "HMS Agamemnon",
+      "className": "Astute-class SSN",
+      "category": "sea_mass",
+      "role": "ssn",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/submarines/attack-submarines/astute-class",
+      "statusSourceTitle": "Royal Navy: Astute-class"
+    },
+    {
+      "itemId": "hms-argyll",
+      "name": "HMS Argyll",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026"
+    },
+    {
+      "itemId": "hms-lancaster",
+      "name": "HMS Lancaster",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026"
+    },
+    {
+      "itemId": "hms-northumberland",
+      "name": "HMS Northumberland",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026"
+    },
+    {
+      "itemId": "hms-somerset",
+      "name": "HMS Somerset",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026"
+    },
+    {
+      "itemId": "hms-st-albans",
+      "name": "HMS St Albans",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026"
+    },
+    {
+      "itemId": "hms-kent",
+      "name": "HMS Kent",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "refit",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026",
+      "notes": "Major refit; due to emerge later in 2026."
+    },
+    {
+      "itemId": "hms-iron-duke",
+      "name": "HMS Iron Duke",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "withdrawn",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026",
+      "notes": "Quietly withdrawn from active service May 2026 after a £103M refit. Stripped of weapons and sensors; no formal decommissioning announcement."
+    },
+    {
+      "itemId": "hms-richmond",
+      "name": "HMS Richmond",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "decommissioned",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026",
+      "notes": "Decommissioning confirmed for 2026."
+    },
+    {
+      "itemId": "hms-westminster",
+      "name": "HMS Westminster",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "decommissioned",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026",
+      "notes": "Decommissioned; towed array sonar removed (cited in Iron Duke article)."
+    },
+    {
+      "itemId": "hms-portland",
+      "name": "HMS Portland",
+      "className": "Type 23 Frigate",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "low_readiness",
+      "statusSourceUrl": "https://www.navylookout.com/another-warship-quietly-withdrawn-royal-navy-now-down-to-just-5-frigates/",
+      "statusSourceTitle": "Navy Lookout, 4 May 2026",
+      "notes": "Spent much of 2025 in unplanned docking period. Conservative: marked low_readiness pending confirmation she has returned to sea."
+    },
+    {
+      "itemId": "hms-daring",
+      "name": "HMS Daring",
+      "className": "Type 45 Destroyer",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/destroyers/type-45-class",
+      "statusSourceTitle": "Royal Navy: Type 45-class"
+    },
+    {
+      "itemId": "hms-dauntless",
+      "name": "HMS Dauntless",
+      "className": "Type 45 Destroyer",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/destroyers/type-45-class",
+      "statusSourceTitle": "Royal Navy: Type 45-class"
+    },
+    {
+      "itemId": "hms-diamond",
+      "name": "HMS Diamond",
+      "className": "Type 45 Destroyer",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/destroyers/type-45-class",
+      "statusSourceTitle": "Royal Navy: Type 45-class"
+    },
+    {
+      "itemId": "hms-dragon",
+      "name": "HMS Dragon",
+      "className": "Type 45 Destroyer",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/destroyers/type-45-class",
+      "statusSourceTitle": "Royal Navy: Type 45-class"
+    },
+    {
+      "itemId": "hms-defender",
+      "name": "HMS Defender",
+      "className": "Type 45 Destroyer",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/destroyers/type-45-class",
+      "statusSourceTitle": "Royal Navy: Type 45-class"
+    },
+    {
+      "itemId": "hms-duncan",
+      "name": "HMS Duncan",
+      "className": "Type 45 Destroyer",
+      "category": "sea_mass",
+      "role": "escort",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/destroyers/type-45-class",
+      "statusSourceTitle": "Royal Navy: Type 45-class"
+    },
+    {
+      "itemId": "rfa-tideforce",
+      "name": "RFA Tideforce",
+      "className": "Tide-class tanker",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "rfa-tidespring",
+      "name": "RFA Tidespring",
+      "className": "Tide-class tanker",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "rfa-tidesurge",
+      "name": "RFA Tidesurge",
+      "className": "Tide-class tanker",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "rfa-tiderace",
+      "name": "RFA Tiderace",
+      "className": "Tide-class tanker",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "rfa-wave-knight",
+      "name": "RFA Wave Knight",
+      "className": "Wave-class tanker",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "rfa-fort-victoria",
+      "name": "RFA Fort Victoria",
+      "className": "Fort-class replenishment",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "rfa-lyme-bay",
+      "name": "RFA Lyme Bay",
+      "className": "Bay-class landing ship dock",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "rfa-mounts-bay",
+      "name": "RFA Mounts Bay",
+      "className": "Bay-class landing ship dock",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "rfa-cardigan-bay",
+      "name": "RFA Cardigan Bay",
+      "className": "Bay-class landing ship dock",
+      "category": "sea_mass",
+      "role": "rfa",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/royal-fleet-auxiliary",
+      "statusSourceTitle": "Royal Fleet Auxiliary"
+    },
+    {
+      "itemId": "hms-tamar",
+      "name": "HMS Tamar",
+      "className": "River-class OPV (Batch 2)",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/patrol",
+      "statusSourceTitle": "Royal Navy: Patrol vessels"
+    },
+    {
+      "itemId": "hms-trent",
+      "name": "HMS Trent",
+      "className": "River-class OPV (Batch 2)",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/patrol",
+      "statusSourceTitle": "Royal Navy: Patrol vessels"
+    },
+    {
+      "itemId": "hms-medway",
+      "name": "HMS Medway",
+      "className": "River-class OPV (Batch 2)",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/patrol",
+      "statusSourceTitle": "Royal Navy: Patrol vessels"
+    },
+    {
+      "itemId": "hms-spey",
+      "name": "HMS Spey",
+      "className": "River-class OPV (Batch 2)",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/patrol",
+      "statusSourceTitle": "Royal Navy: Patrol vessels"
+    },
+    {
+      "itemId": "hms-forth",
+      "name": "HMS Forth",
+      "className": "River-class OPV (Batch 2)",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/patrol",
+      "statusSourceTitle": "Royal Navy: Patrol vessels"
+    },
+    {
+      "itemId": "hms-mersey",
+      "name": "HMS Mersey",
+      "className": "River-class OPV (Batch 1)",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "decommissioned",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/patrol",
+      "statusSourceTitle": "Royal Navy: Patrol vessels",
+      "notes": "Batch 1 River-class; status pending re-verification — preserved in inventory for history."
+    },
+    {
+      "itemId": "hms-tyne",
+      "name": "HMS Tyne",
+      "className": "River-class OPV (Batch 1)",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "decommissioned",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/patrol",
+      "statusSourceTitle": "Royal Navy: Patrol vessels",
+      "notes": "Batch 1 River-class; status pending re-verification — preserved in inventory for history."
+    },
+    {
+      "itemId": "hms-severn",
+      "name": "HMS Severn",
+      "className": "River-class OPV (Batch 1)",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "decommissioned",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/patrol",
+      "statusSourceTitle": "Royal Navy: Patrol vessels",
+      "notes": "Batch 1 River-class; status pending re-verification — preserved in inventory for history."
+    },
+    {
+      "itemId": "hms-ledbury",
+      "name": "HMS Ledbury",
+      "className": "Hunt-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-cattistock",
+      "name": "HMS Cattistock",
+      "className": "Hunt-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-chiddingfold",
+      "name": "HMS Chiddingfold",
+      "className": "Hunt-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-middleton",
+      "name": "HMS Middleton",
+      "className": "Hunt-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-hurworth",
+      "name": "HMS Hurworth",
+      "className": "Hunt-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-bangor",
+      "name": "HMS Bangor",
+      "className": "Sandown-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-shoreham",
+      "name": "HMS Shoreham",
+      "className": "Sandown-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-pembroke",
+      "name": "HMS Pembroke",
+      "className": "Sandown-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-grimsby",
+      "name": "HMS Grimsby",
+      "className": "Sandown-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "active",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare"
+    },
+    {
+      "itemId": "hms-blyth",
+      "name": "HMS Blyth",
+      "className": "Sandown-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "decommissioned",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare",
+      "notes": "Sandown-class retirement programme; preserved in inventory for history."
+    },
+    {
+      "itemId": "hms-penzance",
+      "name": "HMS Penzance",
+      "className": "Sandown-class MCMV",
+      "category": "sea_mass",
+      "role": "patrol_mcm",
+      "status": "decommissioned",
+      "statusSourceUrl": "https://www.royalnavy.mod.uk/the-equipment/ships/mine-warfare",
+      "statusSourceTitle": "Royal Navy: Mine warfare",
+      "notes": "Sandown-class retirement programme; preserved in inventory for history."
+    }
+  ]
+}
