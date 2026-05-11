@@ -287,6 +287,7 @@ export const EDUCATION_ALLOWED_METRIC_KEYS = new Set([
   "apprentice_starts",
   "pupil_attendance",
   "apprenticeship_intensity",
+  "university_education_quality",
 ]);
 
 function filterEducationMetrics(metrics: Metric[], category?: string): Metric[] {

@@ -12,6 +12,7 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
     { metricKey: "cpi_inflation", name: "CPI Inflation" },
     { metricKey: "public_sector_net_debt", name: "Public Sector Net Debt" },
     { metricKey: "business_investment", name: "Business Investment" },
+    { metricKey: "energy_prices", name: "Energy Prices" },
   ],
   Employment: [
     { metricKey: "inactivity_rate", name: "Inactivity Rate" },
@@ -25,6 +26,7 @@ export const EXPECTED_METRICS: Record<string, ExpectedSlot[]> = {
     { metricKey: "neet_rate", name: "NEET Rate (16-24)" },
     { metricKey: "pupil_attendance", name: "Unauthorised Pupil Absence" },
     { metricKey: "apprenticeship_intensity", name: "Apprenticeship Intensity" },
+    { metricKey: "university_education_quality", name: "Quality of University Education" },
   ],
   Crime: [
     { metricKey: "street_confidence_index", name: "Perception of Safety" },

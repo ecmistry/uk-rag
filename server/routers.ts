@@ -39,12 +39,13 @@ const VALIDATION_RANGES: Record<string, [number, number]> = {
   // Economy
   real_gdp_growth: [-30, 30], cpi_inflation: [-5, 30], output_per_hour: [-20, 20],
   public_sector_net_debt: [0, 300], business_investment: [-50, 50],
+  energy_prices: [0, 10000],
   // Employment
   inactivity_rate: [0, 100], real_wage_growth: [-30, 30], job_vacancy_ratio: [0, 10],
   underemployment: [0, 100], sickness_absence: [0, 100],
   // Education
   attainment8: [0, 100], neet_rate: [0, 100], pupil_attendance: [0, 100],
-  apprenticeship_intensity: [0, 200],
+  apprenticeship_intensity: [0, 200], university_education_quality: [0, 100],
   // Crime
   street_confidence_index: [0, 100], crown_court_backlog: [0, 500], recall_rate: [0, 100],
   asb_low_level_crime: [0, 10_000], serious_crime: [0, 10_000],
@@ -401,10 +402,16 @@ export const appRouter = router({
 
         // Track only the latest period per metric for the dashboard tile.
         // History gets ALL rows, but the tile must show the most recent.
+        // `information` is tracked too so the final history upsert below
+        // can refresh narrative text on revised data — without it, the
+        // history row would silently retain stale citations when a value
+        // is re-emitted for an existing period (see
+        // refresh-information-propagation.test.ts for the regression).
         const latestPerKey = new Map<string, {
           metricKey: string; name: string; category: string;
           value: string; unit: string; ragStatus: string;
           dataDate: string; sourceUrl: string;
+          information?: string;
         }>();
 
         for (const metricData of validated) {
@@ -427,6 +434,7 @@ export const appRouter = router({
               ragStatus,
               dataDate: metricData.time_period,
               sourceUrl: metricData.source_url,
+              ...(metricData.information != null && { information: metricData.information }),
             });
           }
 
@@ -444,13 +452,16 @@ export const appRouter = router({
 
         const upsertPromises = [...latestPerKey.values()].map(entry => upsertMetric(entry));
         // Always update history for the latest period per metric so revised
-        // data sources don't leave tile and history out of sync.
+        // data sources don't leave tile and history out of sync. Carry the
+        // `information` narrative through too so admin-approved or
+        // fetcher-refreshed citations land on the history row.
         const latestHistoryPromises = [...latestPerKey.values()].map(entry =>
           addMetricHistory({
             metricKey: entry.metricKey,
             value: entry.value,
             ragStatus: entry.ragStatus,
             dataDate: entry.dataDate,
+            ...(entry.information != null && { information: entry.information }),
           }),
         );
         await Promise.all(upsertPromises);

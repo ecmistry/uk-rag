@@ -446,6 +446,8 @@ describe("calculateRAGStatus — current live values produce correct RAG", () =>
     ["land_mass", 70.4, "amber"],
     ["air_mass", 48.0, "red"],
     ["defence_industry_vitality", 70.2, "amber"],
+    ["university_education_quality", 82.7, "green"],
+    ["energy_prices", 1641, "amber"],
   ];
 
   it("covers every metric in RAG_THRESHOLDS", () => {

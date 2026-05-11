@@ -1,0 +1,35 @@
+{
+  "_comment": [
+    "Seed components for the Economy section's inventory-driven metrics.",
+    "",
+    "Today this drives the 'Energy Prices' card (Ofgem default tariff cap).",
+    "The collection is named generically so future Economy inputs (petrol",
+    "pump prices, council tax index, etc.) can be added as additional rows",
+    "without renaming.",
+    "",
+    "Each row is upserted by `itemId` into the `economy_components`",
+    "MongoDB collection. The economy fetcher reads this collection on every",
+    "refresh; if it's empty/unreachable the fetcher falls back to the",
+    "hardcoded baseline in economy_data_fetcher.py.",
+    "",
+    "To refresh a component value:",
+    "  - update the JSON file and re-run `scripts/seed_economy_components.py`",
+    "    (or, in future, approve a news-watcher proposal in the admin queue).",
+    "  - The next cron pass recomputes the metric.",
+    "",
+    "Ofgem cap cadence: quarterly, announced ~6 weeks before each effective",
+    "quarter (1 Jan, 1 Apr, 1 Jul, 1 Oct)."
+  ],
+  "components": [
+    {
+      "itemId": "ofgem_price_cap",
+      "componentKey": "ofgem_price_cap",
+      "name": "Ofgem default tariff cap (typical household, dual-fuel, Direct Debit)",
+      "value": 1641,
+      "effectivePeriod": "1 Apr - 30 Jun 2026",
+      "sourceUrl": "https://www.ofgem.gov.uk/news/changes-energy-price-cap-between-1-april-and-30-june-2026",
+      "sourceTitle": "Ofgem - April 2026 price cap announcement",
+      "notes": "Annual bill for a typical UK household on a default tariff, paying by Direct Debit. Latest period reduced 7% (-\u00a3117) vs Jan-Mar 2026; 11% (-\u00a3208) lower than Apr-Jun 2025. Includes 5% VAT. Update each quarter when Ofgem announces the next cap (typically published ~6 weeks before quarter start)."
+    }
+  ]
+}

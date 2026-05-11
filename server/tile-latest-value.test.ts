@@ -426,6 +426,7 @@ describe("Tile latest value: economy fetcher output ordering", () => {
     "cpi_inflation",
     "public_sector_net_debt",
     "business_investment",
+    "energy_prices",
   ];
 
   for (const metricKey of ECONOMY_KEYS) {

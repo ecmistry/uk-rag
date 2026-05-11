@@ -29,7 +29,9 @@ vi.mock("./db", async (importOriginal) => {
     addMetricHistory: vi.fn().mockResolvedValue(undefined),
     getExistingHistoryPeriods: vi.fn().mockResolvedValue(new Set()),
     getMetricTrends: vi.fn().mockResolvedValue([]),
-    getMetricsDiagnostics: vi.fn().mockResolvedValue({ dbConnected: true, metricsCount: 0 }),
+    getMetricsDiagnostics: vi
+      .fn()
+      .mockResolvedValue({ dbConnected: true, metricsCount: 0 }),
   };
 });
 
@@ -81,141 +83,122 @@ beforeEach(() => {
   inMemoryMetrics.clear();
 });
 
-const EDUCATION_KEYS = [
-  "attainment8",
-  "neet_rate",
-  "pupil_attendance",
-  "apprenticeship_intensity",
-  "university_education_quality",
+// Canonical set of dashboard keys for the Economy section. Update this list
+// (and only this list) when adding a new card so the per-key tests below
+// catch any wiring gap automatically.
+const ECONOMY_KEYS = [
+  "output_per_hour",
+  "real_gdp_growth",
+  "cpi_inflation",
+  "public_sector_net_debt",
+  "business_investment",
+  "energy_prices",
 ];
 
-describe("Education Metrics", () => {
-  it("should allow admin to refresh Education metrics", async () => {
+describe("Economy Metrics", () => {
+  it("allows admin to refresh Economy metrics", async () => {
     const { ctx } = createAdminContext();
     const caller = appRouter.createCaller(ctx);
     try {
-      const result = await caller.metrics.refresh({ category: "Education" });
+      const result = await caller.metrics.refresh({ category: "Economy" });
       expect(result).toHaveProperty("success");
       expect(result).toHaveProperty("count");
       if (result.success) {
         expect(result.count).toBeGreaterThanOrEqual(0);
       }
     } catch {
-      // Expected in test environment without Python/external APIs
+      // Expected in test environment without Python/external APIs.
     }
   }, 120_000);
 
-  it("should prevent non-admin from refreshing metrics", async () => {
+  it("prevents non-admin from refreshing metrics", async () => {
     const { ctx } = createUserContext();
     const caller = appRouter.createCaller(ctx);
     await expect(
-      caller.metrics.refresh({ category: "Education" })
+      caller.metrics.refresh({ category: "Economy" })
     ).rejects.toThrow(/FORBIDDEN|Admin access required/);
   });
 
-  it("should list Education metrics after upsert", async () => {
+  it("lists Economy metrics after upsert (every expected key present)", async () => {
     const { ctx } = createAdminContext();
     const caller = appRouter.createCaller(ctx);
     const { upsertMetric } = await import("./db");
-    for (const key of EDUCATION_KEYS) {
+    for (const key of ECONOMY_KEYS) {
       await upsertMetric({
         metricKey: key,
         name: key.replace(/_/g, " "),
-        category: "Education",
-        value: "42.5",
-        unit: key === "attainment8" ? "Score" : "%",
+        category: "Economy",
+        value: key === "energy_prices" ? "1641" : "1.5",
+        // energy_prices renders £ as a client-side prefix via formatValue's
+        // POUND_PREFIX_KEYS, so the persisted unit is intentionally empty.
+        unit: key === "energy_prices" ? "" : "%",
         ragStatus: "amber",
-        dataDate: "202425",
+        dataDate: "2026 Q2",
         sourceUrl: "https://example.com",
       });
     }
-    const metrics = await caller.metrics.list({ category: "Education" });
+    const metrics = await caller.metrics.list({ category: "Economy" });
     expect(Array.isArray(metrics)).toBe(true);
-    const eduMetrics = metrics.filter((m) => m.category === "Education");
-    expect(eduMetrics.length).toBe(EDUCATION_KEYS.length);
-    eduMetrics.forEach((metric) => {
-      expect(metric).toHaveProperty("metricKey");
-      expect(metric).toHaveProperty("name");
-      expect(metric.category).toBe("Education");
-      expect(metric).toHaveProperty("value");
-      expect(["red", "amber", "green"]).toContain(metric.ragStatus);
-    });
+    const econMetrics = metrics.filter((m) => m.category === "Economy");
+    const actualKeys = econMetrics.map((m) => m.metricKey).sort();
+    expect(actualKeys).toEqual([...ECONOMY_KEYS].sort());
   });
 
-  it("should retrieve Education metric by key", async () => {
+  it("retrieves Economy metric by key (including energy_prices)", async () => {
     const { ctx } = createAdminContext();
     const caller = appRouter.createCaller(ctx);
     const { upsertMetric } = await import("./db");
     await upsertMetric({
-      metricKey: "attainment8",
-      name: "Attainment 8 Score",
-      category: "Education",
-      value: "45.9",
-      unit: "Score",
+      metricKey: "energy_prices",
+      name: "Energy Prices",
+      category: "Economy",
+      value: "1641",
+      unit: "",
       ragStatus: "amber",
-      dataDate: "202425",
-      sourceUrl: "https://example.com",
+      dataDate: "2026 Q2",
+      sourceUrl: "https://www.ofgem.gov.uk/",
     });
-    const result = await caller.metrics.getById({ metricKey: "attainment8", historyLimit: 5 });
-    expect(result).toHaveProperty("metric");
-    expect(result).toHaveProperty("history");
-    expect(result.metric.metricKey).toBe("attainment8");
-    expect(result.metric.category).toBe("Education");
-    expect(Array.isArray(result.history)).toBe(true);
+    const result = await caller.metrics.getById({
+      metricKey: "energy_prices",
+      historyLimit: 5,
+    });
+    expect(result.metric.metricKey).toBe("energy_prices");
+    expect(result.metric.category).toBe("Economy");
+    expect(result.metric.value).toBe("1641");
+    expect(result.metric.ragStatus).toBe("amber");
   });
 
-  it("should validate RAG status for Education metrics", async () => {
+  it("validates RAG status for Economy metrics", async () => {
     const { ctx } = createAdminContext();
     const caller = appRouter.createCaller(ctx);
     const { upsertMetric } = await import("./db");
     const testData = [
-      { key: "attainment8", value: "45.9", rag: "amber" as const },
-      { key: "neet_rate", value: "4.2", rag: "amber" as const },
-      { key: "pupil_attendance", value: "2.29", rag: "red" as const },
-      { key: "apprenticeship_intensity", value: "12.2", rag: "amber" as const },
-      { key: "university_education_quality", value: "82.7", rag: "green" as const },
+      { key: "output_per_hour", value: "1.1", rag: "amber" as const },
+      { key: "real_gdp_growth", value: "0.97", rag: "amber" as const },
+      { key: "cpi_inflation", value: "3.0", rag: "amber" as const },
+      { key: "public_sector_net_debt", value: "95.1", rag: "red" as const },
+      { key: "business_investment", value: "10.74", rag: "amber" as const },
+      { key: "energy_prices", value: "1641", rag: "amber" as const },
     ];
     for (const d of testData) {
       await upsertMetric({
         metricKey: d.key,
         name: d.key.replace(/_/g, " "),
-        category: "Education",
+        category: "Economy",
         value: d.value,
-        unit: d.key === "attainment8" ? "Score" : "%",
+        unit: d.key === "energy_prices" ? "" : "%",
         ragStatus: d.rag,
-        dataDate: "202425",
+        dataDate: "2026 Q2",
         sourceUrl: "https://example.com",
       });
     }
-    const metrics = await caller.metrics.list({ category: "Education" });
+    const metrics = await caller.metrics.list({ category: "Economy" });
     metrics.forEach((metric) => {
       expect(["red", "amber", "green"]).toContain(metric.ragStatus);
       const value = parseFloat(metric.value);
       expect(isNaN(value)).toBe(false);
       expect(metric.dataDate).toBeTruthy();
     });
-  });
-
-  it("should return all expected Education metric keys", async () => {
-    const { ctx } = createAdminContext();
-    const caller = appRouter.createCaller(ctx);
-    const { upsertMetric } = await import("./db");
-    for (const key of EDUCATION_KEYS) {
-      await upsertMetric({
-        metricKey: key,
-        name: key.replace(/_/g, " "),
-        category: "Education",
-        value: "10",
-        unit: "Score",
-        ragStatus: "green",
-        dataDate: "202425",
-        sourceUrl: "https://example.com",
-      });
-    }
-    const metrics = await caller.metrics.list({ category: "Education" });
-    const returnedKeys = metrics.map((m) => m.metricKey);
-    for (const key of EDUCATION_KEYS) {
-      expect(returnedKeys).toContain(key);
-    }
+    expect(metrics.length).toBe(testData.length);
   });
 });

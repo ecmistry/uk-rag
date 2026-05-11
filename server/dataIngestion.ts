@@ -472,6 +472,8 @@ export const RAG_THRESHOLDS: Record<string, ThresholdDef> = {
   business_investment:  { direction: 'higher_better', greenMin: 12,   amberMin: 10 },
   public_sector_net_debt: { direction: 'lower_better', greenMax: 70,  amberMax: 85 },
   cpi_inflation:        { direction: 'target_band', greenMin: 1.5, greenMax: 2.5, amberMin: 0, amberMax: 4.0 },
+  // Ofgem default tariff cap (£/year). Pre-crisis 2019 baseline ~£1,190/yr.
+  energy_prices:        { direction: 'lower_better',  greenMax: 1400, amberMax: 2000 },
 
   // ── Employment ───────────────────────────────────────────
   real_wage_growth:     { direction: 'higher_better', greenMin: 2.0,  amberMin: 1.0 },
@@ -481,10 +483,11 @@ export const RAG_THRESHOLDS: Record<string, ThresholdDef> = {
   sickness_absence:     { direction: 'lower_better',  greenMax: 3.0,  amberMax: 4.5 },
 
   // ── Education ────────────────────────────────────────────
-  attainment8:              { direction: 'higher_better', greenMin: 5.5,  amberMin: 4.5 },
-  apprenticeship_intensity: { direction: 'higher_better', greenMin: 15,   amberMin: 10 },
-  neet_rate:                { direction: 'lower_better',  greenMax: 8,    amberMax: 12 },
-  pupil_attendance:         { direction: 'lower_better',  greenMax: 1.0,  amberMax: 1.5 },
+  attainment8:                  { direction: 'higher_better', greenMin: 5.5,  amberMin: 4.5 },
+  apprenticeship_intensity:     { direction: 'higher_better', greenMin: 15,   amberMin: 10 },
+  neet_rate:                    { direction: 'lower_better',  greenMax: 8,    amberMax: 12 },
+  pupil_attendance:             { direction: 'lower_better',  greenMax: 1.0,  amberMax: 1.5 },
+  university_education_quality: { direction: 'higher_better', greenMin: 80,   amberMin: 70 },
 
   // ── Crime ────────────────────────────────────────────────
   crown_court_backlog:  { direction: 'lower_better',  greenMax: 60,   amberMax: 90 },

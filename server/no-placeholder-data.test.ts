@@ -139,6 +139,15 @@ describe("No placeholder data: every dashboard metric fetcher makes a network ca
     "air_mass",
     "defence_industry_vitality",
     "defence_spending_gdp",
+    // Composite of three official higher-education indicators read from the
+    // education_quality_components Mongo collection (with hardcoded fallback).
+    // Maintained via the inventory-plus-news-watcher pattern, not a live HTTP
+    // fetch.
+    "university_education_quality",
+    // Ofgem default tariff cap, read from the economy_components Mongo
+    // collection (with hardcoded fallback). Maintained via the inventory
+    // pattern, not a live HTTP fetch.
+    "energy_prices",
   ]);
 
   const NETWORK_PATTERNS =
@@ -248,6 +257,7 @@ describe("No placeholder data: runtime fetcher execution", () => {
         "cpi_inflation",
         "public_sector_net_debt",
         "business_investment",
+        "energy_prices",
       ],
       timeout: 120_000,
     },
@@ -263,7 +273,12 @@ describe("No placeholder data: runtime fetcher execution", () => {
     },
     {
       script: "education_data_fetcher.py",
-      expectedKeys: ["attainment8", "neet_rate", "pupil_attendance"],
+      expectedKeys: [
+        "attainment8",
+        "neet_rate",
+        "pupil_attendance",
+        "university_education_quality",
+      ],
       timeout: 60_000,
     },
     {

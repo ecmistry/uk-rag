@@ -21,6 +21,7 @@ export const METRIC_DIRECTION: Record<string, MetricDirection> = {
   cpi_inflation: "target_band",
   public_sector_net_debt: "lower_better",
   business_investment: "higher_better",
+  energy_prices: "lower_better",
 
   // Employment
   inactivity_rate: "lower_better",
@@ -34,6 +35,7 @@ export const METRIC_DIRECTION: Record<string, MetricDirection> = {
   neet_rate: "lower_better",
   pupil_attendance: "lower_better",
   apprenticeship_intensity: "higher_better",
+  university_education_quality: "higher_better",
 
   // Crime
   street_confidence_index: "lower_better",

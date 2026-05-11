@@ -175,9 +175,9 @@ describe("Scorecard consistency: structural invariants", () => {
 
 describe("Scorecard consistency: exact key sets per category", () => {
   const CANONICAL_KEYS: Record<string, string[]> = {
-    Economy: ["output_per_hour", "real_gdp_growth", "cpi_inflation", "public_sector_net_debt", "business_investment"],
+    Economy: ["output_per_hour", "real_gdp_growth", "cpi_inflation", "public_sector_net_debt", "business_investment", "energy_prices"],
     Employment: ["inactivity_rate", "real_wage_growth", "job_vacancy_ratio", "underemployment", "sickness_absence"],
-    Education: ["attainment8", "neet_rate", "pupil_attendance", "apprenticeship_intensity"],
+    Education: ["attainment8", "neet_rate", "pupil_attendance", "apprenticeship_intensity", "university_education_quality"],
     Crime: ["street_confidence_index", "asb_low_level_crime", "serious_crime", "crown_court_backlog", "recall_rate"],
     Healthcare: ["a_e_wait_time", "elective_backlog", "ambulance_response_time", "gp_appt_access", "old_age_dependency_ratio"],
     Defence: ["sea_mass", "land_mass", "air_mass", "defence_industry_vitality", "defence_spending_gdp"],
@@ -215,6 +215,7 @@ describe("Scorecard consistency: Python fetcher categories", () => {
   const PYTHON_FETCHER_CATEGORIES: Record<string, string> = {
     // Economy
     business_investment: "Economy",
+    energy_prices: "Economy",
     // Employment
     inactivity_rate: "Employment",
     real_wage_growth: "Employment",
@@ -226,6 +227,9 @@ describe("Scorecard consistency: Python fetcher categories", () => {
     neet_rate: "Education",
     persistent_absence: "Education",
     apprentice_starts: "Education",
+    pupil_attendance: "Education",
+    apprenticeship_intensity: "Education",
+    university_education_quality: "Education",
     // Crime
     crown_court_backlog: "Crime",
     recall_rate: "Crime",
@@ -380,6 +384,107 @@ describe("Scorecard consistency: cron CATEGORIES vs dashboard sections", () => {
       mismatches,
       "Metrics are fetched by a script running under the wrong cron category. " +
       "This will cause the cron to overwrite the category incorrectly.",
+    ).toEqual([]);
+  });
+});
+
+// ─── Server-side wiring coverage ────────────────────────────────────────────
+//
+// These tests guard against adding a dashboard card without wiring its
+// metric key into every backend layer it needs to flow through. Each
+// assertion below corresponds to a real category of bug that has bitten
+// the codebase before:
+//
+//   - missing VALIDATION_RANGES → invalid values silently pass
+//   - missing MODEL_BASED_METRICS exemption → no-placeholder runtime check
+//     incorrectly demands a network call for an inventory-backed metric
+//   - stale formatValue keys → the renderer continues to special-case a
+//     metric that no longer exists, or a real metric isn't picked up by
+//     comma/currency formatting
+// ────────────────────────────────────────────────────────────────────────────
+
+describe("Scorecard consistency: server-side wiring coverage", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const routersSource: string = fs.readFileSync(
+    path.join(__dirname, "routers.ts"), "utf-8",
+  );
+  const noPlaceholderSource: string = fs.readFileSync(
+    path.join(__dirname, "no-placeholder-data.test.ts"), "utf-8",
+  );
+  const formatValueSource: string = fs.readFileSync(
+    path.join(__dirname, "..", "client", "src", "data", "formatValue.ts"),
+    "utf-8",
+  );
+
+  const allDashboardKeys = new Set(
+    allExpectedKeys().map(({ slot }) => slot.metricKey),
+  );
+
+  it("every dashboard key has a VALIDATION_RANGES entry in routers.ts", () => {
+    // VALIDATION_RANGES is a const Record<string, [number, number]>; pull
+    // out the key list with a single regex.
+    const validationBlock = routersSource.match(
+      /VALIDATION_RANGES[^{]*\{([\s\S]*?)\};/,
+    );
+    expect(
+      validationBlock,
+      "Could not locate VALIDATION_RANGES in routers.ts",
+    ).not.toBeNull();
+    const rangeKeys = new Set(
+      [...validationBlock![1].matchAll(/(\w+):\s*\[/g)].map((m) => m[1]),
+    );
+
+    const missing = [...allDashboardKeys].filter((k) => !rangeKeys.has(k));
+    expect(
+      missing,
+      "These dashboard metric keys are missing from VALIDATION_RANGES in " +
+      "routers.ts — invalid values will silently pass through the refresh " +
+      `path. Add a [min, max] entry for each: ${missing.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it("every key in MODEL_BASED_METRICS exempts a real dashboard metric", () => {
+    const block = noPlaceholderSource.match(
+      /MODEL_BASED_METRICS\s*=\s*new\s+Set\(\[([\s\S]*?)\]\)/,
+    );
+    expect(
+      block,
+      "Could not locate MODEL_BASED_METRICS in no-placeholder-data.test.ts",
+    ).not.toBeNull();
+    const exemptKeys = new Set(
+      [...block![1].matchAll(/"(\w+)"/g)].map((m) => m[1]),
+    );
+
+    const stale = [...exemptKeys].filter((k) => !allDashboardKeys.has(k));
+    expect(
+      stale,
+      "These MODEL_BASED_METRICS exemptions reference keys that are NOT " +
+      "on the dashboard. Remove them or the exemption list will drift " +
+      `silently: ${stale.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it("every key in COMMA_FORMATTED_KEYS / POUND_PREFIX_KEYS is a real metric", () => {
+    const findSetKeys = (label: string): Set<string> => {
+      const m = formatValueSource.match(
+        new RegExp(`${label}\\s*=\\s*new\\s+Set\\(\\[([^\\]]*)\\]`),
+      );
+      if (!m) return new Set();
+      return new Set([...m[1].matchAll(/"(\w+)"/g)].map((mm) => mm[1]));
+    };
+
+    const orphans: string[] = [];
+    for (const label of ["COMMA_FORMATTED_KEYS", "POUND_PREFIX_KEYS"]) {
+      const keys = findSetKeys(label);
+      for (const k of keys) {
+        if (!allDashboardKeys.has(k)) orphans.push(`${label}/${k}`);
+      }
+    }
+    expect(
+      orphans,
+      "These formatValue.ts entries reference keys that aren't on the " +
+      `dashboard. Remove or rename them: ${orphans.join(", ")}`,
     ).toEqual([]);
   });
 });

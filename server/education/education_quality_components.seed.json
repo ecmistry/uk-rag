@@ -1,0 +1,54 @@
+{
+  "_comment": [
+    "Seed components for the Quality of University Education composite.",
+    "Composite formula:",
+    "  score = 0.40 * graduate_outcomes + 0.30 * continuation + 0.30 * nss_teaching",
+    "",
+    "Each row is upserted by `itemId` into the `education_quality_components`",
+    "MongoDB collection. The fetcher reads this collection on every cron run;",
+    "if the collection is empty/unreachable it falls back to the hardcoded",
+    "baseline inside education_data_fetcher.py.",
+    "",
+    "To refresh a component value:",
+    "  - update the JSON file and re-run `scripts/seed_education_components.py`",
+    "    (or, in future, approve a news-watcher proposal in the admin queue).",
+    "  - The next cron pass recomputes the composite score.",
+    "",
+    "All three components are UK-wide and annually published."
+  ],
+  "components": [
+    {
+      "itemId": "graduate_outcomes_high_skilled",
+      "componentKey": "graduate_outcomes",
+      "name": "Graduate Outcomes — high-skilled employment / further study",
+      "value": 73.8,
+      "weight": 0.40,
+      "reportingPeriod": "2022/23 cohort (surveyed 15 months after graduation)",
+      "sourceUrl": "https://www.hesa.ac.uk/data-and-analysis/graduates/releases",
+      "sourceTitle": "HESA Graduate Outcomes",
+      "notes": "UK-wide. Indicator: % of first-degree graduates in high-skilled employment, further study, or other positive outcome 15 months after graduation. Update annually when HESA publishes the next cohort release."
+    },
+    {
+      "itemId": "continuation_rate",
+      "componentKey": "continuation_rate",
+      "name": "Continuation rate — first-year UGs progressing to year 2",
+      "value": 90.2,
+      "weight": 0.30,
+      "reportingPeriod": "2021/22 entry cohort",
+      "sourceUrl": "https://www.hesa.ac.uk/data-and-analysis/students",
+      "sourceTitle": "HESA Student data / Non-continuation",
+      "notes": "UK-wide. Indicator: % of UK-domiciled full-time first-degree entrants who continue into year 2 (1 − non-continuation rate). Old UKPI series was discontinued in 2020/21 and migrated into HESA core open data."
+    },
+    {
+      "itemId": "nss_teaching_positive",
+      "componentKey": "nss_teaching_positive",
+      "name": "NSS — positive on 'Teaching on my course'",
+      "value": 86.9,
+      "weight": 0.30,
+      "reportingPeriod": "NSS 2025",
+      "sourceUrl": "https://www.officeforstudents.org.uk/data-and-analysis/national-student-survey-data/",
+      "sourceTitle": "Office for Students — NSS 2025",
+      "notes": "UK-wide. 357,000+ final-year UGs surveyed, 71.5% response rate. Indicator: % giving the two most positive answers on the 'Teaching on my course' theme."
+    }
+  ]
+}

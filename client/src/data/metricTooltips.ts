@@ -148,6 +148,38 @@ Why the RAG Thresholds were chosen
 🟡 Amber - 10% – 12% - The "Muddling Through" Zone: This is where the UK has sat for much of the last decade. It's enough to keep the lights on, but it isn't enough to "level up" the economy or fix the productivity crisis.
 
 🔴 Red - Below 10% - The Decay Zone: In this zone, we aren't even replacing what is wearing out. This is a "Health Crisis" for the economy that leads to falling living standards in the years to follow.`,
+
+  energy_prices: `Think of this as the "Household Heat-and-Light Bill." It tracks the Ofgem default tariff cap — the maximum a typical household on a default energy tariff pays per year for electricity and gas combined, set by the regulator and updated every three months. While CPI Inflation tells you how the basket of all consumer prices is moving, this single number tells you what a typical family will actually be charged to keep the lights on and the boiler running for the next quarter.
+
+How it is Calculated
+
+Ofgem publishes the cap roughly six weeks before each effective quarter (1 January, 1 April, 1 July, 1 October). The headline figure is the annual cost for a household at Ofgem's "typical consumption" assumption (around 2,700 kWh of electricity and 11,500 kWh of gas), paying by Direct Debit, on a default tariff. It bundles wholesale energy costs, network costs, supplier operating costs, the social and environmental policy levy, and 5% VAT. Whenever Ofgem announces the next quarter's cap, the dashboard updates the value and re-rates the RAG band.
+
+Real Impact on the Person on the Street
+
+1. Direct Bill Effect
+
+When this number rises by £100, that money comes straight out of a household's discretionary spend. It cascades through the rest of the economy as reduced demand for non-essential goods and services — bad for retail, hospitality, and the high street.
+
+2. Inflation Multiplier
+
+Energy is an input cost for almost every business, so the cap doesn't just affect domestic bills — it ripples into the price of food, manufactured goods, and services within 3–9 months. A high cap reading is often a leading indicator that CPI Inflation will stay elevated.
+
+3. Fuel Poverty
+
+Roughly 12% of UK households are classified as fuel-poor when the cap sits above £2,000/year — meaning they spend more than 10% of household income on energy after housing costs. At those levels, public-health consequences (excess winter deaths, hospitalisations from cold homes) follow.
+
+Why the RAG Thresholds were chosen
+
+Thresholds are anchored against the pre-energy-crisis baseline. Across 2019 — the first year of the price cap regime — quarterly figures sat in a band from £1,137 to £1,254, averaging roughly £1,190/yr. That period represents "normal" affordability for the UK consumer in the recent past.
+
+🟢 Green (at or below £1,400/yr): "Affordability Restored". Within roughly 17% of pre-crisis levels — a typical household's energy share of total spend has reverted to its pre-2021 norm.
+
+🟡 Amber (£1,400 - £2,000/yr): "Elevated but Tolerable". Households absorb the increase via reduced discretionary spend; fuel poverty rises but support schemes remain manageable. Today's £1,641 reading sits in this band.
+
+🔴 Red (above £2,000/yr): "Cost-of-Living Crisis". Captures the 2022–23 peak when caps approached and briefly exceeded £3,500/yr before the Energy Price Guarantee intervened. At this level, fuel poverty becomes mainstream, government intervention is needed, and inflation cascades through the wider economy.
+
+Source: Ofgem default tariff cap (typical household, dual-fuel, Direct Debit). See https://www.ofgem.gov.uk/energy-policy-and-regulation/policy-and-regulatory-programmes/energy-price-cap-default-tariff-policy/energy-price-cap-default-tariff-levels`,
 };
 
 export function getEconomyTooltip(metricKey: string): string | undefined {
@@ -384,6 +416,44 @@ The thresholds are based on the apprenticeship uptake rates needed to sustain th
 🟡 Amber (10 – 15 per 1,000): This is the "Skills Maintenance" zone. The UK currently sits in this bracket. It means apprenticeship starts are sufficient to replace some of the retiring skilled workforce, but not enough to close existing gaps or expand into new sectors. The system is ticking over but not delivering the step-change in skills that the economy needs.
 
 🔴 Red (Below 10 per 1,000): This is the "Skills Erosion" zone. At this rate, the country is not training enough people to replace those leaving the workforce. Trade shortages become acute, wage inflation in skilled sectors drives up costs for everyone, and the UK falls further behind competitor nations that have invested heavily in vocational education.`,
+
+  university_education_quality: `Think of this as the "Graduate Engine Health Check." It tracks how well the UK higher-education sector is delivering on the three things that matter most: students get hired into skilled work, students actually finish what they started, and students rate the teaching positively. Any one of those alone is misleading — high satisfaction with poor outcomes is just expensive entertainment; high continuation with bad jobs is a debt trap; high outcomes with low satisfaction usually means a fragile pipeline. The composite is designed to move only when the sector is genuinely improving on more than one front at once.
+
+How it is Calculated
+
+This metric is a weighted composite of three official UK-wide indicators:
+
+• Graduate Outcomes (40% weight) — % of first-degree graduates in high-skilled employment, further study, or other positive outcome 15 months after graduation. Source: HESA Graduate Outcomes survey, published annually.
+
+• Continuation rate (30% weight) — % of UK-domiciled full-time first-degree entrants who progress into their second year. Source: HESA Student data (migrated from the older UK Performance Indicators series in 2023), published annually.
+
+• National Student Survey — Teaching satisfaction (30% weight) — % of final-year undergraduates giving the two most positive answers on the "Teaching on my course" theme. Source: Office for Students NSS, published annually (NSS 2025 sector average: 86.9%).
+
+Each component carries its own citation URL on the metric detail page, so any movement is traceable back to the underlying publication. Values are stored in a dedicated Mongo collection so they can be refreshed independently when each publisher releases new data — without a code change.
+
+Real Impact on the Person on the Street
+
+Higher education is the UK's largest service export and the second-largest source of skilled professional labour after the NHS itself. When this metric falls:
+
+1. Employers Pay More for Less
+
+A drop in Graduate Outcomes means fewer graduates landing in skilled roles within 15 months. Employers respond by hiking starting salaries to fight for the smaller usable pool, importing skilled labour at higher cost, or simply leaving roles open. You experience that as longer NHS waits, slower digital infrastructure rollout, and tradesperson scarcity in adjacent skilled markets.
+
+2. Your Tax Bill Funds the Gap
+
+Student finance is funded against future graduate earnings. If continuation rates fall, more students leave with debt but no degree; the Student Loans Company collects less, and the Treasury writes off the difference. That write-off is paid for by general taxation.
+
+3. UK Universities Lose International Standing
+
+NSS scores and Graduate Outcomes feed into every major global ranking. International student fees subsidise domestic teaching at most UK universities; a sustained quality drop pushes those students to Australia, Canada, or the Netherlands, and the cross-subsidy collapses.
+
+Why the RAG Thresholds were chosen
+
+🟢 Green (≥ 80%): The "Healthy Pipeline" zone. With NSS Teaching consistently around 85% and Continuation around 90%, the composite needs Graduate Outcomes to also clear roughly 70%+ to land here. At ≥ 80% the sector is delivering on satisfaction, persistence, and outcomes simultaneously.
+
+🟡 Amber (70–80%): The "Watch" zone. One of the three components has materially weakened — most commonly Graduate Outcomes during a soft graduate labour market. The system isn't broken, but stakeholders should be looking for which component slipped.
+
+🔴 Red (Below 70%): The "Structural Problem" zone. At least two components are failing simultaneously, or one is failing badly. Historically this band would indicate either a severe graduate-labour-market shock, a continuation crisis (e.g. a cost-of-living-driven dropout wave), or sustained NSS dissatisfaction. None of these are recoverable in a single year — they signal multi-cycle policy attention is needed.`,
 };
 
 export function getEducationTooltip(metricKey: string): string | undefined {
