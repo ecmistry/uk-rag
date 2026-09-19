@@ -33,6 +33,16 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+
+# Ensure crontab runs pick up project .env (MONGODB_URI, etc.)
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+try:
+    from env_loader import load_project_env
+    load_project_env()
+except Exception:
+    pass
+
 MONGO_URI = (
     os.environ.get("MONGODB_URI")
     or os.environ.get("DATABASE_URL")
@@ -252,6 +262,11 @@ def normalise_data_date(data_date: str) -> str:
     if m:
         return f"{m.group(2)} Q4"
 
+    # Academic year with slash: "2024/25" / "2025/26"
+    m = re.match(r"^(\d{4})/(\d{2})$", s)
+    if m:
+        return f"{int(m.group(1)) + 1} Q3"
+
     # Academic year: "202425"
     m = re.match(r"^(\d{4})(\d{2})$", s)
     if m:
@@ -263,6 +278,32 @@ def normalise_data_date(data_date: str) -> str:
         return f"{m.group(1)} Q4"
 
     return s
+
+
+def source_rank(raw_period: str, canonical: str) -> Tuple[int, int, int]:
+    """
+    Rank a raw period for "latest wins" selection.
+
+    Returns (year, quarter, month_in_quarter) where month_in_quarter is 1–3
+    for monthly sources (or 3 when only a quarter/year is known, so a true
+    quarterly observation does not lose to an early-month reading).
+    """
+    s = str(raw_period).strip()
+    m = re.match(r"^(\d{4})\s+Q([1-4])$", canonical)
+    if not m:
+        return (0, 0, 0)
+    year, quarter = int(m.group(1)), int(m.group(2))
+
+    # Monthly: "2026 JUL" / "Jul 2026" / "July 2026"
+    for abbr, num in MONTH_MAP.items():
+        if re.match(rf"^{abbr}\w*\s+(\d{{4}})$", s, re.I) or re.match(
+            rf"^(\d{{4}})\s+{abbr}\w*$", s, re.I
+        ):
+            month_in_q = ((num - 1) % 3) + 1
+            return (year, quarter, month_in_q)
+
+    # Default: treat as end-of-quarter snapshot
+    return (year, quarter, 3)
 
 # ---------------------------------------------------------------------------
 # Validation
@@ -552,46 +593,67 @@ def run(only_category: Optional[str] = None) -> None:
 
             # Track the latest row per metric_key so only the most
             # recent period is written to the dashboard tile.
+            # Also track the best row per (metricKey, period) so that when
+            # several monthly readings collapse to one quarter, the latest
+            # month wins and history is revised accordingly.
             latest_per_key: Dict[str, Dict] = {}
+            best_per_period: Dict[str, Dict] = {}
 
             for row in valid_metrics:
                 key = row["metric_key"]
                 val = str(row["value"])
                 rag = row["rag_status"].lower()
                 period = row["_normalised_period"]
+                raw_period = str(row.get("time_period", period))
+                rank = source_rank(raw_period, period)
                 name = row.get("metric_name", key)
                 source = row.get("source_url", "")
                 unit = infer_unit(key, row.get("unit"))
                 info = row.get("information")
                 metric_category = row.get("category", cat["name"])
 
-                # Insert history if this period doesn't exist yet
+                entry = {
+                    "key": key, "name": name, "category": metric_category,
+                    "val": val, "unit": unit, "rag": rag,
+                    "period": period, "source": source,
+                    "info": info, "rank": rank,
+                }
+
                 dedup_key = f"{key}|{period}"
-                if dedup_key not in existing:
-                    insert_history(db, key, val, rag, period, info)
+                prev_period = best_per_period.get(dedup_key)
+                if prev_period is None or rank >= prev_period["rank"]:
+                    best_per_period[dedup_key] = entry
+
+                prev = latest_per_key.get(key)
+                if prev is None or rank > prev["rank"] or (
+                    rank == prev["rank"] and period >= prev["period"]
+                ):
+                    latest_per_key[key] = entry
+
+            # Upsert only the latest row per metric to the dashboard tile.
+            # History for every observed period is written first (latest month
+            # within a quarter wins), then the scorecard tile is updated.
+            for dedup_key, entry in best_per_period.items():
+                was_new = dedup_key not in existing
+                insert_history(
+                    db, entry["key"], entry["val"], entry["rag"],
+                    entry["period"], entry.get("info"),
+                )
+                if was_new:
                     existing.add(dedup_key)
                     cat_inserted += 1
-                    log(f"  ✓ New history: {name} — {period} = {val} ({rag})")
+                    log(
+                        f"  ✓ New history: {entry['name']} — "
+                        f"{entry['period']} = {entry['val']} ({entry['rag']})"
+                    )
 
-                # Keep only the latest period for the dashboard tile
-                prev = latest_per_key.get(key)
-                if prev is None or period >= prev["period"]:
-                    latest_per_key[key] = {
-                        "key": key, "name": name, "category": metric_category,
-                        "val": val, "unit": unit, "rag": rag,
-                        "period": period, "source": source,
-                        "info": info,
-                    }
-
-            # Upsert only the latest row per metric to the dashboard tile,
-            # and always update the history entry for that period so the
-            # tile and history stay in sync when data sources revise values.
             for entry in latest_per_key.values():
                 upsert_metric(
                     db, entry["key"], entry["name"], entry["category"],
                     entry["val"], entry["unit"], entry["rag"],
                     entry["period"], entry["source"],
                 )
+                # Keep tile/history in sync for the scorecard period
                 insert_history(
                     db, entry["key"], entry["val"], entry["rag"],
                     entry["period"], entry.get("info"),

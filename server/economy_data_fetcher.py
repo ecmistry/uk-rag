@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional, List
 import logging
 import json
 import os
+import re
 from os import path
 
 logging.basicConfig(
@@ -285,18 +286,51 @@ class ONSDataFetcher:
                 if not data_rows:
                     logger.warning("No quarterly rows for Real GDP Growth (only annual or other period types in CSV)")
                     return None
-            # Public Sector Net Debt (HF6X/PUSF): keep only quarterly rows; exclude annual and monthly.
+            # Public Sector Net Debt (HF6X/PUSF): prefer monthly rows so the
+            # scorecard tracks the latest ONS monthly release (e.g. Jul 2026).
+            # Quarterly/annual rows lag the monthly series. Monthly dates are
+            # normalised to YYYY QN on ingest (last month in the quarter wins).
             if metric_key == "public_sector_net_debt":
-                data_rows = self._quarterly_rows_only(data_rows)
-                if not data_rows:
-                    logger.warning("No quarterly rows for Public Sector Net Debt (only annual or monthly in CSV)")
-                    return None
-                def _sort_quarterly(rows):
-                    def key(r):
-                        pq = self._parse_quarter(r.get("date", ""))
-                        return (pq[0], pq[1]) if pq else (0, 0)
-                    return sorted(rows, key=key)
-                data_rows = _sort_quarterly(data_rows)
+                month_re = re.compile(r"^\d{4}\s+[A-Za-z]{3,9}$")
+                monthly = [r for r in data_rows if month_re.match(r.get("date", "").strip())]
+                if monthly:
+                    month_order = {
+                        "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
+                        "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
+                        "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4,
+                        "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9,
+                        "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12,
+                    }
+
+                    def _month_key(r):
+                        parts = r.get("date", "").strip().split()
+                        if len(parts) != 2:
+                            return (0, 0)
+                        year_s, mon_s = parts[0], parts[1]
+                        if year_s.isdigit():
+                            year, mon = int(year_s), month_order.get(mon_s.upper(), 0)
+                        elif mon_s.isdigit():
+                            year, mon = int(mon_s), month_order.get(year_s.upper(), 0)
+                        else:
+                            return (0, 0)
+                        return (year, mon)
+
+                    data_rows = sorted(monthly, key=_month_key)
+                else:
+                    data_rows = self._quarterly_rows_only(data_rows)
+                    if not data_rows:
+                        logger.warning(
+                            "No monthly or quarterly rows for Public Sector Net Debt"
+                        )
+                        return None
+
+                    def _sort_quarterly(rows):
+                        def key(r):
+                            pq = self._parse_quarter(r.get("date", ""))
+                            return (pq[0], pq[1]) if pq else (0, 0)
+                        return sorted(rows, key=key)
+
+                    data_rows = _sort_quarterly(data_rows)
             # ABMI/PN2 is levels (£m); convert to YoY % growth for real_gdp_growth
             if metric_key == "real_gdp_growth":
                 data_rows = self._levels_to_yoy_growth(data_rows)

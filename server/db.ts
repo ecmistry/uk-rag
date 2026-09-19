@@ -552,6 +552,10 @@ function normaliseDataDate(dataDate: string): string {
   m = s.match(/^(\d{4})-(\d{4})$/);
   if (m) return `${m[2]} Q4`;
 
+  // Academic year with slash: "2024/25" / "2025/26"
+  m = s.match(/^(\d{4})\/(\d{2})$/);
+  if (m) return `${+m[1] + 1} Q3`;
+
   // Academic year: "202425"
   m = s.match(/^(\d{4})(\d{2})$/);
   if (m) return `${+m[1] + 1} Q3`;

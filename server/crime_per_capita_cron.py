@@ -42,6 +42,15 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_FILE = os.path.join(SCRIPT_DIR, "crime_per_capita_cache.json")
+
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+try:
+    from env_loader import load_project_env
+    load_project_env()
+except Exception:
+    pass
+
 MONGO_URI = (
     os.environ.get("MONGODB_URI")
     or os.environ.get("DATABASE_URL")

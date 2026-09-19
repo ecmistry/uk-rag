@@ -37,6 +37,15 @@ except ImportError:
     print("[DefenceIndustryVitality] pymongo required: pip install pymongo", file=sys.stderr)
     sys.exit(1)
 
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+try:
+    from env_loader import load_project_env
+    load_project_env()
+except Exception:
+    pass
+
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------

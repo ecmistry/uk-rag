@@ -385,36 +385,78 @@ def fetch_apprentice_starts_data():
         print(f"  Error fetching apprentice starts: {e}")
         return None
 
+def _latest_pupil_attendance_release_version_id():
+    """
+    Resolve the latest Pupil attendance in schools release *version* id from
+    the publication landing page (__NEXT_DATA__). Used to download underlying
+    data files from the EES content API.
+    """
+    url = "https://explore-education-statistics.service.gov.uk/find-statistics/pupil-attendance-in-schools"
+    response = requests.get(url, timeout=45, headers={"User-Agent": "Mozilla/5.0"}, allow_redirects=True)
+    response.raise_for_status()
+    match = re.search(
+        r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>',
+        response.text,
+        re.S,
+    )
+    if not match:
+        raise RuntimeError("Could not find __NEXT_DATA__ on pupil attendance page")
+    page = json.loads(match.group(1))
+    rvs = page["props"]["pageProps"]["releaseVersionSummary"]
+    return rvs["id"], rvs.get("title") or rvs.get("slug") or "latest"
+
+
 def fetch_pupil_attendance_data():
     """
-    Fetch Unauthorised Pupil Absence rate from DfE: Pupil Absence in Schools.
-    Scrapes the headline figure from the publication page.
-    """
-    url = "https://explore-education-statistics.service.gov.uk/find-statistics/pupil-absence-in-schools-in-england"
-    try:
-        print("\nFetching Unauthorised Pupil Absence (DfE)...")
-        response = requests.get(url, timeout=30, headers={"User-Agent": "Mozilla/5.0"})
-        response.raise_for_status()
-        text = response.text
+    Fetch Unauthorised Pupil Absence rate from DfE Pupil attendance in schools
+    (year-to-date / academic-year national total).
 
-        matches = re.findall(
-            r'unauthorised\s+absence\s+decreased\s+by\s+[\d.]+\s+percentage\s+points?\s+to\s+(\d+\.\d+)%',
-            text, re.I,
+    Uses the latest release's EES_ytd_data.csv rather than scraping headline
+    HTML, which is loaded client-side and no longer matches older regexes.
+    """
+    source_url = "https://explore-education-statistics.service.gov.uk/find-statistics/pupil-attendance-in-schools"
+    try:
+        print("\nFetching Unauthorised Pupil Absence (DfE Pupil attendance)...")
+        release_version_id, release_label = _latest_pupil_attendance_release_version_id()
+        files_url = (
+            "https://content.explore-education-statistics.service.gov.uk"
+            f"/api/releases/{release_version_id}/files?fromPage=ReleaseDownloads"
         )
-        if not matches:
-            matches = re.findall(
-                r'unauthorised\s+(?:absence\s+)?(?:decreased\s+)?(?:by\s+[\d.]+\s+percentage\s+points?\s+to\s+)?(\d+\.\d+)%',
-                text, re.I,
+        files_resp = requests.get(files_url, timeout=120, headers={"User-Agent": "Mozilla/5.0"})
+        files_resp.raise_for_status()
+
+        import zipfile
+
+        with zipfile.ZipFile(io.BytesIO(files_resp.content)) as zf:
+            ytd_name = next(
+                (n for n in zf.namelist() if n.endswith("EES_ytd_data.csv")),
+                None,
             )
-        if not matches:
-            print("  Could not find unauthorised absence rate on DfE page")
+            if not ytd_name:
+                print("  EES_ytd_data.csv not found in release download")
+                return None
+            with zf.open(ytd_name) as fh:
+                df = pd.read_csv(fh, low_memory=False)
+
+        if "unauthorised_absence_perc" not in df.columns:
+            print("  unauthorised_absence_perc column missing from YTD data")
             return None
 
-        value = float(matches[0])
-        year_match = re.search(r'Academic year (\d{4}/\d{2})', text)
-        time_period = year_match.group(1) if year_match else "unknown"
+        national = df[df["geographic_level"] == "National"]
+        if "education_phase" in national.columns:
+            total = national[national["education_phase"] == "Total"]
+            subset = total if not total.empty else national
+        else:
+            subset = national
+        if subset.empty:
+            print("  No national YTD attendance rows found")
+            return None
 
+        row = subset.iloc[0]
+        value = round(float(row["unauthorised_absence_perc"]), 2)
+        time_period = str(row.get("time_period") or "unknown")
         rag_status = calculate_rag_status("pupil_attendance", value)
+        print(f"  Unauthorised absence {value}% ({time_period}) from {release_label}")
         return {
             "metric_name": "Unauthorised Pupil Absence",
             "metric_key": "pupil_attendance",
@@ -422,8 +464,8 @@ def fetch_pupil_attendance_data():
             "value": value,
             "rag_status": rag_status,
             "time_period": time_period,
-            "data_source": "DfE: Pupil Absence in Schools",
-            "source_url": url,
+            "data_source": "DfE: Pupil attendance in schools",
+            "source_url": source_url,
             "last_updated": datetime.now().isoformat(),
         }
     except Exception as e:

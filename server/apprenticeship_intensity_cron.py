@@ -33,6 +33,15 @@ except ImportError:
     print("[ApprenticeshipCron] pymongo not installed – run: pip3 install pymongo", file=sys.stderr)
     sys.exit(1)
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+try:
+    from env_loader import load_project_env
+    load_project_env()
+except Exception:
+    pass
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -191,31 +200,40 @@ def get_existing_quarters(db: Any) -> set[str]:
 
 
 def insert_history(db: Any, quarter: str, intensity: float, rag: str) -> None:
-    db["metricHistory"].insert_one({
-        "metricKey": "apprenticeship_intensity",
+    db["metricHistory"].find_one_and_update(
+        {"metricKey": "apprenticeship_intensity", "dataDate": quarter},
+        {"$set": {
+            "metricKey": "apprenticeship_intensity",
+            "value": str(intensity),
+            "ragStatus": rag,
+            "dataDate": quarter,
+            "recordedAt": datetime.now(timezone.utc),
+        }},
+        upsert=True,
+    )
+
+
+def upsert_metric(db: Any, quarter: str, intensity: float, rag: str, rolling_starts: int | None = None) -> None:
+    now = datetime.now(timezone.utc)
+    information = None
+    if rolling_starts is not None:
+        information = f"Rolling 12-month starts: {rolling_starts:,}"
+    payload = {
+        "name": "Apprenticeship Intensity",
+        "category": "Education",
         "value": str(intensity),
+        "unit": "per 1,000",
         "ragStatus": rag,
         "dataDate": quarter,
-        "recordedAt": datetime.now(timezone.utc),
-        "createdAt": datetime.now(timezone.utc),
-    })
-
-
-def upsert_metric(db: Any, quarter: str, raw_starts: int, intensity: float, rag: str) -> None:
-    now = datetime.now(timezone.utc)
+        "sourceUrl": SOURCE_URL,
+        "lastUpdated": now,
+    }
+    if information is not None:
+        payload["information"] = information
     db["metrics"].update_one(
         {"metricKey": "apprenticeship_intensity"},
         {
-            "$set": {
-                "name": "Apprenticeship Intensity",
-                "category": "Education",
-                "value": str(raw_starts),
-                "unit": "per 1,000",
-                "ragStatus": rag,
-                "dataDate": quarter,
-                "sourceUrl": SOURCE_URL,
-                "lastUpdated": now,
-            },
+            "$set": payload,
             "$setOnInsert": {"createdAt": now},
         },
         upsert=True,
@@ -256,9 +274,6 @@ def run() -> None:
         latest_rolling = None
 
         for quarter in sorted(rolling_starts.keys()):
-            if quarter in existing:
-                continue
-
             rolling = rolling_starts[quarter]
             wf = workforce.get(quarter)
             if not wf or wf < 1.0:
@@ -269,22 +284,34 @@ def run() -> None:
             intensity = round((rolling / eng_wf) * 1000, 1)
             rag = rag_status(intensity)
 
-            insert_history(db, quarter, intensity, rag)
-            new_count += 1
-            log(f"  Inserted: {quarter} = {intensity} per 1,000 [{rag}] (rolling_12m={rolling:,}, eng_wf={int(eng_wf):,})")
+            if quarter not in existing:
+                insert_history(db, quarter, intensity, rag)
+                new_count += 1
+                log(
+                    f"  Inserted: {quarter} = {intensity} per 1,000 [{rag}] "
+                    f"(rolling_12m={rolling:,}, eng_wf={int(eng_wf):,})"
+                )
+            else:
+                # Refresh existing history so revised starts/workforce apply
+                insert_history(db, quarter, intensity, rag)
 
             if latest_quarter is None or quarter > latest_quarter:
                 latest_quarter = quarter
                 latest_intensity = intensity
                 latest_rolling = rolling
 
-        if latest_intensity is not None:
+        if latest_intensity is not None and latest_quarter is not None:
             rag = rag_status(latest_intensity)
-            upsert_metric(db, latest_quarter, latest_rolling, latest_intensity, rag)
-            log(f"Updated tile metric to: {latest_quarter} = {latest_intensity} per 1,000 [{rag}]")
+            upsert_metric(
+                db, latest_quarter, latest_intensity, rag, latest_rolling
+            )
+            log(
+                f"Updated tile metric to: {latest_quarter} = "
+                f"{latest_intensity} per 1,000 [{rag}]"
+            )
 
         if new_count == 0:
-            log("No new quarters found – data is up to date.")
+            log("No new quarters found – tile refreshed from latest computed quarter.")
         else:
             log(f"Done. Loaded {new_count} new quarter(s).")
 
