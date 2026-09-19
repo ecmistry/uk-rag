@@ -13,6 +13,7 @@ const MetricDetail = lazy(() => import("./pages/MetricDetail"));
 const Charts = lazy(() => import("./pages/Charts"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Diagnosis = lazy(() => import("./pages/Diagnosis"));
+const Benchmark = lazy(() => import("./pages/Benchmark"));
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
         <Switch>
           <Route path={"/"} component={Home} />
+          <Route path={"/benchmark"} component={Benchmark} />
           <Route path={"/metric/:metricKey"} component={MetricDetail} />
           <Route path={"/charts"} component={Charts} />
           <Route path={"/admin"} component={Admin} />

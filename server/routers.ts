@@ -26,6 +26,7 @@ import { fetchEconomyMetrics, fetchEducationMetrics, fetchCrimeMetrics, fetchHea
 import { checkAndSendAlerts, validateDataQuality } from "./alertService";
 import { cache } from "./cache";
 import { diagnose as runDiagnosis, chat as runChat, type ChatMessage } from "./diagnosis";
+import { getOrRefreshBenchmark } from "./g20Benchmark";
 
 function csvEscape(field: unknown): string {
   let s = String(field ?? "");
@@ -904,6 +905,28 @@ export const appRouter = router({
         );
         return { reply };
       }),
+  }),
+
+  /**
+   * G20 (+ EU) comparative benchmark dashboard.
+   * Percentile RAG vs peer economies — separate from absolute UK scorecards.
+   */
+  benchmark: router({
+    get: publicProcedure.query(async () => {
+      const cacheKey = "benchmark:g20";
+      const cached = cache.get<Awaited<ReturnType<typeof getOrRefreshBenchmark>>>(cacheKey);
+      if (cached) return cached;
+      const snapshot = await getOrRefreshBenchmark(false);
+      cache.set(cacheKey, snapshot, 15 * 60 * 1000);
+      return snapshot;
+    }),
+
+    refresh: adminProcedure.mutation(async () => {
+      const snapshot = await getOrRefreshBenchmark(true);
+      cache.delete("benchmark:g20");
+      cache.set("benchmark:g20", snapshot, 15 * 60 * 1000);
+      return snapshot;
+    }),
   }),
 });
 

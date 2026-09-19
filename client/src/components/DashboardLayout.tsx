@@ -20,7 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Lock, BarChart3, Settings, Stethoscope } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Lock, BarChart3, Settings, Stethoscope, Globe2 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { CSSProperties, useEffect, useRef, useState } from "react";
@@ -29,6 +29,7 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 
 const baseMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Globe2, label: "G20 Benchmark", path: "/benchmark" },
   { icon: BarChart3, label: "Charts", path: "/charts" },
 ];
 
