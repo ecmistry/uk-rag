@@ -1,10 +1,10 @@
 {
-  "time_period": "2025 Q4",
-  "value": 70.3,
+  "time_period": "2026 Q2",
+  "value": 71.4,
   "rag_status": "amber",
-  "weapons_million": 411.2,
-  "vehicles_million": 411.2,
-  "sum_million": 822.5,
-  "yoy_growth_pct": 12.75,
-  "updated_at": "2026-05-01T06:01:01.329630+00:00"
+  "weapons_million": 419.5,
+  "vehicles_million": 419.5,
+  "sum_million": 839.0,
+  "yoy_growth_pct": 11.2,
+  "updated_at": "2026-09-19T11:53:25.071683+00:00"
 }
